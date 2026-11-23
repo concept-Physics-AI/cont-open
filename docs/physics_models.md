@@ -14,8 +14,8 @@ ConT가 숫자를 내는 데 **지금 실제로 쓰는 모형**, 옛 저장소�
 | 체결력·마찰계수 추정 | 역문제 (닫힌 식) + 불확도 전파 | 볼트 늘어남 → 체결력, 마찰계수 | 아래 1.3 | 추정 | `packs/fastening/estimate.py` |
 | 설계 추천 | 열거 탐색 (새 식 없음) | 목표 안전율을 만족하는 규격·등급·토크 | 표준에 있는 조합을 모두 놓고 토크를 훑는다 | 생성 후보 | `packs/fastening/recommend.py` |
 | 절삭력 | 해석식 (키엔츨레) | 절삭 조건 → 절삭력, 동력 | F_c = k_c1.1 · h^(−m_c) · b · h | 해석 | `packs/machining/kienzle.py` |
-| 설비 진단 (ConT Fab) | 통계 | 정상 기준, 벗어남, 추이 | 운전조건의 1차식 + 구간별 중앙값·MAD, 벗어남 z | 관측 | `packs/diagnosis/` |
-| 품질 예측 (ConT Fab) | 1차 회귀 (최소제곱) | 공정 값 → 품질 값 | y = Xβ, 학습 범위 밖은 표시 | 예측 | `packs/diagnosis/special/predict.py` |
+| 설비 진단 | 통계 | 정상 기준, 벗어남, 추이 | 운전조건의 1차식 + 구간별 중앙값·MAD, 벗어남 z | 관측 | `packs/diagnosis/` |
+| 품질 예측 | 1차 회귀 (최소제곱) | 공정 값 → 품질 값 | y = Xβ, 학습 범위 밖은 표시 | 예측 | `packs/diagnosis/special/predict.py` |
 | 대화 | LLM | 말로 설계 바꾸기, 결과 풀어 말하기 | 숫자는 만들지 않는다 | 없음 | `llm/`, `dialogue/` |
 
 ### 1.1 체결 해석식 (VDI 2230)

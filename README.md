@@ -27,7 +27,7 @@
 | 숨은 물리의 복원 | 볼트 늘어남 관측 → 체결력·마찰계수 추정 (범위, 잔차, 증거, 식별가능성) | [docs/fastening_estimate.md](docs/fastening_estimate.md) |
 | 현장 계측 추천 | 어떤 센서를 어떻게 연결할지, 이 조인트에서 신호가 얼마나 나오는지 | [docs/fastening_sensing.md](docs/fastening_sensing.md) |
 | 절삭가공 | 선삭의 절삭력·동력 (계산만) | [docs/machining_slice1.md](docs/machining_slice1.md) |
-| 설비 진단 (ConT Fab) | 정상 기준, 이상 징후, 추이 | [docs/diagnosis.md](docs/diagnosis.md) |
+| 설비 진단 (Fab으로 만든 것의 예) | 정상 기준, 이상 징후, 추이 | [docs/diagnosis.md](docs/diagnosis.md) |
 
 ## 돌려 보기
 
