@@ -138,7 +138,7 @@ def stress_image(joint: BoltedJoint, load: LoadCase) -> str:
     facts = (f'판 사이 면의 최대 압력 <b>{a.value("interface_peak_pressure"):,.0f} MPa</b> · 눌리는 반지름 <b>{a.value("pressed_radius"):.1f} mm</b>'
              f' (VDI 원뿔 {a.value("pressed_radius_vdi_cone"):.1f} mm) · 판 컴플라이언스는 VDI 식보다 <b>{a.value("plate_resilience_deviation"):+.1f}%</b>'
              f' · 평형 잔차 {res.value:,.0f} N')
-    return f'{img}<div class="fcap">{facts}<br>볼트는 풀지 않고 좌면에 고른 압력으로 걸었고, 두 판은 붙어 있다고 가정했습니다. 보라색은 당겨지는 것으로 계산된 곳이며 실제로는 판이 벌어지는 곳입니다. 판정은 하지 않습니다.</div>'
+    return f'{img}<div class="fcap">{facts}<br>볼트는 풀지 않고 좌면에 고른 압력으로 걸었고, 두 판은 붙어 있다고 가정했습니다. 청회색은 당겨지는 것으로 계산된 곳이며 실제로는 판이 벌어지는 곳입니다. 판정은 하지 않습니다.</div>'
 
 
 def state(joint: BoltedJoint, load: LoadCase, answer: PhysicsAnswer, before: PhysicsAnswer | None = None,

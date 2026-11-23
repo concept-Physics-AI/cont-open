@@ -124,3 +124,13 @@ def test_server_answers_the_chat_screen_and_starts_over_on_reset():
         assert 'id="live-data"' in urllib.request.urlopen(base + "/live", timeout=5).read().decode("utf-8")     # 예전 화면도 남아 있다
     finally:
         srv.shutdown(); srv.server_close()
+
+
+def test_picture_can_be_saved_as_an_image_and_the_field_uses_one_hue():
+    from cont.view.field_image import BELOW, RAMP
+    page = app_page(Session(*example()))
+    assert 'id="shot"' in page and "이미지로 저장" in page and "function exportImage()" in page and "toBlob" in page
+    assert "실측과 대조하기 전입니다" in page[page.index("function exportImage()"):]                 # 내보낸 그림에도 값의 지위를 적는다
+    light = [sum(c) for _, c in RAMP]
+    assert light == sorted(light) and all(c[0] >= c[2] for _, c in RAMP[1:])                       # 값이 클수록 밝고, 푸른 쪽으로 가지 않는다
+    assert BELOW[2] > BELOW[0]                                                                      # 0보다 작은 곳은 다른 색(청회색)
