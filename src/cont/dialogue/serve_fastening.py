@@ -18,6 +18,7 @@ import yaml
 from cont.dialogue.fastening_chat import Session, Turn, brief
 from cont.dialogue.fastening_talk import screen_intent, suggest, talk
 from cont.packs.fastening.joint import BoltedJoint, LoadCase, Plate
+from cont.packs.fastening.process import settings as process_settings, tightening
 from cont.view import render_fastening
 from cont.tolerance import CONFIG_DIR
 from cont.view.fastening_app import IDEAS, render_app
@@ -73,6 +74,12 @@ def links() -> dict[str, str]:
     return {"모형 설명": a["model_doc_url"], "코드": a["repo_url"]}
 
 
+def app_state(session: Session, before: Any = None) -> dict[str, Any]:
+    """대화 화면의 상태: 지금 상태에 조이는 과정(4D)을 붙인다."""
+    return {**state(session.joint, session.load, session.answer, before), "timeline": tightening(session.joint, session.load),
+            "play_seconds": process_settings()["play_seconds"]}
+
+
 def message(session: Session, text: str) -> dict[str, Any]:
     """대화 화면에 보내는 한 번의 답: 지금 상태, 풀어 쓴 답, 바뀐 값, 화면에서 열 곳, 다음에 할 만한 말."""
     intent = screen_intent(text, session)
@@ -80,12 +87,12 @@ def message(session: Session, text: str) -> dict[str, Any]:
         return {"state": None, "talk": intent["talk"], "brief": None,
                 "ui": {"view": intent["view"], "open": intent["open"]}, "detail": "", "suggest": suggest(session, text)}
     t = session.say(text)
-    return {"state": state(session.joint, session.load, session.answer, t.before if t.changes else None), "talk": talk(t), "brief": brief(t),
+    return {"state": app_state(session, t.before if t.changes else None), "talk": talk(t), "brief": brief(t),
             "ui": None, "detail": t.reply + "\n\n" + source_text(t), "suggest": suggest(session, text)}
 
 
 def app_page(session: Session, ask_url: str | None = "/ask") -> str:
-    data = {"states": {"s0": state(session.joint, session.load, session.answer)},
+    data = {"states": {"s0": app_state(session)},
             "nodes": {"start": {"sid": "s0", "next": {}, "suggest": suggest(session)}}, "start": "start"}
     return render_app(data, ask_url, links=links(), downloads=(("STEP", "/joint.step"), ("STL", "/joint.stl")))
 
@@ -101,7 +108,7 @@ def tree(max_states: int = TREE_STATES) -> dict[str, Any]:
                           ensure_ascii=False, sort_keys=True, default=str)
 
     root = Session(*example())
-    states: dict[str, Any] = {"s0": state(root.joint, root.load, root.answer)}
+    states: dict[str, Any] = {"s0": app_state(root)}
     nodes: dict[str, Any] = {"start": {"sid": "s0", "next": {}}}
     seen: dict[tuple[str, str, str], str] = {}
     designs = {design(root)}
