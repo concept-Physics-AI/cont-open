@@ -1,8 +1,8 @@
-"""ConT Fab 화면을 내 PC에서 띄우는 작은 서버 (표준 라이브러리만 사용, 127.0.0.1에서만 받는다).
+"""설비 이상진단 화면(ConT Fab으로 만든 화면의 한 예)을 내 PC에서 띄우는 작은 서버 (표준 라이브러리만 사용, 127.0.0.1에서만 받는다).
 
-가상 설비로:        python -m cont.dialogue.serve_fab
-LLM으로 답 다듬기:  python -m cont.dialogue.serve_fab --llm
-파일 하나로:        python -m cont.dialogue.serve_fab --out fab.html      (질문은 미리 만든 답만)
+가상 설비로:        python -m cont.dialogue.serve_diagnosis
+LLM으로 답 다듬기:  python -m cont.dialogue.serve_diagnosis --llm
+파일 하나로:        python -m cont.dialogue.serve_diagnosis --out diagnosis.html      (질문은 미리 만든 답만)
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from cont.packs.diagnosis.equipment import EquipmentDiagnosis, diagnose_equipmen
 from cont.packs.diagnosis.guidance import Guidance, guide
 from cont.packs.diagnosis.report import report
 from cont.packs.diagnosis.special import interpret
-from cont.view.fab_app import case, render_fab
+from cont.view.diagnosis_app import case, render_diagnosis_app
 
 MAX_BODY = 4000
 QUESTIONS = ("어디가 평소와 다른가요?", "언제부터 달라졌나요?", "원인이 무엇인가요?", "무엇부터 점검해야 하나요?")
@@ -53,7 +53,7 @@ def demo_cases(provider: Any | None = None) -> tuple[list[dict[str, Any]], dict[
 
 def make_server(port: int = 8767, provider: Any | None = None) -> ThreadingHTTPServer:
     cases, kept = demo_cases()
-    page = render_fab(cases, "/ask").encode("utf-8")
+    page = render_diagnosis_app(cases, "/ask").encode("utf-8")
 
     class Handler(BaseHTTPRequestHandler):
         def _send(self, code: int, body: bytes, ctype: str) -> None:
@@ -103,7 +103,7 @@ def main(argv: list[str] | None = None) -> None:
     if a.out:
         cases, _ = demo_cases()
         with open(a.out, "w", encoding="utf-8") as f:
-            f.write(render_fab(cases))
+            f.write(render_diagnosis_app(cases))
         print(f"written {a.out}: {len(cases)} case(s), {sum(len(c['cards']) for c in cases)} finding(s)")
         return
     srv = make_server(a.port, provider)

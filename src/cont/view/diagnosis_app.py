@@ -1,4 +1,4 @@
-"""ConT Fab 화면: 왼쪽에 현장 설정, 가운데에 신호와 정상 범위, 오른쪽에 ConT Agent (관찰 사실 · 원인 후보 · 다음 점검).
+"""설비 이상진단 화면 (ConT Fab으로 만든 화면의 한 예): 왼쪽에 현장 설정, 가운데에 신호와 정상 범위, 오른쪽에 ConT Agent (관찰 사실 · 원인 후보 · 다음 점검).
 
 - 값은 진단 팩이 낸 것만 싣는다. 원인은 후보로만 말하고 판정하지 않는다.
 - 점검 상태(미확인 → 점검 중 → 조치 → 재확인)는 지금은 이 화면 안에서만 바뀐다. 저장하지 않는다.
@@ -24,7 +24,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer}h1,h2,h3{margin:0}
 .fab{height:100dvh;display:grid;grid-template-rows:56px 58px minmax(0,1fr)}
 .bar{display:flex;align-items:center;padding:0 26px;border-bottom:1px solid var(--line);min-width:0}
 .bar .name{font-size:24px;font-weight:600;letter-spacing:-.02em;margin-right:26px;white-space:nowrap}.bar .sep{width:1px;height:24px;background:var(--line);margin-right:10px}
-.bar .prod{height:56px;display:flex;align-items:center;padding:0 22px;font-size:16px;border-bottom:3px solid transparent;color:var(--sub)}.bar .prod.on{color:var(--t);font-weight:600;border-bottom-color:var(--t)}
+.bar .made{margin-left:12px;font-size:14px;font-weight:500;color:var(--t);background:var(--ts);padding:5px 12px;border-radius:6px;white-space:nowrap}
 .bar select{margin-left:auto;height:40px;padding:0 12px;border-radius:8px;border:1px solid var(--ink);background:#fff;font-size:14px}
 .head{display:flex;align-items:center;gap:22px;padding:0 26px;border-bottom:1px solid var(--line);min-width:0}.head h1{font-size:23px;font-weight:600;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .head .q{font-size:15px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.head .demo{margin-left:auto;flex:none;font-size:14px;font-weight:500;color:var(--warn);background:var(--warnbg);padding:5px 12px;border-radius:6px}
@@ -61,13 +61,13 @@ button,input{font:inherit;color:inherit}button{cursor:pointer}h1,h2,h3{margin:0}
 #say button{flex:none;height:46px;padding:0 18px;border-radius:23px;border:0;background:var(--ink);color:#fff;font-size:14px}
 .fab button:focus-visible,.fab select:focus-visible,.fab input:focus-visible{outline:2px solid var(--t);outline-offset:2px}
 @media (max-width:1100px){body{overflow:auto}.fab{height:auto;display:block}.bar{height:56px;overflow-x:auto}.head{min-height:58px;flex-wrap:wrap;padding:8px 26px}.cols{display:block}
-.left,.mid,.right{overflow:visible;border:0;border-bottom:1px solid var(--line)}.bar .prod{padding:0 14px}}
+.left,.mid,.right{overflow:visible;border:0;border-bottom:1px solid var(--line)}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
 """
 
 FAB_JS = r"""
 (function(){
-var D=JSON.parse(document.getElementById('fab-data').textContent),C=null,sys=0,state={};
+var D=JSON.parse(document.getElementById('app-data').textContent),C=null,sys=0,state={};
 var $=function(q,r){return (r||document).querySelector(q)},STATES=D.states;
 function esc(t){var d=document.createElement('div');d.textContent=t==null?'':String(t);return d.innerHTML;}
 function tg(x){return '<span class="tg">'+esc(x.tag)+'</span>'+esc(x.text);}
@@ -138,14 +138,14 @@ def case(case_id: str, heading: str, eq: EquipmentDiagnosis, cards: Sequence[Car
             "questions": [{"q": q, "a": a, "src": src} for q, a, src in questions]}
 
 
-def render_fab(cases: Sequence[Mapping[str, Any]], ask_url: str | None = None, title: str = "ConT Fab") -> str:
+def render_diagnosis_app(cases: Sequence[Mapping[str, Any]], ask_url: str | None = None, title: str = "설비 이상진단 · ConT Fab으로 만든 화면") -> str:
     if not cases:
         raise ValueError("at least one case is required")
     e = html.escape
     opts = "".join(f'<option value="{i}">{e(c["equipment"])}</option>' for i, c in enumerate(cases))
     blob = json.dumps({"cases": list(cases), "ask_url": ask_url, "states": STATES}, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     body = f"""<div class="fab">
-<header class="bar"><span class="name">ConT Fab</span><span class="sep"></span><span class="prod">Physics</span><span class="prod on" aria-current="page">Fab</span><span class="prod">Studio</span>
+<header class="bar"><span class="name">설비 이상진단</span><span class="sep"></span><span class="made">ConT Fab으로 만든 화면</span>
 <select id="case" aria-label="설비 고르기">{opts}</select></header>
 <div class="head"><h1 id="title"></h1><span class="q" id="quest"></span><span class="demo" id="demo">가상 데이터 시연</span></div>
 <div class="cols">
@@ -164,7 +164,7 @@ def render_fab(cases: Sequence[Mapping[str, Any]], ask_url: str | None = None, t
 <form id="say"><input type="text" aria-label="진단 결과에 대해 묻기" placeholder="진단 결과에 대해 물어보세요" autocomplete="off"><button type="submit">묻기</button></form></div>
 </section>
 </div></div>
-<script type="application/json" id="fab-data">{blob}</script><script>{FAB_JS}</script>"""
+<script type="application/json" id="app-data">{blob}</script><script>{FAB_JS}</script>"""
     fonts = ('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
              '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">')
     return (f'<!DOCTYPE html>\n<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">\n'

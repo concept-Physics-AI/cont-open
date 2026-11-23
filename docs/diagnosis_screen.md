@@ -1,13 +1,17 @@
-# ConT Fab 화면
+# 설비 이상진단 화면 (ConT Fab으로 만든 화면)
 
-현장 설비의 신호로 진단한 결과를 한 화면에 모은다 (`src/cont/view/fab_app.py`). 제품 구분은 [ARCHITECTURE.md](../ARCHITECTURE.md)의 "3제품 1코어"에 있다.
+**이 화면은 ConT Fab 그 자체가 아니다.** ConT Fab은 물리 정보(2D · 3D · 4D)를 골라 담아 자기 현장의 Physical AI를 꾸리는 곳이고,
+이 화면은 그렇게 꾸린 결과의 한 예로서 설비 이상진단에 맞춘 화면이다 ([ARCHITECTURE.md](../ARCHITECTURE.md)의 "3제품 1코어").
+화면 위쪽에 "ConT Fab으로 만든 화면"이라고 적는다. 골라 담는 곳(Fab 자체)은 아직 만들지 않았다.
+
+현장 설비의 신호로 진단한 결과를 한 화면에 모은다 (`src/cont/view/diagnosis_app.py`).
 지금은 가상 데이터로 만든 설비 둘(절삭 설비, 계통 넷인 설비)을 보인다. 현장 데이터로 검증한 것이 아니다.
 
 ## 구성
 
 | 곳 | 내용 |
 |---|---|
-| 위 | 제품 이름, 설비 고르기, "가상 데이터 시연" 표시 |
+| 위 | 화면 이름, "ConT Fab으로 만든 화면" 표시, 설비 고르기, "가상 데이터 시연" 표시 |
 | 왼쪽: 현장 설정 | 계통 목록(벗어난 건수), 운전조건, 정상 기준, 입력 신호(이름 → 현장 열) |
 | 가운데: 신호 | 고른 계통의 신호마다 실제 값, 같은 운전조건의 정상 범위, 벗어난 구간. 가장 크게 벗어난 정도(정상 산포의 배수) |
 | 오른쪽: ConT Agent | 찾아낸 변화마다 관찰 사실 · 원인 후보 · 다음 점검, 점검 상태, 물어보기 |
@@ -32,12 +36,11 @@
 - 설치·입력 → 모델·설정 → 성능 평가 → 운영 인수의 단계 줄.
 - 설비 그림(3D). 지금은 신호 그림만 있다.
 - 현장 데이터 읽기 화면. 현장 설정 파일로 진단하는 것은 `packs/diagnosis/demo.py --site`에 있으나 이 화면에 잇지 않았다.
-- Physics · Studio로 오가기 (이름만 보인다).
 
 ## 쓰는 법
 
 ```
-python -m cont.dialogue.serve_fab                 # 브라우저에서 http://127.0.0.1:8767
-python -m cont.dialogue.serve_fab --llm           # 직접 친 질문의 답을 LLM으로 다듬는다
-python -m cont.dialogue.serve_fab --out fab.html  # 파일 하나로
+python -m cont.dialogue.serve_diagnosis                 # 브라우저에서 http://127.0.0.1:8767
+python -m cont.dialogue.serve_diagnosis --llm           # 직접 친 질문의 답을 LLM으로 다듬는다
+python -m cont.dialogue.serve_diagnosis --out diagnosis.html  # 파일 하나로
 ```

@@ -1,14 +1,14 @@
-"""ConT Fab 화면: 진단 결과를 관찰 사실 · 원인 후보 · 다음 점검으로, 값은 진단 팩이 낸 것만."""
+"""설비 이상진단 화면 (ConT Fab으로 만든 화면의 한 예): 진단 결과를 관찰 사실 · 원인 후보 · 다음 점검으로, 값은 진단 팩이 낸 것만."""
 import json
 import re
 import threading
 import urllib.request
 
-from cont.dialogue.serve_fab import QUESTIONS, demo_cases, main, make_server, synthetic_cutting
+from cont.dialogue.serve_diagnosis import QUESTIONS, demo_cases, main, make_server, synthetic_cutting
 from cont.packs.diagnosis.demo import synthetic_equipment
 from cont.packs.diagnosis.guidance import guide
 from cont.packs.diagnosis.report import report
-from cont.view.fab_app import STATES, render_fab
+from cont.view.diagnosis_app import STATES, render_diagnosis_app
 
 
 def test_report_splits_each_finding_into_fact_candidates_and_checks():
@@ -42,10 +42,10 @@ def test_page_has_site_settings_signals_and_agent_and_never_judges(tmp_path):
     out = tmp_path / "fab.html"
     main(["--out", str(out)])
     page = out.read_text(encoding="utf-8")
-    assert page.startswith("<!DOCTYPE html>") and all(x in page for x in ("ConT Fab", "현장 설정", "운전조건", "정상 기준", "입력 신호", "ConT Agent",
+    assert page.startswith("<!DOCTYPE html>") and all(x in page for x in ("설비 이상진단", "ConT Fab으로 만든 화면", "현장 설정", "운전조건", "정상 기준", "입력 신호", "ConT Agent",
                                                                            "관찰 사실", "원인 후보", "다음 점검", "확정한 원인이 아닙니다", "가상 데이터 시연"))
     assert "합격·불합격의 기준이 아니며" in page and "아직 저장하지 않습니다" in page and "합격입니다" not in page
-    data = json.loads(re.search(r'<script type="application/json" id="fab-data">(.*?)</script>', page, re.S).group(1))
+    data = json.loads(re.search(r'<script type="application/json" id="app-data">(.*?)</script>', page, re.S).group(1))
     assert data["ask_url"] is None and data["states"] == list(STATES) == ["미확인", "점검 중", "조치", "재확인"]
     cut, eqp = data["cases"]
     assert cut["id"] == "cutting" and cut["synthetic"] and [c["title"] for c in cut["cards"]] == ["공구 마모 진행 의심", "공구 파손 의심"]
@@ -75,4 +75,4 @@ def test_server_answers_a_typed_question_from_the_diagnosis():
     finally:
         srv.shutdown(); srv.server_close()
     cases, kept = demo_cases()
-    assert set(kept) == {"cutting", "equipment"} and render_fab(cases).count("<option") == 2
+    assert set(kept) == {"cutting", "equipment"} and render_diagnosis_app(cases).count("<option") == 2
