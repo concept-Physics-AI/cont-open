@@ -75,8 +75,12 @@ def _line(points: list[tuple[float, float]], xlabel: str, ylabel: str, marks: tu
     px = lambda x: 44 + (x - x0) / ((x1 - x0) or 1.0) * (W - 60)
     py = lambda y: H - 30 - (y - y0) / ((y1 - y0) or 1.0) * (H - 52)
     pts = " ".join(f"{px(x):.1f},{py(y):.1f}" for x, y in points)
-    extra = "".join(f'<line class="ax" stroke-dasharray="4 3" x1="{px(m):.1f}" y1="22" x2="{px(m):.1f}" y2="{H - 30}"/>'
-                    f'<text class="tick" x="{px(m) + (-4 if px(m) > W * 0.6 else 4):.1f}" y="32"{" text-anchor=\"end\"" if px(m) > W * 0.6 else ""}>{html.escape(t)}</text>' for m, t in marks)
+    def mark(m: float, name: str) -> str:
+        right = px(m) > W * 0.6                                # 오른쪽 가까이면 글자가 잘리지 않게 왼쪽으로 쓴다
+        anchor = ' text-anchor="end"' if right else ""
+        return (f'<line class="ax" stroke-dasharray="4 3" x1="{px(m):.1f}" y1="22" x2="{px(m):.1f}" y2="{H - 30}"/>'
+                f'<text class="tick" x="{px(m) + (-4 if right else 4):.1f}" y="32"{anchor}>{html.escape(name)}</text>')
+    extra = "".join(mark(m, n) for m, n in marks)
     return (f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="{html.escape(ylabel)} 대 {html.escape(xlabel)}">'
             f'<line class="ax" x1="44" y1="{py(0):.1f}" x2="{W - 16}" y2="{py(0):.1f}"/><line class="ax" x1="44" y1="22" x2="44" y2="{H - 30}"/>{extra}'
             f'<polygon class="area" points="{px(xs[0]):.1f},{py(0):.1f} {pts} {px(xs[-1]):.1f},{py(0):.1f}"/><polyline class="sig" points="{pts}"/>'
