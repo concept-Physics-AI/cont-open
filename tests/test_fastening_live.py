@@ -60,7 +60,7 @@ def test_state_carries_what_the_screen_draws_and_meshes_can_morph_between_states
 
 def test_live_page_is_one_file_with_tabs_and_plays_prepared_states(tmp_path):
     out = tmp_path / "live.html"
-    main(["--out", str(out)])
+    main(["--out", str(out), "--live"])
     page = out.read_text(encoding="utf-8")
     assert page.startswith("<!DOCTYPE html>") and "http" not in page and page.count("<canvas") == 1
     assert all(t in page for t in ('data-v="shape"', 'data-v="section"', 'data-v="diagram"', 'data-v="torque"', "자세히: 물리, 수학·조건"))
@@ -82,7 +82,7 @@ def test_server_answers_a_turn_with_the_next_state_so_the_page_changes_in_place(
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{srv.server_address[1]}"
     try:
-        home = urllib.request.urlopen(base + "/", timeout=5).read().decode("utf-8")
+        home = urllib.request.urlopen(base + "/live", timeout=5).read().decode("utf-8")
         assert 'id="live-data"' in home and '"ask_url":"/say"' in home and "location.reload" not in home
         req = urllib.request.Request(base + "/say", data=json.dumps({"text": "M12로 바꿔"}).encode(),
                                      headers={"Content-Type": "application/json"}, method="POST")
