@@ -129,3 +129,9 @@ def test_server_makes_samples_on_request_and_says_why_when_it_cannot():
         assert "만들지 못했습니다" in post({"key": "guidance", "size": "M10"})["error"]
     finally:
         srv.shutdown(); srv.server_close()
+
+
+def test_card_is_short_and_detail_is_full():
+    items = catalog()
+    assert all(0 < len(i["short"]) <= 24 for i in items)            # 카드에는 한 줄 설명만
+    assert all(i["short"] != i["summary"] for i in items)           # 긴 설명은 상세 창에서
