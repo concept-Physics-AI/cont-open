@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 import yaml
 
@@ -41,6 +41,27 @@ def load() -> dict[str, Any]:
     return {"forms": forms, "uses": uses, "quantities": data.get("quantities") or [], "items": items, "sets": sets, "rule": data.get("sample_rule") or {}}
 
 
+def _sample(s: Mapping[str, Any]) -> dict[str, Any]:
+    """샘플 하나. view3d(3D를 돌려 볼 때 쓰는 값)와 more(근거 자세히)는 있을 때만 붙는다."""
+    out = {"label": s["label"], "html": s["html"], "facts": [list(x) for x in s["facts"]], "params": s.get("params") or {}}
+    for k in ("view3d", "more"):
+        if s.get(k):
+            out[k] = s[k]
+    return out
+
+
+def meshes(items: Sequence[Mapping[str, Any]], digits: int = 1) -> dict[str, Any]:
+    """3D 샘플이 쓰는 규격별 삼각형 자료 (화면에서 돌려 보기용). 소수 첫째 자리까지만 싣는다."""
+    from cont.fab.previews import joint_for
+    sizes = sorted({s["view3d"]["size"] for it in items for s in it["samples"] if s.get("view3d")})
+    out = {}
+    for size in sizes:
+        v = joint_for(size)["state"]["viewer"]
+        out[size] = {"c": [round(x, 3) for x in v["center"]], "r": round(v["radius"], 3),
+                     "p": [{"r": p["role"], "t": [round(x, digits) for x in p["tri"]]} for p in v["parts"]]}
+    return out
+
+
 def catalog() -> list[dict[str, Any]]:
     """상품들. 상품마다 엔진을 조건별로 돌린 샘플(samples)이 붙는다."""
     from cont.fab.previews import MAKEABLE, PREVIEWS
@@ -54,7 +75,7 @@ def catalog() -> list[dict[str, Any]]:
             raise ValueError(f"catalog item {it['key']!r} produced no sample")
         out.append({**{k: it[k] for k in SHOWN}, "form_label": data["forms"][it["form"]], "doc": it.get("doc", ""), "preview_note": it.get("preview_note", ""),
                     "together": list(it.get("together") or []), "makeable": it["preview"] in MAKEABLE,
-                    "samples": [{"label": s["label"], "html": s["html"], "facts": [list(x) for x in s["facts"]], "params": s.get("params") or {}} for s in samples]})
+                    "samples": [_sample(s) for s in samples]})
     return out
 
 
@@ -70,7 +91,7 @@ def make(key: str, params: Mapping[str, Any]) -> dict[str, Any]:
     if torque is not None and torque <= 0:
         raise ValueError("torque must be positive")
     s = PREVIEWS[it["preview"]](it, {"size": size, "torque": torque})[0]
-    return {"label": s["label"], "html": s["html"], "facts": [list(x) for x in s["facts"]], "params": s["params"]}
+    return _sample(s)
 
 
 def selection(keys: list[str], site: str = "") -> dict[str, Any]:

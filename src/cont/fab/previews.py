@@ -62,8 +62,10 @@ def _each(item: Mapping[str, Any], make: Callable[[dict[str, Any]], tuple[str, l
                 continue
     out = []
     for f in cases:
-        body, facts = make(f)
-        out.append({"label": f["label"], "html": body, "facts": facts, "params": f["params"]})
+        got = make(f)
+        body, facts = got[0], got[1]
+        extra = got[2] if len(got) > 2 else {}                 # view3d(3D를 돌려 볼 자료), more(근거) 같은 덧붙임
+        out.append({"label": f["label"], "html": body, "facts": facts, "params": f["params"], **extra})
     return out
 
 
@@ -93,7 +95,8 @@ def fastening_section(item: Mapping[str, Any], params: Mapping[str, Any] | None 
 
     def make(f: dict[str, Any]) -> tuple[str, list[tuple[str, str]]]:
         j = f["joint"]
-        return iso_svg(f["state"]["viewer"], label=f"{j.size} 볼트 조인트 3D"), [("규격", f"{j.size} · {j.property_class}"), ("판", f"{j.plate_head.thickness:g} + {j.plate_nut.thickness:g} mm")]
+        return (iso_svg(f["state"]["viewer"], label=f"{j.size} 볼트 조인트 3D"), [("규격", f"{j.size} · {j.property_class}"), ("판", f"{j.plate_head.thickness:g} + {j.plate_nut.thickness:g} mm")],
+                {"view3d": {"size": j.size, "hidden": False, "use": None}})
     return _each(item, make, params)
 
 
@@ -103,7 +106,8 @@ def fastening_hidden(item: Mapping[str, Any], params: Mapping[str, Any] | None =
     def make(f: dict[str, Any]) -> tuple[str, list[tuple[str, str]]]:
         h = f["state"]["hidden"]
         return (iso_svg(f["state"]["viewer"], hidden=True, use=h["use"], label="숨은 물리 3D"),
-                [("볼트 응력 ÷ 항복강도", f"{h['use']:.2f}"), ("운전 시 등가응력", f"{h['stress']:,.0f} MPa")])
+                [("볼트 응력 ÷ 항복강도", f"{h['use']:.2f}"), ("운전 시 등가응력", f"{h['stress']:,.0f} MPa")],
+                {"view3d": {"size": f["joint"].size, "hidden": True, "use": round(h["use"], 3)}})
     return _each(item, make, params)
 
 
@@ -201,10 +205,10 @@ def fastening_video(item: Mapping[str, Any], params: Mapping[str, Any] | None = 
     from cont.view.iso_svg import iso_svg
 
     def make(f: dict[str, Any]) -> tuple[str, list[tuple[str, str]]]:
-        first, end = _frames(f, 4)[0], _frames(f, 4)[-1]
-        cells = "".join(f'<figure>{iso_svg(f["state"]["viewer"], 150, 150, use=x["use"], label="영상의 한 장면")}<figcaption>{t}</figcaption></figure>'
-                        for x, t in ((first, "처음"), (end, "끝")))
-        return f'<div class="strip two">{cells}</div>', [("길이", f"약 {settings()['play_seconds']:g}초"), ("끝", f"{end['torque']:g} N·m → {end['preload']:,.0f} N")]
+        picks = _frames(f, int(_rule()["process_frames"]))
+        end = picks[-1]
+        cells = "".join(f'<figure>{iso_svg(f["state"]["viewer"], 150, 150, use=x["use"], label="영상의 한 장면")}<figcaption>{x["torque"]:.1f} N·m</figcaption></figure>' for x in picks)
+        return f'<div class="strip">{cells}</div>', [("길이", f"약 {settings()['play_seconds']:g}초"), ("끝", f"{end['torque']:g} N·m → {end['preload']:,.0f} N")]
     return _each(item, make, params)
 
 
@@ -228,7 +232,10 @@ def fastening_sensing(item: Mapping[str, Any], params: Mapping[str, Any] | None 
     def make(f: dict[str, Any]) -> tuple[str, list[tuple[str, str]]]:
         p = plan(f["joint"], f["load"])
         rows = "".join(f'<li><b>{html.escape(o.stage)}</b> {html.escape(o.label)}</li>' for o in p.options[:3])
-        return f'<ol class="steps">{rows}</ol>', [("추천 단계", f"{len(p.options)}가지"), ("예상 볼트 늘어남", f"{p.elongation * 1000:.0f} µm")]
+        every = "".join(f'<li><b>{html.escape(o.stage)}</b> {html.escape(o.label)}</li>' for o in p.options)
+        more = (f'<h4>추천하는 측정 단계 전부</h4><ol class="steps">{every}</ol>'
+                f'<h4>이 추천이 쓴 입력</h4><p>조인트 {html.escape(f["joint"].size)}, 조임 토크 {f["load"].tightening_torque:g} N·m. 예상 볼트 늘어남 {p.elongation * 1000:.0f} µm는 엔진이 계산한 값입니다.</p>')
+        return f'<ol class="steps">{rows}</ol>', [("추천 단계", f"{len(p.options)}가지"), ("예상 볼트 늘어남", f"{p.elongation * 1000:.0f} µm")], {"more": more}
     return _each(item, make, params)
 
 
@@ -293,7 +300,11 @@ def guidance(item: Mapping[str, Any], params: Mapping[str, Any] | None = None) -
             cand = c.candidates[0].text.split(". ")[0] if c.candidates else "지식표에 후보가 없습니다"
             body = (f'<dl class="three"><dt>관찰 사실</dt><dd>{e(c.observed.text)}</dd><dt>원인 후보</dt><dd>{e(cand)}</dd>'
                     f'<dt>다음 점검</dt><dd>{e(c.checks[0].text) if c.checks else "지식표에 항목이 없습니다"}</dd></dl>')
-            out.append({"label": f"{c.title} · {c.system}", "html": body, "params": {}, "facts": [("가상 설비", eq.equipment), ("점검 항목", f"{len(c.checks)}가지")]})
+            li = lambda xs: "".join(f'<li><b>{e(x.tag)}</b> {e(x.text)}</li>' for x in xs) or "<li>지식표에 항목이 없습니다</li>"
+            more = (f'<h4>관찰 사실 (데이터에서 나온 것)</h4><ul class="ev"><li><b>{e(c.observed.tag)}</b> {e(c.observed.text)}</li></ul>'
+                    f'<h4>원인 후보 (지식표의 후보이며 확정이 아닙니다)</h4><ul class="ev">{li(c.candidates)}</ul>'
+                    f'<h4>점검 순서</h4><ul class="ev">{li(c.checks)}</ul>')
+            out.append({"label": f"{c.title} · {c.system}", "html": body, "params": {}, "facts": [("가상 설비", eq.equipment), ("점검 항목", f"{len(c.checks)}가지")], "more": more})
     return out[: int((item.get("samples") or {}).get("max", len(out)))]
 
 

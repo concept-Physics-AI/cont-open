@@ -96,8 +96,8 @@ def test_selection_is_the_seed_of_my_fab():
 def test_store_page_is_a_shop_with_shelves_details_compare_and_my_fab_bar(items, tmp_path):
     page = render_store(items)
     assert page.startswith("<!DOCTYPE html>") and all(x in page for x in (
-        "ConT FAB", "고르기", "내 Fab을 꾸리세요", 'id="q"', 'id="shelves"', 'id="detail"', 'id="cmp"', "견주기", "함께 담으면 좋은 것", "내 Fab", "고른 것 내려받기",
-        "세트 담기", "꾸리기 (준비 중)", "prefers-reduced-motion", 'data-grp="form"', 'data-grp="quantity"', "물리 특성별", "data-var"))
+        "ConT FAB", "고르기", "내 Fab을 꾸리세요", 'id="q"', 'id="shelves"', 'id="detail"', 'id="cmp"', "견주기", "함께 담으면 좋은 것", "내 Fab", "구성 화면 열기", "내려받기",
+        "세트 담기", "prefers-reduced-motion", 'data-grp="form"', 'data-grp="quantity"', "물리 특성별", "data-var"))
     assert "계산값 · 검증 전" in page and "실측과 대조하기 전" in page
     text = re.sub(r"<script.*?</script>|<style.*?</style>|<svg.*?</svg>", "", page, flags=re.S)
     assert not re.search(r"\d\s*(만\s*)?원|USD|\$\d|€", text)                              # 가격이 없다
@@ -143,3 +143,27 @@ def test_filters_are_compact_menus_in_the_top_bar_and_the_bar_hides_while_scroll
     top = page[page.index('<header class="top">'):page.index("</header>")]
     assert top.count('class="dd"') == 4 and all(w in top for w in ("묶기", "형태", "쓰임", "물리 영역", 'data-grp="quantity"', 'data-area="체결"'))
     assert 'class="filters"' not in page and "classList.add('away')" in page            # 줄마다 펼친 칩 대신 작은 메뉴, 내려가면 막대가 숨는다
+
+
+def test_samples_carry_what_the_detail_preview_needs_to_be_operated():
+    from cont.fab.catalog import catalog, meshes
+    items = {i["key"]: i for i in catalog()}
+    for key in ("fastening_shape", "fastening_hidden"):                                   # 3D: 돌려 볼 자료
+        assert all(s["view3d"]["size"] in s["label"] for s in items[key]["samples"])
+    assert all(s["view3d"]["hidden"] for s in items["fastening_hidden"]["samples"]) and not any(s["view3d"]["hidden"] for s in items["fastening_shape"]["samples"])
+    m = meshes(list(items.values()))
+    assert set(m) == {s["view3d"]["size"] for s in items["fastening_shape"]["samples"]} and all(v["p"] and v["r"] > 0 for v in m.values())
+    for key in ("fastening_process", "fastening_video"):                                  # 4D·영상: 재생할 장면 여러 장
+        assert all(s["html"].count("<figure>") >= 4 for s in items[key]["samples"])
+    for s in items["guidance"]["samples"]:                                                # 판단·점검: 근거(관찰·후보·점검)와 번호
+        assert all(re.search(p, s["more"]) for p in (r"E-\d\d", r"H-\d\d", r"M-\d\d", "확정이 아닙니다"))
+    assert all("추천하는 측정 단계 전부" in s["more"] for s in items["fastening_sensing"]["samples"])
+
+
+def test_my_fab_keeps_the_condition_and_view_and_can_be_reopened():
+    from cont.fab.catalog import catalog, load
+    page = render_store(catalog(), load(), "")
+    for w in ('id="build"', "cont-fab-selection", "version:2", "localStorage", 'id="b-file"', "data-v3", 'data-pl="play"', "연결 정보만 적음, 실제 연결은 아직 없음", "구성 화면 열기"):
+        assert w in page
+    assert "다음: 꾸리기 (준비 중)" not in page and "picked=[" not in page                       # 이름만 담던 옛 목록이 남지 않았다
+    assert "condition:{label:p.label,params:p.params}" in page and "view:p.view" in page      # 조건과 보던 설정을 함께 저장한다

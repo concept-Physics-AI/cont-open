@@ -6,7 +6,7 @@
 - 진열대: 세트, 그리고 형태별(이미지 · 그래프 · 3D · 4D · 영상 · 신호 · 계산값 · 판단) 줄. 카드 하나 = 샘플 하나.
 - 샘플은 엔진을 조건마다 실제로 돌린 결과다. 값은 모두 계산값이며 실측과 대조하기 전이다. 가격은 없다.
 - 자세히 보기: 샘플을 넘겨 보고, 넣는 것 · 내는 것 · 한계 · 함께 담으면 좋은 것을 본다. 서버로 띄웠으면 규격과 토크를 바꿔 그 자리에서 다시 만든다.
-- 견주기: 샘플 셋까지 나란히. 내 Fab: 담은 것이 아래 띠에 늘 보이고, 파일(my-fab.json)로 내려받는다. 꾸리기 화면은 아직 없다.
+- 견주기: 샘플 셋까지 나란히. 내 Fab: 담은 것이 조건·설정과 함께 아래 띠에 보이고, 구성 화면(build_ui.py)에서 크기·순서·데이터 연결을 정해 저장하고 다시 연다.
 """
 from __future__ import annotations
 
@@ -16,9 +16,10 @@ import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Mapping, Sequence
 
-from cont.fab.catalog import catalog, load, make
+from cont.fab.catalog import catalog, load, make, meshes
 from cont.view.diagnosis_html import CSS
 from cont.view.fastening_html import EXTRA_CSS
+from cont.fab.build_ui import BUILD_CSS, BUILD_HTML, BUILD_JS
 from cont.view.field_image import FIELD_CSS
 
 MAX_BODY = 2000
@@ -89,7 +90,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 
 STORE_JS = r"""
 (function(){
-var D=JSON.parse(document.getElementById('store-data').textContent),picked=[],cmp=[],form='all',use='all',q='',cur=null,curS=0,grp='form';
+var D=JSON.parse(document.getElementById('store-data').textContent),cmp=[],form='all',use='all',q='',cur=null,curS=0,grp='form';
 var $=function(s,r){return (r||document).querySelector(s)},all=function(s,r){return [].slice.call((r||document).querySelectorAll(s));};
 function esc(t){var d=document.createElement('div');d.textContent=t==null?'':String(t);return d.innerHTML;}
 function item(k){return D.items.filter(function(x){return x.key===k;})[0];}
@@ -115,12 +116,9 @@ $('#shelves').innerHTML=h;}
 function apply(){var on=areas(),total=0;all('.shelf').forEach(function(sh){if(sh.dataset.shelf==='set'){sh.hidden=!!q||form!=='all'||use!=='all';return;}var shown=0;
 all('.item',sh).forEach(function(el){var it=item(el.dataset.k),text=(it.name+' '+it.samples.map(function(x){return x.label;}).join(' ')+' '+it.summary+' '+it.area+' '+it.quantity+' '+it.form_label+' '+it.needs+' '+it.gives).toLowerCase();
 var ok=(form==='all'||it.form===form)&&(use==='all'||it.uses.indexOf(use)>=0)&&on.indexOf(it.area)>=0&&(!q||text.indexOf(q)>=0);el.hidden=!ok;if(ok)shown++;
-var inb=picked.indexOf(it.key)>=0;el.classList.toggle('in',inb);var a=$('.add',el);a.textContent=inb?'담김':'담기';a.classList.toggle('in',inb);a.setAttribute('aria-pressed',inb?'true':'false');
+var inb=isIn(it.key,Number(el.dataset.s));el.classList.toggle('in',has(it.key));var a=$('.add',el);a.textContent=inb?'담김':'담기';a.classList.toggle('in',inb);a.setAttribute('aria-pressed',inb?'true':'false');
 var c=$('input[data-cmp]',el);c.checked=cmp.indexOf(c.dataset.cmp)>=0;});sh.hidden=!shown;total+=shown;var n=$('[data-n]',sh);if(n)n.textContent='보이는 것 '+shown;});
 $('#none').hidden=total>0;bar();}
-function bar(){$('#got').innerHTML=picked.length?picked.map(function(k){return '<button type="button" data-drop="'+esc(k)+'" aria-label="'+esc(item(k).name)+' 빼기">'+esc(item(k).name)+' ×</button>';}).join(''):'<span>아직 담은 것이 없습니다. 카드의 "담기"를 눌러 보세요.</span>';
-$('#pk').textContent=picked.length;$('#save').disabled=!picked.length;$('#cmpb').disabled=cmp.length<2;$('#cmpb').textContent='견주기 '+cmp.length;}
-function toggle(k,on){var i=picked.indexOf(k);if(on===undefined)on=i<0;if(on&&i<0)picked.push(k);if(!on&&i>=0)picked.splice(i,1);}
 /* 자세히 보기 */
 function reduced(){return window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;}
 function flip(card,d,out){if(!card||reduced()||!d.animate)return null;var a=card.getBoundingClientRect(),b=d.getBoundingClientRect();if(!b.width||!b.height)return null;var small='translate('+(a.left+a.width/2-b.left-b.width/2)+'px,'+(a.top+a.height/2-b.top-b.height/2)+'px) scale('+a.width/b.width+','+a.height/b.height+')',f=[{transform:small,opacity:.35},{transform:'none',opacity:1}];return d.animate(out?f.reverse():f,{duration:out?240:380,easing:'cubic-bezier(.2,.8,.2,1)'});}
@@ -128,22 +126,21 @@ function shut(){var d=$('#detail'),c=cur&&document.querySelector('.item[data-k="
 function detail(k,si,src){cur=item(k);curS=si||0;var it=cur;$('#d-name').textContent=it.name;$('#d-sum').textContent=it.summary;$('#d-tags').innerHTML='<span>'+esc(it.form_label)+'</span><span>'+esc(it.quantity)+'</span><span>'+esc(it.area)+'</span>';
 $('#d-meta').innerHTML='<dt>넣는 것</dt><dd>'+esc(it.needs)+'</dd><dt>내는 것</dt><dd>'+esc(it.gives)+'</dd><dt>이럴 때</dt><dd>'+esc(it.uses.join(', '))+'</dd><dt>알아둘 점</dt><dd>'+esc(it.limits)+'</dd>'+(it.preview_note?'<dt>미리보기</dt><dd>'+esc(it.preview_note)+'</dd>':'');
 $('#d-with').innerHTML=it.together.map(function(t){return '<button type="button" data-open-k="'+esc(t)+'">'+esc(item(t).name)+'</button>';}).join('')||'<span class="sm">없음</span>';
-$('#mk').hidden=!(D.make_url&&it.makeable);$('#mk-msg').textContent='규격과 조임 토크를 바꾸면 엔진이 다시 계산합니다. 토크를 비우면 추천 엔진이 고릅니다.';sample();if(!$('#detail').open){$('#detail').showModal();flip(src,$('#detail'),false);}}
+sample();if(!$('#detail').open){$('#detail').showModal();flip(src,$('#detail'),false);}}
 function sample(){var it=cur,s=it.samples[curS];$('#d-pv').className='pv'+pad(it);$('#d-pv').innerHTML=s.html;$('#d-facts').innerHTML='<div class="lb">'+esc(s.label)+'</div><ul>'+s.facts.map(function(f){return '<li><span>'+esc(f[0])+'</span><b>'+esc(f[1])+'</b></li>';}).join('')+'</ul>';
 $('#d-picks').innerHTML=it.samples.map(function(x,i){return '<button type="button" data-pick="'+i+'" aria-pressed="'+(i===curS)+'">'+esc(x.label)+'</button>';}).join('');
-var inb=picked.indexOf(it.key)>=0,a=$('#d-add');a.textContent=inb?'담김 (빼기)':'내 Fab에 담기';a.classList.toggle('in',inb);if(s.params&&s.params.size){$('#mk-size').value=s.params.size;$('#mk-torque').value=s.params.torque;}}
+var inb=isIn(it.key,curS),a=$('#d-add');a.textContent=inb?'담김 (빼기)':'이 조건으로 내 FAB에 담기';a.classList.toggle('in',inb);if(s.params&&s.params.size){$('#mk-size').value=s.params.size;$('#mk-torque').value=s.params.torque;}richDetail();}
 function compare(){$('#c-cols').innerHTML=cmp.map(function(id){var p=id.split('#'),it=item(p[0]),s=it.samples[Number(p[1])];return '<div class="col"><div class="pv'+pad(it)+'">'+s.html+'</div><div class="bd"><h3>'+esc(it.name)+'</h3><div>'+esc(s.label)+'</div><div class="facts">'+s.facts.map(function(f){return esc(f[0])+' <b>'+esc(f[1])+'</b>';}).join('<br>')+'</div></div></div>';}).join('');$('#cmp').showModal();}
 document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('button');if(!b){var cd=e.target.closest&&e.target.closest('.item');if(cd&&!e.target.closest('label,input'))detail(cd.dataset.k,Number(cd.dataset.s),cd);return;}var el=b.closest('.item');
 if(b.dataset.var!=null&&el){swap(el,Number(b.dataset.var));return;}if(b.dataset.grp!=null){grp=b.dataset.grp;all('[data-grp]').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});build();apply();return;}
 if(b.dataset.open!=null&&el){detail(el.dataset.k,Number(el.dataset.s),el);return;}if(b.dataset.openK){detail(b.dataset.openK,0);return;}
-if(b.dataset.add!=null&&el){toggle(el.dataset.k);apply();return;}if(b.dataset.set!=null){D.sets[Number(b.dataset.set)].items.forEach(function(k){toggle(k,true);});apply();return;}
+if(b.dataset.add!=null&&el){addPick(el.dataset.k,Number(el.dataset.s));apply();return;}if(b.dataset.set!=null){D.sets[Number(b.dataset.set)].items.forEach(function(k){if(!has(k))addPick(k,0);});apply();return;}
 if(b.dataset.form!=null){form=b.dataset.form;all('[data-form]').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});apply();return;}
 if(b.dataset.use!=null){use=b.dataset.use;all('[data-use]').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});apply();return;}
 if(b.dataset.go!=null){var r=$('.rail',b.closest('.shelf'));r.scrollBy({left:Number(b.dataset.go)*r.clientWidth*0.85,behavior:'smooth'});return;}
-if(b.dataset.drop!=null){toggle(b.dataset.drop,false);apply();return;}if(b.dataset.pick!=null){curS=Number(b.dataset.pick);sample();var c0=document.querySelector('.item[data-k="'+cur.key+'"]');if(c0&&curS<D.card_variants)swap(c0,curS);return;}
-if(b.id==='d-add'){toggle(cur.key);apply();sample();return;}if(b.id==='d-close'){shut();return;}if(b.id==='c-close'){$('#cmp').close();return;}if(b.id==='cmpb'){compare();return;}
-if(b.id==='save'){var out={format:'cont-fab-selection',version:1,site:$('#site').value.trim(),items:picked.map(function(k){var it=item(k);return {key:k,name:it.name,needs:it.needs};})};
-var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(out,null,2)],{type:'application/json'}));a.download='my-fab.json';document.body.appendChild(a);a.click();a.remove();window.__lastSelection=out;return;}});
+if(b.dataset.drop!=null){dropPick(b.dataset.drop);apply();return;}if(b.dataset.pick!=null){curS=Number(b.dataset.pick);sample();var c0=document.querySelector('.item[data-k="'+cur.key+'"]');if(c0&&curS<D.card_variants)swap(c0,curS);return;}
+if(b.id==='d-add'){addPick(cur.key,curS,detailView&&JSON.parse(JSON.stringify(detailView)));apply();sample();return;}if(b.id==='d-close'){shut();return;}if(b.id==='c-close'){$('#cmp').close();return;}if(b.id==='cmpb'){compare();return;}
+});
 document.addEventListener('change',function(e){var c=e.target;if(c.dataset&&c.dataset.cmp!=null){var i=cmp.indexOf(c.dataset.cmp);if(c.checked&&i<0){if(cmp.length>=D.compare_max){c.checked=false;return;}cmp.push(c.dataset.cmp);}if(!c.checked&&i>=0)cmp.splice(i,1);bar();}
 if(c.dataset&&c.dataset.area!=null)apply();});
 $('#q').addEventListener('input',function(){q=this.value.trim().toLowerCase();apply();});
@@ -159,6 +156,7 @@ document.addEventListener('change',function(e){var c=e.target;if(!(c.dataset&&c.
 all('.dd').forEach(function(d){d.addEventListener('toggle',function(){if(d.open)all('.dd[open]').forEach(function(x){if(x!==d)x.open=false;});});});
 /* 위 막대는 내려가면 숨고, 올리면 다시 나온다 */
 (function(){var bar=$('.top'),y=window.scrollY;window.addEventListener('scroll',function(){var n=window.scrollY;if(n>y&&n>160&&!$('.dd[open]'))bar.classList.add('away');else if(n<y)bar.classList.remove('away');y=n;},{passive:true});})();
+/*BUILD*/
 build();apply();document.body.dataset.ready='1';
 })();
 """
@@ -188,7 +186,7 @@ def render_store(items: Sequence[Mapping[str, Any]], data: Mapping[str, Any] | N
             frames.append(iso_svg(f["state"]["viewer"], 420, 260, hidden=True, use=x["use"], label="조이는 과정의 한 장면", background=None))
             caps.append(f'조이는 과정 · {e(f["joint"].size)} · <b>{x["torque"]:.1f} N·m → {x["preload"]:,.0f} N</b>')
     from cont.packs.fastening.standards import thread_sizes
-    blob = json.dumps({"items": list(items), "forms": [[k, v] for k, v in forms.items()], "sets": list(sets), "make_url": make_url, "compare_max": COMPARE_MAX, "card_variants": CARD_VARIANTS, "quantities": list(data["quantities"]),
+    blob = json.dumps({"items": list(items), "forms": [[k, v] for k, v in forms.items()], "sets": list(sets), "make_url": make_url, "compare_max": COMPARE_MAX, "card_variants": CARD_VARIANTS, "quantities": list(data["quantities"]), "meshes": meshes(items),
                        "hero": {"caps": caps}}, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     body = f"""<header class="top"><span class="name">ConT FAB<small>고르기</small></span>
 <label class="find"><svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12.2 12.2L16 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -204,21 +202,22 @@ def render_store(items: Sequence[Mapping[str, Any]], data: Mapping[str, Any] | N
 <div class="live" id="live" aria-label="조이는 과정의 장면">{"".join(frames)}<div class="cap" id="livecap"></div></div></section>
 <div id="shelves"></div><p class="none" id="none" hidden>맞는 것이 없습니다. 찾는 말이나 거르기를 바꿔 보세요.</p>
 </div>
-<dialog id="detail" aria-labelledby="d-name"><div class="dl"><div class="big"><div class="pv" id="d-pv"></div><div class="picks" id="d-picks" role="group" aria-label="샘플 고르기"></div></div>
+<dialog id="detail" aria-labelledby="d-name"><div class="dl"><div class="big"><div class="pv" id="d-pv"></div><div class="ctl" id="d-ctl"></div><div class="picks" id="d-picks" role="group" aria-label="샘플 고르기"></div></div>
 <div class="info"><div class="tags" id="d-tags"></div><h2 id="d-name"></h2><p class="sm" id="d-sum"></p><div class="facts" id="d-facts" style="font-size:14px"></div><span class="st">계산값 · 검증 전</span>
-<dl class="meta" id="d-meta"></dl><div><div class="sm" style="margin-bottom:6px">함께 담으면 좋은 것</div><div class="with" id="d-with"></div></div>
+<dl class="meta" id="d-meta"></dl><div id="d-more" hidden></div><div><div class="sm" style="margin-bottom:6px">함께 담으면 좋은 것</div><div class="with" id="d-with"></div></div>
 <form class="mk" id="mk" hidden><label>규격<select id="mk-size">{"".join(f"<option>{e(z)}</option>" for z in thread_sizes())}</select></label>
 <label>조임 토크 (N·m)<input type="number" id="mk-torque" min="0" step="0.5" inputmode="decimal"></label><button type="submit">이 조건으로 다시 만들기</button><div class="msg" id="mk-msg" aria-live="polite"></div></form>
 <div class="acts"><button type="button" class="add" id="d-add">내 Fab에 담기</button><button type="button" class="x" id="d-close">닫기</button></div></div></div></dialog>
 <dialog id="cmp" aria-labelledby="c-h"><div class="cmp"><h2 id="c-h">견주기</h2><div class="cols" id="c-cols"></div><button type="button" class="x" id="c-close">닫기</button></div></dialog>
 <div class="myfab" aria-label="내 Fab"><span class="ttl">내 Fab<b id="pk">0</b></span><div class="got" id="got"></div>
 <button type="button" class="cp" id="cmpb" disabled>견주기 0</button><input type="text" id="site" aria-label="현장 이름" placeholder="현장 이름" autocomplete="off">
-<button type="button" class="go" id="save" disabled>고른 것 내려받기</button><span class="nx">다음: 꾸리기 (준비 중)</span></div>
-<script type="application/json" id="store-data">{blob}</script><script>{STORE_JS}</script>"""
+<button type="button" class="cp pri" id="bopen">구성 화면 열기</button><button type="button" class="go" id="save" disabled>내려받기</button></div>
+{BUILD_HTML}
+<script type="application/json" id="store-data">{blob}</script><script>{STORE_JS.replace("/*BUILD*/", BUILD_JS)}</script>"""
     fonts = ('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
              '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">')
     return (f'<!DOCTYPE html>\n<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">\n'
-            f"<title>{e(title)}</title>{fonts}<style>{CSS}{EXTRA_CSS}{FIELD_CSS}{STORE_CSS}</style></head><body>\n{body}\n</body></html>")
+            f"<title>{e(title)}</title>{fonts}<style>{CSS}{EXTRA_CSS}{FIELD_CSS}{STORE_CSS}{BUILD_CSS}</style></head><body>\n{body}\n</body></html>")
 
 
 def make_server(port: int = 8768) -> ThreadingHTTPServer:
