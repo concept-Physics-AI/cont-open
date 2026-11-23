@@ -176,7 +176,7 @@ def test_types_counts_and_rules():
     d = types_data(); ts = d["types"]
     assert len(ts) == 59
     open_ = [t for t in ts if not t["covered_by"]]
-    assert len(open_) == 40
+    assert len(open_) == 37
     assert len({t["key"] for t in ts}) == 59
     for t in open_:
         assert t["engine"] in d["engines"] and t["ready"] and t["needs"]
