@@ -102,7 +102,7 @@ main.conv{max-width:none;margin:0}
 .rhead h2 small{font-size:14px;font-weight:400;color:var(--sub);margin-left:12px;letter-spacing:0}.rhead .state{font-size:13px;color:var(--sub)}
 .stage.stage{flex:1 1 300px;min-height:220px;transition:flex-grow .38s cubic-bezier(.2,.7,.2,1),flex-basis .38s cubic-bezier(.2,.7,.2,1),min-height .38s cubic-bezier(.2,.7,.2,1);border-radius:26px;background:radial-gradient(60% 70% at 50% 52%,#242B33,#14181D 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
 .rcard.open .stage.stage{flex:0 0 56px;min-height:56px;cursor:pointer}.rcard.open .stage .vp{opacity:0;pointer-events:none}.stage .vp{transition:opacity .25s}
-.rcard.open .stage .tabs{padding-top:6px}.rcard.open .stage .xr{display:none}.stage .fold{display:none;margin-left:auto;font-size:13px;color:var(--vsub);align-items:center;gap:6px;white-space:nowrap}.rcard.open .stage .fold{display:flex}.rcard.open .stage .sp{display:none}
+.rcard.open .stage .tabs{padding-top:6px}.rcard.open .stage .xr,.rcard.open .stage .shot{display:none}.stage .tabs .shot{flex:none;white-space:nowrap;height:36px;padding:0 14px;margin-right:8px;font-size:13px;color:var(--vsub);border:1px solid var(--vline);border-radius:999px}.stage .tabs .shot:hover{color:var(--vink);border-color:var(--vsub)}.stage .fold{display:none;margin-left:auto;font-size:13px;color:var(--vsub);align-items:center;gap:6px;white-space:nowrap}.rcard.open .stage .fold{display:flex}.rcard.open .stage .sp{display:none}
 .stage .tabs{gap:24px;padding:10px 26px 0;align-items:center}.stage .tabs button{font-size:14px;height:44px;padding:0;border-bottom:2px solid transparent}
 .stage .tabs button[aria-selected=true]{border-bottom-color:var(--glow)}.stage .tabs .sp{margin-left:auto}
 .stage .tabs .xr{position:relative;border:1px solid var(--vline);border-radius:999px;right:auto;top:auto;flex:none;white-space:nowrap;height:36px;padding:0 14px 0 32px;font-size:13px;background:transparent;border-color:var(--vline)}.stage .tabs .xr[aria-pressed=true]{border-color:var(--glow)}
@@ -137,7 +137,7 @@ body{overflow:auto}.app.app,.app[data-mode=talk]{display:block;height:auto;min-h
 .result{padding:8px 0 0}.rcard{padding:14px 14px 16px;border-radius:24px;gap:14px}.stage.stage,.rcard.open .stage.stage{flex:none;min-height:0;cursor:auto}.stage .vp{height:auto}
 .stage .tabs{gap:16px;padding:6px 16px 0;overflow-x:auto;scrollbar-width:none}.stage .tabs button{flex:none;white-space:nowrap;font-size:13px}.stage .pane{position:static;padding:4px 12px 12px}
 .stage #pane-shape{position:relative}.stage .hint{display:none}.stage .key{position:static;padding:0 14px 12px;max-width:none}.stage .badge{display:none!important}
-.stats{gap:12px;padding:0 2px}.stat{padding-left:12px}.stat .num{font-size:24px}.stat .k{font-size:12px}.drawer[hidden]{display:none}.rcard.open .stage .vp{opacity:1;pointer-events:auto}.rcard.open .stage .xr{display:block}.rcard.open .stage .fold{display:none}.seg{flex-direction:column}.seg button{flex:none}.thread .result{padding:0;display:block}.drawer{flex:none;overflow:visible;padding:4px 14px 14px}
+.stats{gap:12px;padding:0 2px}.stat{padding-left:12px}.stat .num{font-size:24px}.stat .k{font-size:12px}.drawer[hidden]{display:none}.rcard.open .stage .vp{opacity:1;pointer-events:auto}.rcard.open .stage .xr,.rcard.open .stage .shot{display:block}.rcard.open .stage .fold{display:none}.seg{flex-direction:column}.seg button{flex:none}.thread .result{padding:0;display:block}.drawer{flex:none;overflow:visible;padding:4px 14px 14px}
 #latest{position:fixed;left:50%;transform:translateX(-50%);bottom:150px;z-index:21}
 }
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
@@ -169,6 +169,27 @@ function open(name){var same=name&&!drawer.hidden&&!$('#d-'+name).hidden;if(same
 segs.forEach(function(b){b.setAttribute('aria-expanded',b.dataset.d===name?'true':'false');});
 ['values','trust','sensing'].forEach(function(k){$('#d-'+k).hidden=k!==name;});drawer.hidden=!name;card.classList.toggle('open',!!name);if(name){drawer.scrollTop=0;if(narrow())setTimeout(function(){drawer.scrollIntoView({block:'nearest',behavior:'smooth'});},0);}setTimeout(V.draw,0);}
 segs.forEach(function(b){b.addEventListener('click',function(){open(b.dataset.d);});});
+
+/* ---------- 이미지로 내보내기: 지금 보고 있는 그림과 숫자 셋을 한 장으로 ---------- */
+var PROPS=['fill','stroke','stroke-width','stroke-dasharray','stroke-linecap','opacity','fill-opacity','stroke-opacity','font-size','font-weight','font-family','text-anchor','dominant-baseline','letter-spacing'];
+function svgImage(svg){return new Promise(function(done){var c=svg.cloneNode(true),a=svg.querySelectorAll('*'),b=c.querySelectorAll('*'),vb=svg.viewBox.baseVal;
+for(var i=0;i<a.length;i++){var cs=getComputedStyle(a[i]),t='';PROPS.forEach(function(k){t+=k+':'+cs.getPropertyValue(k)+';';});b[i].setAttribute('style',t);}
+var root=getComputedStyle(svg);c.setAttribute('style','color:'+root.color+';font-family:'+root.fontFamily);c.setAttribute('xmlns','http://www.w3.org/2000/svg');c.setAttribute('width',vb.width);c.setAttribute('height',vb.height);
+var im=new Image();im.onload=function(){done(im);};im.onerror=function(){done(null);};im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(c));});}
+function fit(x,im,bx,by,bw,bh){var w=im.naturalWidth||im.width,h=im.naturalHeight||im.height,k=Math.min(bw/w,bh/h);x.drawImage(im,bx+(bw-w*k)/2,by+(bh-h*k)/2,w*k,h*k);}
+function exportImage(){if(!cur)return;var on=$('.tabs button[aria-selected=true]'),v=on.dataset.v,W=1600,H=1080,c=document.createElement('canvas'),x=c.getContext('2d'),F='"IBM Plex Sans KR","Malgun Gothic",sans-serif';c.width=W;c.height=H;
+x.fillStyle='#14181D';x.fillRect(0,0,W,H);var g=x.createRadialGradient(W/2,470,60,W/2,470,760);g.addColorStop(0,'#242B33');g.addColorStop(1,'#14181D');x.fillStyle=g;x.fillRect(0,0,W,H);
+x.textBaseline='alphabetic';x.fillStyle='#EEF1F4';x.font='600 44px '+F;x.fillText(cur.size+' 볼트 조인트',72,96);x.fillStyle='#A3ABB4';x.font='400 24px '+F;x.fillText('강도 등급 '+cur.grade+' · '+cur.sub,72,138);
+x.textAlign='right';x.fillStyle='#D9A441';x.font='500 24px '+F;x.fillText(on.textContent.trim(),W-72,96);x.fillStyle='#A3ABB4';x.font='400 22px '+F;x.fillText('계산값 · 검증 전',W-72,138);x.textAlign='left';
+var jobs=[];if(v==='shape'){V.draw();jobs=[Promise.resolve($('#cv'))];}else jobs=[].map.call(document.querySelectorAll('#pane-'+v+' svg'),svgImage);
+return Promise.all(jobs).then(function(ims){ims=ims.filter(Boolean);var bw=(W-144-(ims.length-1)*32)/Math.max(1,ims.length);ims.forEach(function(im,i){fit(x,im,72+i*(bw+32),176,bw,640);});
+x.strokeStyle='#2C343D';x.beginPath();x.moveTo(72,848);x.lineTo(W-72,848);x.stroke();
+cur.core.forEach(function(t,i){var sx=72+i*((W-144)/3);x.fillStyle='#A3ABB4';x.font='400 22px '+F;x.fillText(t.label,sx,896);x.fillStyle=t.low?'#FF8A7A':'#EEF1F4';x.font='300 56px '+F;var n=fmt(t.value,t.digits);x.fillText(n,sx,962);
+var nw=x.measureText(n).width;x.fillStyle='#A3ABB4';x.font='400 24px '+F;x.fillText(t.unit||'',sx+nw+10,962);x.font='400 20px '+F;x.fillText(t.range||'',sx,998);});
+x.fillStyle='#6E7781';x.font='400 20px '+F;x.fillText('ConT · 모든 값은 계산값이며 실측과 대조하기 전입니다',72,H-32);
+var name=('ConT_'+cur.size+'_'+v+'.png');c.toBlob(function(b){if(!b)return;var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href);},2000);},'image/png');
+window.__lastExport={name:name,width:W,height:H,views:ims.length};return window.__lastExport;});}
+$('#shot').addEventListener('click',function(e){e.stopPropagation();exportImage();});
 
 /* ---------- 상태를 결과에 반영 ---------- */
 function show(s,animate){var prev=cur;cur=s;
@@ -272,7 +293,7 @@ def render_app(data: Mapping[str, Any], ask_url: str | None = None, title: str =
 <div class="stage">
 <div class="tabs" role="tablist" aria-label="보기"><button type="button" role="tab" data-v="shape" aria-selected="true">3D CAD</button>
 <button type="button" role="tab" data-v="section" aria-selected="false">단면</button><button type="button" role="tab" data-v="graph" aria-selected="false">그래프</button>
-<button type="button" role="tab" data-v="field" aria-selected="false">물리 이미지</button><span class="sp"></span><span class="fold">그림 펼치기{CHEV}</span><button type="button" class="xr" id="xr" aria-pressed="true">숨은 물리</button></div>
+<button type="button" role="tab" data-v="field" aria-selected="false">물리 이미지</button><span class="sp"></span><button type="button" class="shot" id="shot">이미지로 저장</button><span class="fold">그림 펼치기{CHEV}</span><button type="button" class="xr" id="xr" aria-pressed="true">숨은 물리</button></div>
 <div class="vp">
 <div class="pane on" id="pane-shape"><canvas id="cv" tabindex="0" role="img" aria-label="볼트 조인트 3D 형상. 끌거나 화살표 키로 돌리고 휠이나 +, - 키로 확대합니다"></canvas>
 <div class="notes" id="notes" aria-live="polite"></div><div class="hint"><span id="cvmsg"></span>끌어서 돌리고 휠로 확대합니다.{files}</div>
