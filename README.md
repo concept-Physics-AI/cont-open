@@ -71,5 +71,5 @@ python -m cont.dialogue.serve_fastening
 
 ## 개발 방식
 
-코드의 기준은 이 저장소 하나다. 한 브랜치에 한 가지 일을 하고, PR로 올려 대표가 병합한다. 개발에는 AI 개발 도구를 쓰며 그 규칙이 [CLAUDE.md](CLAUDE.md)에 있다.
+코드의 기준은 이 저장소 하나다. 시연 화면은 https://concept-physics-ai.github.io/cont-open/ 에 있고 main이 바뀔 때마다 새로 만들어진다. 한 브랜치에 한 가지 일을 하고, PR로 올려 대표가 병합한다. 개발에는 AI 개발 도구를 쓰며 그 규칙이 [CLAUDE.md](CLAUDE.md)에 있다.
 이전의 저장소들은 보관되어 있고 참고만 한다. 거기서 가져온 생각에는 문서에 출처를 적는다 (보관 저장소는 비공개라 밖에서는 열리지 않는다).
