@@ -23,6 +23,7 @@ from cont.view.field_image import FIELD_CSS
 
 MAX_BODY = 2000
 COMPARE_MAX = 3
+CARD_VARIANTS = 5        # 카드에 바로 보이는 조건 단추의 수. 나머지는 자세히 보기에서 고른다
 
 STORE_CSS = """
 :root,:root:root{color-scheme:light;--bg:#fff;--card:#fff;--ink:#101317;--sub:#59626C;--line:#E1E4E8;--band:#D9EFEC;--sig:#0B7F7A;--bad:#B4541A;--t:#0B7F7A;--ts:#E3F4F2;--g:#F5F6F8;--warn:#855000;--warnbg:#FDF1DC;--okbg:#E3F4F2;--ok:#0B7F7A}
@@ -54,8 +55,8 @@ button,input,select{font:inherit;color:inherit}button{cursor:pointer}h1,h2,h3,p,
 .strip{display:grid;grid-template-columns:repeat(4,1fr);width:100%;height:100%;background:#14181D}.strip.two{grid-template-columns:repeat(2,1fr)}.strip figure{position:relative;min-width:0}.strip svg{display:block;width:100%;height:100%}
 .strip figcaption{position:absolute;left:0;right:0;bottom:6px;text-align:center;font-size:11.5px;color:#EEF1F4}
 .item .bd{padding:12px 14px 14px;display:flex;flex-direction:column;gap:5px;flex:1}.tags{display:flex;gap:6px;flex-wrap:wrap}
-.tags span{font-size:12px;font-weight:600;color:var(--t);background:var(--ts);padding:2px 8px;border-radius:6px}.tags span+span{color:var(--sub);background:var(--g)}
-.item h3{font-size:16px;font-weight:600;line-height:1.35}.item .lb{font-size:13.5px;color:var(--ink)}.item .facts{font-size:12.5px;color:var(--sub);line-height:1.5}.item .facts b{color:var(--ink);font-weight:500}
+.tags span{font-size:12px;font-weight:600;color:var(--t);background:var(--ts);padding:2px 8px;border-radius:6px}.tags span+span{color:var(--sub);background:var(--g)}.tags span:nth-child(2){color:var(--warn);background:var(--warnbg)}
+.item h3{font-size:16px;font-weight:600;line-height:1.35}.item .sm{font-size:13px;color:var(--sub);line-height:1.5}.vars{display:flex;gap:5px;flex-wrap:wrap;margin:4px 0 2px}.vars button{height:32px;padding:0 10px;border-radius:16px;border:1px solid var(--line);background:#fff;font-size:12.5px}.vars button[aria-pressed=true]{border-color:var(--t);background:var(--ts);color:var(--t);font-weight:600}.pv .bar{fill:var(--sig)}.pv .bar.low{fill:var(--bad)}.item .lb{font-size:13.5px;color:var(--ink)}.item .facts{font-size:12.5px;color:var(--sub);line-height:1.5}.item .facts b{color:var(--ink);font-weight:500}
 .item .ft{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:8px}.item .ft label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--sub);min-height:44px}.item .ft input{width:16px;height:16px;accent-color:var(--t)}
 .add{margin-left:auto;height:44px;padding:0 18px;border-radius:10px;border:0;background:var(--t);color:#fff;font-size:14px;font-weight:600;white-space:nowrap}.add.in{border:1px solid var(--t);background:var(--ts);color:var(--t)}
 .set{scroll-snap-align:start;border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:8px;background:var(--g)}.set h3{font-size:18px;font-weight:600}.set p{font-size:13.5px;color:var(--sub)}
@@ -80,30 +81,36 @@ dialog{border:0;border-radius:24px;padding:0;max-width:min(1100px,calc(100vw - 3
 .myfab .go{height:44px;padding:0 16px;border-radius:10px;border:0;background:#2BB5AE;color:#0B1114;font-size:14px;font-weight:600;white-space:nowrap}.myfab .go[disabled],.myfab .cp[disabled]{opacity:.4;cursor:default}
 .myfab .cp{height:44px;padding:0 14px;border-radius:10px;border:1px solid #EEF1F4;background:transparent;color:#EEF1F4;font-size:14px;white-space:nowrap}.myfab .nx{font-size:12.5px;color:#A3ABB4;white-space:nowrap}
 button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--t);outline-offset:2px}.myfab button:focus-visible,.myfab input:focus-visible{outline-color:#5ED1CB}
-@media (max-width:900px){.page{padding:0 16px}.top{padding:8px 16px;gap:10px}.hero{grid-template-columns:1fr;padding:22px 20px;gap:18px}.hero h1{font-size:28px}.hero .live{height:200px}.filters{top:112px}
+@media (max-width:900px){.page{padding:0 16px}.top{padding:8px 16px;gap:10px}.hero{grid-template-columns:1fr;padding:22px 20px;gap:18px}.hero h1{font-size:28px}.hero .live{height:200px}.filters{position:static}
 .dl{grid-template-columns:1fr;overflow-y:auto}.dl .big .pv{min-height:220px}.cmp .cols{grid-auto-flow:row}.myfab{padding:10px 16px;gap:8px}.myfab input{width:130px}.myfab .nx{display:none}body{padding-bottom:140px}}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition-duration:.01s!important}}
 """
 
 STORE_JS = r"""
 (function(){
-var D=JSON.parse(document.getElementById('store-data').textContent),picked=[],cmp=[],form='all',use='all',q='',cur=null,curS=0;
+var D=JSON.parse(document.getElementById('store-data').textContent),picked=[],cmp=[],form='all',use='all',q='',cur=null,curS=0,grp='form';
 var $=function(s,r){return (r||document).querySelector(s)},all=function(s,r){return [].slice.call((r||document).querySelectorAll(s));};
 function esc(t){var d=document.createElement('div');d.textContent=t==null?'':String(t);return d.innerHTML;}
 function item(k){return D.items.filter(function(x){return x.key===k;})[0];}
 function pad(it){return (it.form==='graph'||it.form==='signal'||it.form==='image')?' pad':(it.form==='3d'||it.form==='4d'||it.form==='video')?' dark':'';}
 function facts(s){return s.facts.map(function(f){return esc(f[0])+' <b>'+esc(f[1])+'</b>';}).join(' · ');}
 function areas(){return all('.more input[data-area]').filter(function(x){return x.checked;}).map(function(x){return x.dataset.area;});}
-function card(it,si){var s=it.samples[si],id=it.key+'#'+si;return '<article class="item" data-k="'+esc(it.key)+'" data-s="'+si+'"><button type="button" class="pv'+pad(it)+'" data-open aria-label="'+esc(it.name+' '+s.label)+' 자세히 보기">'+s.html+'</button><div class="bd">'
-+'<div class="tags"><span>'+esc(it.form_label)+'</span><span>'+esc(it.area)+'</span></div><h3>'+esc(it.name)+'</h3><div class="lb">'+esc(s.label)+'</div><div class="facts">'+facts(s)+'</div>'
-+'<div class="ft"><label><input type="checkbox" data-cmp="'+esc(id)+'">견주기</label><button type="button" class="add" data-add>담기</button></div></div></article>';}
-function build(){var h='';h+='<section class="shelf" data-shelf="set"><header><h2>세트</h2><span>한 번에 담는 묶음</span></header><div class="rail">'+D.sets.map(function(s,i){return '<article class="set"><h3>'+esc(s.name)+'</h3><p>'+esc(s.summary)+'</p><ul>'+s.items.map(function(k){return '<li>'+esc(item(k).name)+'</li>';}).join('')+'</ul><button type="button" class="add" style="margin:auto 0 0" data-set="'+i+'">세트 담기</button></article>';}).join('')+'</div></section>';
-D.forms.forEach(function(f){var its=D.items.filter(function(x){return x.form===f[0];});if(!its.length)return;var n=its.reduce(function(a,x){return a+x.samples.length;},0);
-h+='<section class="shelf" data-shelf="'+esc(f[0])+'"><header><h2>'+esc(f[1])+'</h2><span><b data-n></b> · 상품 '+its.length+'가지, 샘플 '+n+'개</span><div class="nav"><button type="button" data-go="-1" aria-label="앞으로">‹</button><button type="button" data-go="1" aria-label="뒤로">›</button></div></header><div class="rail">'
-+its.map(function(it){return it.samples.map(function(_,si){return card(it,si);}).join('');}).join('')+'</div></section>';});
+function vars(it,si){if(it.samples.length<2)return '';var n=Math.min(it.samples.length,D.card_variants),short=it.samples.map(function(x){return x.label.split(' · ')[0];}),uniq=short.filter(function(v,i){return short.indexOf(v)===i;}).length===short.length;return '<div class="vars" role="group" aria-label="조건 고르기">'+it.samples.slice(0,n).map(function(x,i){return '<button type="button" data-var="'+i+'" aria-pressed="'+(i===si)+'">'+esc(uniq?short[i]:x.label)+'</button>';}).join('')
++(it.samples.length>n?'<button type="button" data-open>+'+(it.samples.length-n)+'</button>':'')+'</div>';}
+function card(it,si){var s=it.samples[si];return '<article class="item" data-k="'+esc(it.key)+'" data-s="'+si+'"><button type="button" class="pv'+pad(it)+'" data-open aria-label="'+esc(it.name)+' 자세히 보기">'+s.html+'</button><div class="bd">'
++'<div class="tags"><span>'+esc(it.form_label)+'</span><span>'+esc(it.quantity)+'</span><span>'+esc(it.area)+'</span></div><h3>'+esc(it.name)+'</h3><p class="sm">'+esc(it.summary)+'</p>'+vars(it,si)
++'<div class="lb">'+esc(s.label)+'</div><div class="facts">'+facts(s)+'</div>'
++'<div class="ft"><label><input type="checkbox" data-cmp="'+esc(it.key+'#'+si)+'">견주기</label><button type="button" class="add" data-add>담기</button></div></div></article>';}
+function swap(el,si){var it=item(el.dataset.k),s=it.samples[si],old=el.dataset.k+'#'+el.dataset.s,i=cmp.indexOf(old);el.dataset.s=si;$('.pv',el).innerHTML=s.html;$('.lb',el).textContent=s.label;$('.facts',el).innerHTML=facts(s);
+all('[data-var]',el).forEach(function(b){b.setAttribute('aria-pressed',Number(b.dataset.var)===si?'true':'false');});var c=$('input[data-cmp]',el);c.dataset.cmp=it.key+'#'+si;if(i>=0)cmp[i]=c.dataset.cmp;bar();}
+function build(){var h='',groups=grp==='form'?D.forms:D.quantities.map(function(x){return [x,x];});
+h+='<section class="shelf" data-shelf="set"><header><h2>세트</h2><span>한 번에 담는 묶음</span></header><div class="rail">'+D.sets.map(function(s,i){return '<article class="set"><h3>'+esc(s.name)+'</h3><p>'+esc(s.summary)+'</p><ul>'+s.items.map(function(k){return '<li>'+esc(item(k).name)+'</li>';}).join('')+'</ul><button type="button" class="add" style="margin:auto 0 0" data-set="'+i+'">세트 담기</button></article>';}).join('')+'</div></section>';
+groups.forEach(function(f){var its=D.items.filter(function(x){return x[grp]===f[0];});if(!its.length)return;var n=its.reduce(function(a,x){return a+x.samples.length;},0);
+h+='<section class="shelf" data-shelf="'+esc(f[0])+'"><header><h2>'+esc(f[1])+'</h2><span><b data-n></b> · 상품 '+its.length+'가지, 조건 '+n+'개</span><div class="nav"><button type="button" data-go="-1" aria-label="앞으로">‹</button><button type="button" data-go="1" aria-label="뒤로">›</button></div></header><div class="rail">'
++its.map(function(it){return card(it,0);}).join('')+'</div></section>';});
 $('#shelves').innerHTML=h;}
 function apply(){var on=areas(),total=0;all('.shelf').forEach(function(sh){if(sh.dataset.shelf==='set'){sh.hidden=!!q||form!=='all'||use!=='all';return;}var shown=0;
-all('.item',sh).forEach(function(el){var it=item(el.dataset.k),s=it.samples[Number(el.dataset.s)],text=(it.name+' '+s.label+' '+it.summary+' '+it.area+' '+it.form_label+' '+it.needs+' '+it.gives).toLowerCase();
+all('.item',sh).forEach(function(el){var it=item(el.dataset.k),text=(it.name+' '+it.samples.map(function(x){return x.label;}).join(' ')+' '+it.summary+' '+it.area+' '+it.quantity+' '+it.form_label+' '+it.needs+' '+it.gives).toLowerCase();
 var ok=(form==='all'||it.form===form)&&(use==='all'||it.uses.indexOf(use)>=0)&&on.indexOf(it.area)>=0&&(!q||text.indexOf(q)>=0);el.hidden=!ok;if(ok)shown++;
 var inb=picked.indexOf(it.key)>=0;el.classList.toggle('in',inb);var a=$('.add',el);a.textContent=inb?'담김':'담기';a.classList.toggle('in',inb);a.setAttribute('aria-pressed',inb?'true':'false');
 var c=$('input[data-cmp]',el);c.checked=cmp.indexOf(c.dataset.cmp)>=0;});sh.hidden=!shown;total+=shown;var n=$('[data-n]',sh);if(n)n.textContent='보이는 것 '+shown;});
@@ -121,12 +128,13 @@ $('#d-picks').innerHTML=it.samples.map(function(x,i){return '<button type="butto
 var inb=picked.indexOf(it.key)>=0,a=$('#d-add');a.textContent=inb?'담김 (빼기)':'내 Fab에 담기';a.classList.toggle('in',inb);if(s.params&&s.params.size){$('#mk-size').value=s.params.size;$('#mk-torque').value=s.params.torque;}}
 function compare(){$('#c-cols').innerHTML=cmp.map(function(id){var p=id.split('#'),it=item(p[0]),s=it.samples[Number(p[1])];return '<div class="col"><div class="pv'+pad(it)+'">'+s.html+'</div><div class="bd"><h3>'+esc(it.name)+'</h3><div>'+esc(s.label)+'</div><div class="facts">'+s.facts.map(function(f){return esc(f[0])+' <b>'+esc(f[1])+'</b>';}).join('<br>')+'</div></div></div>';}).join('');$('#cmp').showModal();}
 document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('button');if(!b)return;var el=b.closest('.item');
+if(b.dataset.var!=null&&el){swap(el,Number(b.dataset.var));return;}if(b.dataset.grp!=null){grp=b.dataset.grp;all('[data-grp]').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});build();apply();return;}
 if(b.dataset.open!=null&&el){detail(el.dataset.k,Number(el.dataset.s));return;}if(b.dataset.openK){detail(b.dataset.openK,0);return;}
 if(b.dataset.add!=null&&el){toggle(el.dataset.k);apply();return;}if(b.dataset.set!=null){D.sets[Number(b.dataset.set)].items.forEach(function(k){toggle(k,true);});apply();return;}
 if(b.dataset.form!=null){form=b.dataset.form;all('[data-form]').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});apply();return;}
 if(b.dataset.use!=null){use=b.dataset.use;all('[data-use]').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});apply();return;}
 if(b.dataset.go!=null){var r=$('.rail',b.closest('.shelf'));r.scrollBy({left:Number(b.dataset.go)*r.clientWidth*0.85,behavior:'smooth'});return;}
-if(b.dataset.drop!=null){toggle(b.dataset.drop,false);apply();return;}if(b.dataset.pick!=null){curS=Number(b.dataset.pick);sample();return;}
+if(b.dataset.drop!=null){toggle(b.dataset.drop,false);apply();return;}if(b.dataset.pick!=null){curS=Number(b.dataset.pick);sample();var c0=document.querySelector('.item[data-k="'+cur.key+'"]');if(c0&&curS<D.card_variants)swap(c0,curS);return;}
 if(b.id==='d-add'){toggle(cur.key);apply();sample();return;}if(b.id==='d-close'){$('#detail').close();return;}if(b.id==='c-close'){$('#cmp').close();return;}if(b.id==='cmpb'){compare();return;}
 if(b.id==='save'){var out={format:'cont-fab-selection',version:1,site:$('#site').value.trim(),items:picked.map(function(k){var it=item(k);return {key:k,name:it.name,needs:it.needs};})};
 var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(out,null,2)],{type:'application/json'}));a.download='my-fab.json';document.body.appendChild(a);a.click();a.remove();window.__lastSelection=out;return;}});
@@ -168,16 +176,17 @@ def render_store(items: Sequence[Mapping[str, Any]], data: Mapping[str, Any] | N
             frames.append(iso_svg(f["state"]["viewer"], 420, 260, hidden=True, use=x["use"], label="조이는 과정의 한 장면", background=None))
             caps.append(f'조이는 과정 · {e(f["joint"].size)} · <b>{x["torque"]:.1f} N·m → {x["preload"]:,.0f} N</b>')
     from cont.packs.fastening.standards import thread_sizes
-    blob = json.dumps({"items": list(items), "forms": [[k, v] for k, v in forms.items()], "sets": list(sets), "make_url": make_url, "compare_max": COMPARE_MAX,
+    blob = json.dumps({"items": list(items), "forms": [[k, v] for k, v in forms.items()], "sets": list(sets), "make_url": make_url, "compare_max": COMPARE_MAX, "card_variants": CARD_VARIANTS, "quantities": list(data["quantities"]),
                        "hero": {"caps": caps}}, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     body = f"""<header class="top"><span class="name">ConT FAB<small>고르기</small></span>
 <label class="find"><svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12.2 12.2L16 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
 <input type="search" id="q" aria-label="물리 정보 찾기" placeholder="찾기: 응력, 4D, 전류, M12" autocomplete="off"></label></header>
 <div class="page">
-<section class="hero"><div><h1>물리 정보를 골라<br>내 Fab을 꾸리세요</h1><p>이미지, 그래프, 3D, 4D, 신호, 계산값이 진열대에 놓여 있습니다. 모두 엔진을 실제로 돌린 결과입니다. 값은 계산값이며 실측과 대조하기 전입니다.</p>
-<div class="cnt"><div><b>{len(items)}</b><span>상품 (엔진)</span></div><div><b>{n_samples}</b><span>샘플</span></div><div><b>{len(sets)}</b><span>세트</span></div></div></div>
+<section class="hero"><div><h1>물리 정보를 골라<br>내 Fab을 꾸리세요</h1><p>이미지, 그래프, 3D, 4D, 신호, 계산값이 진열대에 놓여 있습니다. 카드에서 조건을 눌러 바꿔 보세요. 모두 엔진을 실제로 돌린 결과이며, 값은 계산값이고 실측과 대조하기 전입니다.</p>
+<div class="cnt"><div><b>{len(items)}</b><span>상품 (엔진)</span></div><div><b>{n_samples}</b><span>조건별 결과</span></div><div><b>{len(sets)}</b><span>세트</span></div></div></div>
 <div class="live" id="live" aria-label="조이는 과정의 장면">{"".join(frames)}<div class="cap" id="livecap"></div></div></section>
-<div class="filters"><div class="frow" role="group" aria-label="형태"><span>형태</span>{fchips}</div><div class="frow" role="group" aria-label="쓰임"><span>쓰임</span>{uchips}</div>
+<div class="filters"><div class="frow" role="group" aria-label="묶는 방법"><span>묶기</span><button type="button" data-grp="form" aria-pressed="true">형태별</button><button type="button" data-grp="quantity" aria-pressed="false">물리 특성별</button></div>
+<div class="frow" role="group" aria-label="형태"><span>형태</span>{fchips}</div><div class="frow" role="group" aria-label="쓰임"><span>쓰임</span>{uchips}</div>
 <details class="more"><summary>물리 영역으로 거르기</summary>{achecks}</details></div>
 <div id="shelves"></div><p class="none" id="none" hidden>맞는 것이 없습니다. 찾는 말이나 거르기를 바꿔 보세요.</p>
 </div>

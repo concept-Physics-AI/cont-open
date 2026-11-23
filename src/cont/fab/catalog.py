@@ -8,8 +8,8 @@ import yaml
 
 from cont.tolerance import CONFIG_DIR
 
-REQUIRED = ("key", "name", "form", "area", "summary", "needs", "gives", "preview", "uses", "limits")
-SHOWN = ("key", "name", "form", "area", "summary", "needs", "gives", "uses", "limits")
+REQUIRED = ("key", "name", "form", "area", "quantity", "summary", "needs", "gives", "preview", "uses", "limits")
+SHOWN = ("key", "name", "form", "area", "quantity", "summary", "needs", "gives", "uses", "limits")
 
 
 @lru_cache(maxsize=1)
@@ -26,6 +26,8 @@ def load() -> dict[str, Any]:
             raise ValueError(f"duplicate catalog key {it['key']!r}")
         if it["form"] not in forms:
             raise ValueError(f"catalog item {it['key']!r} has unknown form {it['form']!r}")
+        if it["quantity"] not in (data.get("quantities") or []):
+            raise ValueError(f"catalog item {it['key']!r} has unknown quantity {it['quantity']!r}")
         if [u for u in it["uses"] if u not in uses]:
             raise ValueError(f"catalog item {it['key']!r} has an unknown use")
         keys.add(it["key"])
@@ -36,7 +38,7 @@ def load() -> dict[str, Any]:
     for s in sets:
         if [k for k in s["items"] if k not in keys]:
             raise ValueError(f"catalog set {s['key']!r} names an unknown item")
-    return {"forms": forms, "uses": uses, "items": items, "sets": sets, "rule": data.get("sample_rule") or {}}
+    return {"forms": forms, "uses": uses, "quantities": data.get("quantities") or [], "items": items, "sets": sets, "rule": data.get("sample_rule") or {}}
 
 
 def catalog() -> list[dict[str, Any]]:
