@@ -57,7 +57,7 @@ def test_the_physics_image_is_drawn_only_from_a_field_and_says_what_it_is():
     a = stress_field(j, l)
     svg = field_image(a, "plate_axial_compression", lines=((15.0, "판 사이 면"),), marks=((5.5, 8.0, 30.0, "머리 좌면"),))
     assert svg.startswith("<svg") and "해석 · 수치해석 (축대칭 유한요소, 선형 탄성) · 검증 전" in svg
-    assert svg.count("<rect") > 2 * len(a.field("plate_axial_compression").x) * len(a.field("plate_axial_compression").y)   # 좌우로 펼쳐 그린다
+    assert 'href="data:image/png;base64,' in svg and 'data-card="' in svg and "<polygon" not in svg      # 칸 모양이 아니라 부드러운 한 장의 그림
     assert all(t in svg for t in ("볼트 자리 (계산에 넣지 않음)", "판 사이 면", "머리 좌면", "0보다 작은 곳"))
     empty = PhysicsAnswer("q", (), "해석식", (), Confidence("low", "r"))
     assert field_image(empty, "plate_axial_compression") == NO_IMAGE and field_image(a, "no_such_field") == NO_IMAGE

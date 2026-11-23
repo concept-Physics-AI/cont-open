@@ -76,10 +76,10 @@ def _line(points: list[tuple[float, float]], xlabel: str, ylabel: str, marks: tu
     py = lambda y: H - 30 - (y - y0) / ((y1 - y0) or 1.0) * (H - 52)
     pts = " ".join(f"{px(x):.1f},{py(y):.1f}" for x, y in points)
     extra = "".join(f'<line class="ax" stroke-dasharray="4 3" x1="{px(m):.1f}" y1="22" x2="{px(m):.1f}" y2="{H - 30}"/>'
-                    f'<text class="tick" x="{px(m) + 4:.1f}" y="32">{html.escape(t)}</text>' for m, t in marks)
+                    f'<text class="tick" x="{px(m) + (-4 if px(m) > W * 0.6 else 4):.1f}" y="32"{" text-anchor=\"end\"" if px(m) > W * 0.6 else ""}>{html.escape(t)}</text>' for m, t in marks)
     return (f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="{html.escape(ylabel)} 대 {html.escape(xlabel)}">'
             f'<line class="ax" x1="44" y1="{py(0):.1f}" x2="{W - 16}" y2="{py(0):.1f}"/><line class="ax" x1="44" y1="22" x2="44" y2="{H - 30}"/>{extra}'
-            f'<polyline class="sig" points="{pts}"/>'
+            f'<polygon class="area" points="{px(xs[0]):.1f},{py(0):.1f} {pts} {px(xs[-1]):.1f},{py(0):.1f}"/><polyline class="sig" points="{pts}"/>'
             f'<text class="tick" x="44" y="{H - 10}">{x0:.3g}</text><text class="tick" x="{W - 16}" y="{H - 10}" text-anchor="end">{html.escape(xlabel)} {x1:.3g}</text>'
             f'<text class="tick" x="44" y="14">{html.escape(ylabel)} · 최대 {format(max(ys), yfmt)}</text></svg>')
 
