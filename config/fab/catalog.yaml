@@ -546,6 +546,85 @@ items:
     - 0.45
     - 0.5
   example: *id003
+- key: signal_spectrum
+  name: 진동의 주파수 성분
+  short: 진동을 주파수별 크기로
+  form: signal
+  area: 설비 공통
+  quantity: 전류 · 진동
+  summary: 진동 신호를 주파수 성분으로 나눠, 어느 주파수에서 얼마나 큰지 봉우리로 보입니다.
+  needs: 진동 파형, 샘플링 주파수
+  gives: 봉우리의 주파수와 크기, 주파수 간격
+  preview: signal_spectrum
+  doc: docs/signal_analysis.md
+  uses:
+  - 감시할 때
+  - 점검할 때
+  limits: 지금 샘플은 성분을 알고 만든 가상 신호입니다. 어느 주파수가 어떤 결함인지는 판단하지 않고 성분만 보고합니다. 자기 신호를 넣는 화면은 아직 없습니다.
+  together:
+  - signal_spectrogram
+  - signal_drive
+  samples:
+    fs: 2000
+    seconds: 2
+    rpm: 1500
+    fmax: 150
+    peaks: 3
+    min_ratio: 0.08
+    cases:
+    - {label: 정상 회전, unbalance: 1.0, harmonic2: 0.3}
+    - {label: 불균형이 큰 회전, unbalance: 2.2, harmonic2: 0.3}
+    - {label: 결함 주파수 성분이 있는 회전, unbalance: 1.0, harmonic2: 0.3, fault_hz: 87.0, fault_amp: 0.25}
+- key: signal_spectrogram
+  name: 시간별 주파수 변화
+  short: 속도가 변할 때 주파수 이동
+  form: signal
+  area: 설비 공통
+  quantity: 전류 · 진동
+  summary: 시간이 지나면서 진동의 주파수 성분이 어떻게 움직이는지 색의 진하기로 한 장에 보입니다.
+  needs: 진동 파형, 샘플링 주파수
+  gives: 시간별 주파수 성분, 가장 큰 성분의 이동
+  preview: signal_spectrogram
+  doc: docs/signal_analysis.md
+  uses:
+  - 감시할 때
+  - 점검할 때
+  limits: 지금 샘플은 회전수를 알고 만든 가상 신호입니다. 조각이 짧으면 시간은 정확하고 주파수는 거칠어지며, 길면 반대입니다.
+  together:
+  - signal_spectrum
+  samples:
+    fs: 2000
+    seconds: 4
+    fmax: 100
+    window: 256
+    overlap: 0.5
+    cases:
+    - {label: 속도가 올라가는 중, rpm0: 600, rpm1: 2400}
+    - {label: 일정한 속도, rpm0: 1500, rpm1: 1500}
+- key: repeat_distribution
+  name: 반복 작업의 편차 분포
+  short: 작업마다 얼마나 흩어지는지
+  form: graph
+  area: 설비 공통
+  quantity: 품질 치수
+  summary: 반복 작업마다 잰 값이 어떻게 흩어지는지 막대 분포와 상자 그림으로 보입니다.
+  needs: 작업마다 잰 값
+  gives: 평균, 표준편차, 중앙값, 벗어난 값
+  preview: repeat_distribution
+  doc: docs/signal_analysis.md
+  uses:
+  - 감시할 때
+  - 보고할 때
+  limits: 지금 샘플은 평균과 산포를 알고 만든 가상 값입니다. 허용 범위는 정하지 않았으므로 합격·불합격은 말하지 않고 분포만 보입니다.
+  samples:
+    n: 200
+    bins: 12
+    unit: mm
+    cases:
+    - {label: 안정적인 반복, mean: 10.0, std: 0.05}
+    - {label: 평균이 치우친 반복, mean: 10.08, std: 0.05}
+    - {label: 산포가 큰 반복, mean: 10.0, std: 0.15}
+    - {label: 크게 벗어난 값이 섞인 반복, mean: 10.0, std: 0.05, outliers: 3}
 uses:
 - 설계할 때
 - 조건 잡을 때
