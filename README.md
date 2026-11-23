@@ -28,6 +28,7 @@
 | 현장 계측 추천 | 어떤 센서를 어떻게 연결할지, 이 조인트에서 신호가 얼마나 나오는지 | [docs/fastening_sensing.md](docs/fastening_sensing.md) |
 | 절삭가공 | 선삭의 절삭력·동력 (계산만) | [docs/machining_slice1.md](docs/machining_slice1.md) |
 | 설비 진단 (Fab으로 만든 것의 예) | 정상 기준, 이상 징후, 추이 | [docs/diagnosis.md](docs/diagnosis.md) |
+| ConT Fab: 고르기 | 물리 정보를 상품처럼 골라 바구니에 담는다. 미리보기는 엔진을 돌린 결과 | [docs/fab_store.md](docs/fab_store.md) |
 | 설비 이상진단 화면 (ConT Fab으로 만든 화면의 한 예) | 현장 설정, 신호와 정상 범위, 관찰 사실 · 원인 후보 · 다음 점검 | [docs/diagnosis_screen.md](docs/diagnosis_screen.md) |
 
 ## 돌려 보기

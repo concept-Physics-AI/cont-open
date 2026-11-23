@@ -1,0 +1,105 @@
+# ConT Fab에서 고를 수 있는 물리 정보의 목록.
+# 여기에는 지금 코드에 실제로 있는 엔진만 적는다. preview는 cont.fab.previews에 있는 함수 이름이며, 그 함수가 엔진을 돌려 미리보기를 만든다.
+# form: 형태 (image | 3d | 4d | signal | judge | number).  area: 물리 영역.
+forms:
+  image: 이미지 · 그래프
+  3d: 3D
+  4d: 4D · 영상
+  signal: 신호
+  judge: 판단 · 점검
+  number: 계산값
+items:
+  - key: fastening_shape
+    name: 볼트 조인트 3D CAD
+    form: 3d
+    area: 체결
+    summary: 치수를 넣으면 형상이 만들어집니다. STEP · STL로 내려받습니다.
+    needs: 치수, 강도 등급
+    gives: 3D 형상, 단면, CAD 파일
+    preview: fastening_section
+    preview_note: 미리보기는 단면입니다. 3D는 체결 화면에서 돌려 봅니다.
+    doc: docs/shape.md
+  - key: fastening_field
+    name: 판 응력 분포
+    form: image
+    area: 체결
+    summary: 판 안에서 압축이 퍼지는 모습을 수치해석으로 그립니다.
+    needs: 조인트, 조임 토크
+    gives: 물리 이미지, 판 사이 면의 압력
+    preview: fastening_field
+    doc: docs/fastening_field.md
+  - key: fastening_process
+    name: 조이는 과정
+    form: 4d
+    area: 체결
+    summary: 토크를 0에서 지금 값까지 나눠 다시 계산해 재생합니다.
+    needs: 조인트, 조임 토크
+    gives: 4D 재생, 영상, 토크마다의 체결력
+    preview: fastening_process
+    preview_note: 미리보기는 토크마다 다시 계산한 체결력입니다. 재생은 체결 화면에서 봅니다.
+    doc: docs/fastening_screen.md
+  - key: fastening_diagram
+    name: 체결 선도와 안전율
+    form: image
+    area: 체결
+    summary: 볼트와 판이 힘을 나눠 받는 모습과 안전율을 그립니다.
+    needs: 조인트, 하중
+    gives: 체결 선도, 안전율
+    preview: fastening_diagram
+    doc: docs/fastening_screen.md
+  - key: fastening_sensing
+    name: 센서와 연결 추천
+    form: judge
+    area: 체결
+    summary: 이 조인트에서 무엇으로 재야 하는지, 신호가 얼마나 나오는지.
+    needs: 조인트, 조임 토크
+    gives: 단계별 센서, 연결 순서, 신호의 크기
+    preview: fastening_sensing
+    doc: docs/fastening_sensing.md
+  - key: signal_baseline
+    name: 신호와 정상 범위
+    form: signal
+    area: 설비 공통
+    summary: 같은 운전조건의 평소와 지금을 비교해 벗어난 구간을 찾습니다.
+    needs: 설비 신호, 운전조건
+    gives: 벗어난 구간, 벗어난 정도
+    preview: signal_baseline
+    doc: docs/diagnosis.md
+  - key: guidance
+    name: 원인 후보와 점검 안내
+    form: judge
+    area: 설비 공통
+    summary: 찾아낸 변화를 관찰 사실, 원인 후보, 다음 점검으로 정리합니다.
+    needs: 진단 결과
+    gives: 관찰 사실, 원인 후보, 다음 점검
+    preview: guidance
+    doc: docs/diagnosis_screen.md
+  - key: stroke_curve
+    name: 스트로크 부하 곡선
+    form: signal
+    area: 프레스
+    summary: 프레스의 부하 곡선을 위치별 정상 범위와 비교합니다.
+    needs: 스트로크별 부하
+    gives: 벗어난 스트로크, 벗어난 구간
+    preview: stroke_curve
+    doc: docs/diagnosis.md
+  - key: quality_prediction
+    name: 두께 예측
+    form: image
+    area: 압출
+    summary: 공정 값으로 품질 값을 예측해 규격과 비교합니다.
+    needs: 공정 값, 실측 표본
+    gives: 예측 값, 규격 이탈 예측 구간
+    preview: quality_prediction
+    doc: docs/diagnosis.md
+  - key: cutting_force
+    name: 선삭의 절삭력
+    form: number
+    area: 절삭
+    summary: 절삭 조건과 재료에서 절삭력, 토크, 동력을 계산합니다.
+    needs: 절삭 조건, 재료
+    gives: 주절삭력, 토크, 절삭 동력
+    preview: cutting_force
+    example: {material: C45, diameter: 50.0, cutting_speed: 200.0, feed: 0.25, depth: 2.0}   # 미리보기에 쓰는 예제 조건
+    preview_note: 재료 값은 원문과 대조하지 않은 값입니다.
+    doc: docs/machining_slice1.md

@@ -28,7 +28,7 @@
 | 체결 대화 화면 | Studio가 다룰 물리 하나(체결)를 먼저 만들어 본 것. Studio는 여기서 모든 물리와 일반적인 AI로 넓힌다 |
 | 설비 이상진단 화면 | Fab으로 만든 화면의 한 예. 설비 이상진단에 맞춘 것이며 Fab 자체가 아니다 |
 
-**아직 없는 것**: 물리 영역을 가리지 않는 Studio(지금은 체결 하나), 골라 담는 곳인 Fab 자체(고를 물리 정보의 목록, 담는 화면, 현장에 잇는 설정).
+**아직 없는 것**: 물리 영역을 가리지 않는 Studio(지금은 체결 하나). Fab은 고르는 곳만 있다 ([docs/fab_store.md](docs/fab_store.md)): 꾸리는 곳, 시나리오, 공장 화면을 만들어 내는 일은 아직 없다.
 
 **ConT Physics가 맡는 것**
 
@@ -50,6 +50,7 @@ Studio와 Fab은 같은 엔진을 쓴다. 그래서 계산과 그림을 만드�
 | `dialogue/fastening_*`, `view/fastening_app.py` (체결 대화 화면) | Studio의 한 예 |
 | `packs/fastening`, `packs/machining`, `packs/diagnosis`, `fem/`, `shape/`, `view/field_image.py`, 3D 보기 | Physics (엔진) |
 | `view/diagnosis_app.py`, `dialogue/serve_diagnosis.py`, `dialogue/diagnosis_qa.py` (설비 이상진단 화면) | Fab으로 만든 화면의 한 예 |
+| `fab/` (목록, 미리보기, 고르기 화면) | Fab |
 | 센서 추천 ("현장에서 재려면") | Studio에서 Fab으로 넘어가는 다리 |
 
 폴더 구조는 아직 제품별로 나누지 않았다. 나누려면 이 문서를 먼저 고친다.
