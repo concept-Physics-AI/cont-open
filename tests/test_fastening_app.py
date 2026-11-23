@@ -76,6 +76,7 @@ def test_page_has_two_scroll_areas_and_a_fixed_composer():
     css = page[page.index("<style>"):page.index("</style>")]
     assert "body{margin:0;overflow:hidden" in css and ".thread{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain" in css
     assert ".drawer{flex:1 1 0;min-height:0;overflow-y:auto;overscroll-behavior:contain" in css and "prefers-reduced-motion" in css
+    assert ".rcard.open .stage.stage{flex:0 0 56px" in css and "그림 펼치기" in page          # 묶음을 열면 그림 상자가 위로 접힌다
     assert "@media (max-width:900px)" in css and "env(safe-area-inset-bottom)" in css and ":focus-visible" in css
     data = json.loads(re.search(r'<script type="application/json" id="app-data">(.*?)</script>', page, re.S).group(1))
     assert data["ask_url"] == "/ask" and data["reset_url"] == "/reset" and data["nodes"]["start"]["suggest"] == suggest(s)

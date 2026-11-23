@@ -27,6 +27,10 @@ IDEAS = (("예제 조인트로 시작해 줘", "M10 볼트로 두께 15 mm 판 �
 
 _HELPERS = LIVE_JS[LIVE_JS.index("var $="):LIVE_JS.index("/* ---------- 3D 보기")]
 _VIEWER = (LIVE_JS[LIVE_JS.index("/* ---------- 3D 보기"):LIVE_JS.index("$('#xr').addEventListener")]
+           # 조명: 주 조명 + 반대쪽 보조 조명 + 위아래 밝기 차 + 가장자리 빛. 면이 한 색으로 뭉치지 않게 한다
+           .replace("l=0.30+0.70*max(dot(m,L),0.0);g=pow(max(dot(m,normalize(L+vec3(0.0,0.0,1.0))),0.0),26.0);",
+                    "l=0.20+0.58*max(dot(m,L),0.0)+0.16*max(dot(m,normalize(vec3(-0.7,0.15,0.45))),0.0)+0.10*(m.y*0.5+0.5);"
+                    "g=pow(max(dot(m,normalize(L+vec3(0.0,0.0,1.0))),0.0),44.0)+0.30*pow(1.0-abs(m.z),3.0);")
            # 눌림 영역을 비쳐 보이게 그려 그 안의 볼트가 보이게 한다
            .replace("p.role.indexOf('plate')!==0&&(xray||p.role!=='zone')", "p.role.indexOf('plate')!==0&&p.role!=='zone'")
            .replace("plates.forEach(function(p){paint(p,0.2);});",
@@ -34,7 +38,7 @@ _VIEWER = (LIVE_JS[LIVE_JS.index("/* ---------- 3D 보기"):LIVE_JS.index("$('#x
 # 볼트의 색: 한 가지 색 계열 (금속 회색 → 황동색). 등가응력 ÷ 항복강도가 클수록 밝은 황동색이다
 _HELPERS = _HELPERS.replace("var RAMP=[[0,[0.30,0.49,0.94]],[0.5,[0.27,0.76,0.65]],[0.8,[0.95,0.79,0.30]],[1,[0.94,0.32,0.29]]];",
                             "var RAMP=[[0,[0.66,0.70,0.74]],[0.5,[0.72,0.60,0.36]],[0.8,[0.85,0.64,0.25]],[1,[0.96,0.80,0.44]]];")
-assert "paint(p,0.34)" in _VIEWER and "p.role!=='zone';})" in _VIEWER and "0.66,0.70,0.74" in _HELPERS       # fastening_live가 바뀌면 여기서 알아챈다
+assert "0.30*pow(1.0-abs(m.z),3.0)" in _VIEWER and "paint(p,0.34)" in _VIEWER and "p.role!=='zone';})" in _VIEWER and "0.66,0.70,0.74" in _HELPERS       # fastening_live가 바뀌면 여기서 알아챈다
 
 MARK = ('<svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="#101317"/>'
         '<path d="M18.5 10.2a6 6 0 1 0 0 7.6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><circle cx="14" cy="14" r="1.8" fill="#D9A441"/></svg>')
@@ -96,8 +100,9 @@ main.conv{max-width:none;margin:0}
 .rcard{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;gap:16px;padding:22px 22px 20px;border-radius:32px;background:#fff;box-shadow:0 1px 2px rgba(16,19,23,.04),0 16px 48px rgba(16,19,23,.07)}
 .rhead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:0 6px;flex-wrap:wrap}.rhead h2{font-size:22px;font-weight:600;letter-spacing:-.02em;margin:0}
 .rhead h2 small{font-size:14px;font-weight:400;color:var(--sub);margin-left:12px;letter-spacing:0}.rhead .state{font-size:13px;color:var(--sub)}
-.stage.stage{flex:1 1 300px;min-height:220px;border-radius:26px;background:radial-gradient(60% 70% at 50% 52%,#242B33,#14181D 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
-.rcard.open .stage.stage{flex:0 0 clamp(200px,32vh,300px)}
+.stage.stage{flex:1 1 300px;min-height:220px;transition:flex-grow .38s cubic-bezier(.2,.7,.2,1),flex-basis .38s cubic-bezier(.2,.7,.2,1),min-height .38s cubic-bezier(.2,.7,.2,1);border-radius:26px;background:radial-gradient(60% 70% at 50% 52%,#242B33,#14181D 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
+.rcard.open .stage.stage{flex:0 0 56px;min-height:56px;cursor:pointer}.rcard.open .stage .vp{opacity:0;pointer-events:none}.stage .vp{transition:opacity .25s}
+.rcard.open .stage .tabs{padding-top:6px}.rcard.open .stage .xr{display:none}.stage .fold{display:none;margin-left:auto;font-size:13px;color:var(--vsub);align-items:center;gap:6px;white-space:nowrap}.rcard.open .stage .fold{display:flex}.rcard.open .stage .sp{display:none}
 .stage .tabs{gap:24px;padding:10px 26px 0;align-items:center}.stage .tabs button{font-size:14px;height:44px;padding:0;border-bottom:2px solid transparent}
 .stage .tabs button[aria-selected=true]{border-bottom-color:var(--glow)}.stage .tabs .sp{margin-left:auto}
 .stage .tabs .xr{position:relative;border:1px solid var(--vline);border-radius:999px;right:auto;top:auto;flex:none;white-space:nowrap;height:36px;padding:0 14px 0 32px;font-size:13px;background:transparent;border-color:var(--vline)}.stage .tabs .xr[aria-pressed=true]{border-color:var(--glow)}
@@ -114,9 +119,9 @@ main.conv{max-width:none;margin:0}
 .seg button:hover{border-color:var(--line)}.seg button[aria-expanded=true]{background:#fff;border-color:var(--ink);font-weight:600}
 .seg svg{transition:transform .2s}.seg button[aria-expanded=true] svg{transform:rotate(180deg)}
 .drawer{flex:1 1 0;min-height:0;overflow-y:auto;overscroll-behavior:contain;border-radius:16px;background:var(--paper);padding:6px 20px 18px;scrollbar-width:thin;scrollbar-color:#C3C9D0 transparent}
-.drawer[hidden]{display:none}.drawer>div[hidden]{display:none}.drawer h3{font-size:14px;font-weight:600;margin:16px 0 6px}.drawer h3 small{font-weight:400;color:var(--sub);margin-left:8px}
+.drawer{transition:flex-grow .38s cubic-bezier(.2,.7,.2,1),padding .38s}.drawer[hidden]{display:block;flex:0 0 0;padding-top:0;padding-bottom:0;overflow:hidden;visibility:hidden;margin-top:-16px}.drawer>div[hidden]{display:none}.drawer h3{font-size:14px;font-weight:600;margin:16px 0 6px}.drawer h3 small{font-weight:400;color:var(--sub);margin-left:8px}
 .drawer .why{font-size:12.5px;color:var(--sub);margin:0 0 8px;line-height:1.55}.drawer .tr{grid-template-columns:96px 1fr;gap:10px 14px;font-size:14px;padding:12px 0 0;line-height:1.55}
-.drawer table{background:#fff}.drawer .read .v{font-size:20px}
+.drawer table{background:#fff}.drawer .sen .swhy,.drawer .why{font-size:13.5px;line-height:1.65}.drawer .sen .sh{font-size:15px}.drawer .sen .sst{font-size:13px}.drawer .sg{font-size:14.5px}.drawer .sg em,.drawer .sg b i,.drawer .chain{font-size:13px}.drawer .read .v{font-size:20px}
 .app a:focus-visible,.app button:focus-visible,.app summary:focus-visible{outline:2px solid var(--ink);outline-offset:2px}.stage button:focus-visible,.stage canvas:focus-visible{outline-color:var(--glow)}
 .top{display:none}
 /* 좁은 화면: 이름 줄과 입력창만 고정하고 그 사이가 한 줄기로 흐른다 */
@@ -129,10 +134,10 @@ body{overflow:auto}.app.app,.app[data-mode=talk]{display:block;height:auto;min-h
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:10px 16px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(rgba(247,247,248,0),var(--paper) 22%)}
 .app[data-mode=empty] .dock{position:static;padding:0;background:none}
 .sugg{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.sugg button{flex:none;white-space:nowrap}
-.result{padding:8px 0 0}.rcard{padding:14px 14px 16px;border-radius:24px;gap:14px}.stage.stage,.rcard.open .stage.stage{flex:none;min-height:0}.stage .vp{height:auto}
+.result{padding:8px 0 0}.rcard{padding:14px 14px 16px;border-radius:24px;gap:14px}.stage.stage,.rcard.open .stage.stage{flex:none;min-height:0;cursor:auto}.stage .vp{height:auto}
 .stage .tabs{gap:16px;padding:6px 16px 0;overflow-x:auto;scrollbar-width:none}.stage .tabs button{flex:none;white-space:nowrap;font-size:13px}.stage .pane{position:static;padding:4px 12px 12px}
 .stage #pane-shape{position:relative}.stage .hint{display:none}.stage .key{position:static;padding:0 14px 12px;max-width:none}.stage .badge{display:none!important}
-.stats{gap:12px;padding:0 2px}.stat{padding-left:12px}.stat .num{font-size:24px}.stat .k{font-size:12px}.seg{flex-direction:column}.seg button{flex:none}.thread .result{padding:0;display:block}.drawer{flex:none;overflow:visible;padding:4px 14px 14px}
+.stats{gap:12px;padding:0 2px}.stat{padding-left:12px}.stat .num{font-size:24px}.stat .k{font-size:12px}.drawer[hidden]{display:none}.rcard.open .stage .vp{opacity:1;pointer-events:auto}.rcard.open .stage .xr{display:block}.rcard.open .stage .fold{display:none}.seg{flex-direction:column}.seg button{flex:none}.thread .result{padding:0;display:block}.drawer{flex:none;overflow:visible;padding:4px 14px 14px}
 #latest{position:fixed;left:50%;transform:translateX(-50%);bottom:150px;z-index:21}
 }
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
@@ -155,12 +160,14 @@ var tabs=document.querySelectorAll('.tabs button[data-v]');
 function view(v){tabs.forEach(function(x){var on=x.dataset.v===v;x.setAttribute('aria-selected',on?'true':'false');if(on)x.classList.remove('new');});
 document.querySelectorAll('.pane').forEach(function(p){p.classList.toggle('on',p.id==='pane-'+v);});if(v==='shape')V.draw();}
 tabs.forEach(function(b){b.addEventListener('click',function(){view(b.dataset.v);});});
+$('.stage').addEventListener('click',function(){if(card.classList.contains('open')&&!narrow()){drawer.hidden=true;open(null);}});
+$('.stage').addEventListener('transitionend',function(e){if(e.target===this)V.draw();});
 function dot(v,on){var b=$('.tabs button[data-v="'+v+'"]');if(b)b.classList.toggle('new',on&&b.getAttribute('aria-selected')!=='true');}
 $('#xr').addEventListener('click',function(){var on=this.getAttribute('aria-pressed')!=='true';this.setAttribute('aria-pressed',on?'true':'false');V.hidden(on,cur?cur.hidden.use:0);});
 var segs=document.querySelectorAll('.seg button'),drawer=$('#drawer');
 function open(name){var same=name&&!drawer.hidden&&!$('#d-'+name).hidden;if(same)name=null;
 segs.forEach(function(b){b.setAttribute('aria-expanded',b.dataset.d===name?'true':'false');});
-['values','trust','sensing'].forEach(function(k){$('#d-'+k).hidden=k!==name;});drawer.hidden=!name;card.classList.toggle('open',!!name);if(name)drawer.scrollTop=0;setTimeout(V.draw,0);}
+['values','trust','sensing'].forEach(function(k){$('#d-'+k).hidden=k!==name;});drawer.hidden=!name;card.classList.toggle('open',!!name);if(name){drawer.scrollTop=0;if(narrow())setTimeout(function(){drawer.scrollIntoView({block:'nearest',behavior:'smooth'});},0);}setTimeout(V.draw,0);}
 segs.forEach(function(b){b.addEventListener('click',function(){open(b.dataset.d);});});
 
 /* ---------- 상태를 결과에 반영 ---------- */
@@ -265,7 +272,7 @@ def render_app(data: Mapping[str, Any], ask_url: str | None = None, title: str =
 <div class="stage">
 <div class="tabs" role="tablist" aria-label="보기"><button type="button" role="tab" data-v="shape" aria-selected="true">3D CAD</button>
 <button type="button" role="tab" data-v="section" aria-selected="false">단면</button><button type="button" role="tab" data-v="graph" aria-selected="false">그래프</button>
-<button type="button" role="tab" data-v="field" aria-selected="false">물리 이미지</button><span class="sp"></span><button type="button" class="xr" id="xr" aria-pressed="true">숨은 물리</button></div>
+<button type="button" role="tab" data-v="field" aria-selected="false">물리 이미지</button><span class="sp"></span><span class="fold">그림 펼치기{CHEV}</span><button type="button" class="xr" id="xr" aria-pressed="true">숨은 물리</button></div>
 <div class="vp">
 <div class="pane on" id="pane-shape"><canvas id="cv" tabindex="0" role="img" aria-label="볼트 조인트 3D 형상. 끌거나 화살표 키로 돌리고 휠이나 +, - 키로 확대합니다"></canvas>
 <div class="notes" id="notes" aria-live="polite"></div><div class="hint"><span id="cvmsg"></span>끌어서 돌리고 휠로 확대합니다.{files}</div>

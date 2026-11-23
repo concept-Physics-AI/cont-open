@@ -39,7 +39,7 @@ def test_needed_precision_is_what_it_takes_to_beat_torque_alone():
     s = settings()
     rel = math.hypot(p.needed_elongation_uncertainty / p.elongation, s["bolt_resilience_relative_uncertainty"])
     assert s["coverage_factor"] * rel == pytest.approx(p.torque_only_spread)      # 딱 그 정밀도면 범위가 토크만일 때와 같다
-    assert f"{p.needed_elongation_uncertainty * 1000:.1f} um" in p.summary and "117 um" in p.summary
+    assert f"{p.needed_elongation_uncertainty * 1000:.1f} µm" in p.summary and "117 µm" in p.summary
     tight = plan(j, replace(l, friction_range=(0.118, 0.122)))                    # 마찰이 거의 안 흩어지면 재도 나아지지 않는다
     assert tight.needed_elongation_uncertainty is None and "나아지지 않는다" in tight.summary
     none = plan(j, replace(l, friction_range=None))

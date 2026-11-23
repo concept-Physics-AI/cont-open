@@ -57,7 +57,7 @@ class Option:
 @dataclass(frozen=True)
 class Plan:
     summary: str
-    torque_only_spread: float | None         # 토크만으로 조일 때 체결력의 흩어짐 (+- 비율). 마찰 범위가 없으면 None
+    torque_only_spread: float | None         # 토크만으로 조일 때 체결력의 흩어짐 (± 비율). 마찰 범위가 없으면 None
     elongation: float                        # 예상 볼트 늘어남 (mm)
     needed_elongation_uncertainty: float | None   # 토크만일 때보다 나아지려면 필요한 늘어남의 표준 불확도 (mm)
     options: tuple[Option, ...]
@@ -88,7 +88,7 @@ def plan(joint: BoltedJoint, load: LoadCase) -> Plan:
         if key == "tool_controller":
             return (Signal("조임 토크", load.tightening_torque, "N·m"),
                     Signal("이 토크에서 체결력의 흩어짐", None if spread is None else spread * 100, "%",
-                           "마찰 범위를 주지 않아 계산하지 않음" if spread is None else f"마찰계수 {load.friction_range[0]:g} ~ {load.friction_range[1]:g}일 때 +-"))
+                           "마찰 범위를 주지 않아 계산하지 않음" if spread is None else f"마찰계수 {load.friction_range[0]:g} ~ {load.friction_range[1]:g}일 때 ±"))
         if key == "ultrasonic":
             return (Signal("볼트 늘어남", elong, "mm"),
                     Signal("초음파 왕복 시간 (조이기 전)", tof_base, "us", f"볼트 길이 약 {length:.0f} mm"),
@@ -105,7 +105,7 @@ def plan(joint: BoltedJoint, load: LoadCase) -> Plan:
     small = f"왕복 시간의 변화가 {tof_total:.0f} ns로 작다. 작은 볼트에서 정확도가 제한된다는 보고가 있으므로 벤치에서 먼저 확인한다"
     order = (
         ("tool_controller", "1단계: 지금 라인에서", "볼트와 조인트에 아무것도 더하지 않는다. 공구 제어기가 이미 재고 있는 값을 받기만 하면 된다. "
-         + ("다만 체결력은 여전히 +-%.0f%% 흩어진다" % (spread * 100) if spread is not None else "다만 토크만으로는 체결력의 흩어짐을 알 수 없다")),
+         + ("다만 체결력은 여전히 ±%.0f%% 흩어진다" % (spread * 100) if spread is not None else "다만 토크만으로는 체결력의 흩어짐을 알 수 없다")),
         ("load_washer", "2단계: 검증 벤치에서", "체결력을 직접 잰다. 기준값이 되어 다른 방법(초음파, 계산식)을 맞추는 데 쓴다. "
          "볼트 컴플라이언스 계산값이 실제와 얼마나 다른지도 여기서 정해진다 (지금은 5%로 잠정)"),
         ("ultrasonic", "3단계: 라인에서 표본으로", "여기 든 방법 가운데 양산 조인트에 부품을 더하지 않고 체결력을 추정하는 방법이다. " + small),
@@ -117,11 +117,11 @@ def plan(joint: BoltedJoint, load: LoadCase) -> Plan:
         m = t["methods"][key]
         options.append(Option(key, rank, stage, m["label"], m["measures"], why, signals_for(key), tuple(m["hardware"]), tuple(m["chain"]),
                               m["protocol"], m["into_cont"], tuple(m["cautions"]), tuple(m["sources"])))
-    head = (f"이 조인트({joint.size}, 체결 길이 {joint.clamp_length:g} mm, {load.tightening_torque:g} N·m)에서 볼트는 약 {elong * 1000:.0f} um 늘어난다. ")
+    head = (f"이 조인트({joint.size}, 체결 길이 {joint.clamp_length:g} mm, {load.tightening_torque:g} N·m)에서 볼트는 약 {elong * 1000:.0f} µm 늘어난다. ")
     if needed is not None:
-        head += (f"토크만으로 조이면 체결력이 +-{spread * 100:.0f}% 흩어지므로, 늘어남을 표준 불확도 {needed * 1000:.1f} um보다 정밀하게 재야 토크만일 때보다 나아진다.")
+        head += (f"토크만으로 조이면 체결력이 ±{spread * 100:.0f}% 흩어지므로, 늘어남을 표준 불확도 {needed * 1000:.1f} µm보다 정밀하게 재야 토크만일 때보다 나아진다.")
     elif spread is not None:
-        head += (f"토크만일 때의 흩어짐(+-{spread * 100:.0f}%)이 볼트 컴플라이언스 계산값의 불확도({model_u * 100:g}%, 잠정)보다 작아, 늘어남을 재도 지금 모형으로는 나아지지 않는다.")
+        head += (f"토크만일 때의 흩어짐(±{spread * 100:.0f}%)이 볼트 컴플라이언스 계산값의 불확도({model_u * 100:g}%, 잠정)보다 작아, 늘어남을 재도 지금 모형으로는 나아지지 않는다.")
     return Plan(head, spread, elong, needed, tuple(options), (
         "제품 이름, 가격, 제품별 정확도는 다루지 않는다. 확인하지 않은 값을 싣지 않기 위해서다",
         "신호의 크기는 VDI 2230 식으로 계산한 값이다 (해석, 검증 전). 실제 계측기를 고를 때는 제조사 사양과 맞춰 본다",
