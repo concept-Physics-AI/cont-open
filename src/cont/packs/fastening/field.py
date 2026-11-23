@@ -82,6 +82,9 @@ def stress_field(joint: BoltedJoint, load: LoadCase, question: str = "") -> Phys
     def grid(a: np.ndarray) -> tuple[tuple[float, ...], ...]:
         return tuple(tuple(round(float(x), 3) for x in row) for row in a)
 
+    def centre(u: np.ndarray) -> np.ndarray:
+        return (u[:-1, :-1] + u[1:, :-1] + u[:-1, 1:] + u[1:, 1:]) / 4
+
     x = tuple(round(float(c), 4) for c in sol.r_mid)
     y = tuple(round(float(c), 4) for c in sol.z_mid)
     axes = ("반지름 r", "높이 z (0 = 너트 쪽 바닥)")
@@ -89,6 +92,12 @@ def stress_field(joint: BoltedJoint, load: LoadCase, question: str = "") -> Phys
         Field("plate_axial_compression", "판의 축 방향 압축 응력", "MPa", axes, "mm", x, y, grid(comp),
               note="양수가 압축이다. 음수(당겨짐)가 나오는 곳은 실제로는 판이 벌어지는 곳이다"),
         Field("plate_von_mises", "판의 등가응력 (von Mises)", "MPa", axes, "mm", x, y, grid(mises)),
+        Field("plate_radial_compression", "판의 반지름 방향 압축 응력", "MPa", axes, "mm", x, y, grid(-sol.stress[..., 0]),
+              note="양수가 압축이다"),
+        Field("plate_shear", "판의 전단 응력 크기", "MPa", axes, "mm", x, y, grid(np.abs(sol.stress[..., 3])),
+              note="r-z 면의 전단 응력의 절댓값이다"),
+        Field("plate_axial_displacement", "판의 축 방향 변위 크기", "µm", axes, "mm", x, y, grid(np.abs(centre(sol.u_z)) * 1000.0),
+              note="변위를 0으로 잡은 점에 대한 값의 절댓값이다. 요소 가운데 값은 네 절점의 평균이다"),
     )
     deviation = (v["resilience"] - r.delta_p) / r.delta_p * 100.0
     cone_radius = min(joint.bearing_diameter / 2 + vdi2230.cone_angle_tan(joint.clamp_length, joint.bearing_diameter, joint.outer_diameter)

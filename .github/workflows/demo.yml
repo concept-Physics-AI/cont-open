@@ -1,4 +1,5 @@
-# 시연 화면: main이 바뀔 때마다 체결 화면을 파일 하나로 만들어 GitHub Pages에 올린다.
+# 시연 화면: main이 바뀔 때마다 화면들을 파일 하나씩으로 만들어 GitHub Pages에 올린다.
+#   index.html 체결 화면 · fab.html ConT Fab 고르기 · diagnosis.html 설비 이상진단 (Fab으로 만든 화면의 예)
 # 저장소 설정에서 Pages의 소스를 "GitHub Actions"로 켜야 동작한다.
 name: demo
 on:
@@ -22,6 +23,8 @@ jobs:
           python-version: "3.13"
       - run: pip install -e .
       - run: mkdir -p site && python -m cont.dialogue.serve_fastening --out site/index.html
+      - run: python -m cont.fab.store --out site/fab.html
+      - run: python -m cont.dialogue.serve_diagnosis --out site/diagnosis.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
