@@ -135,3 +135,11 @@ def test_card_is_short_and_detail_is_full():
     items = catalog()
     assert all(0 < len(i["short"]) <= 24 for i in items)            # 카드에는 한 줄 설명만
     assert all(i["short"] != i["summary"] for i in items)           # 긴 설명은 상세 창에서
+
+
+def test_filters_are_compact_menus_in_the_top_bar_and_the_bar_hides_while_scrolling_down():
+    from cont.fab.catalog import catalog, load
+    page = render_store(catalog(), load(), "")
+    top = page[page.index('<header class="top">'):page.index("</header>")]
+    assert top.count('class="dd"') == 4 and all(w in top for w in ("묶기", "형태", "쓰임", "물리 영역", 'data-grp="quantity"', 'data-area="체결"'))
+    assert 'class="filters"' not in page and "classList.add('away')" in page            # 줄마다 펼친 칩 대신 작은 메뉴, 내려가면 막대가 숨는다
