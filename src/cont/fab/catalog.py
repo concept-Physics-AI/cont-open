@@ -8,8 +8,8 @@ import yaml
 
 from cont.tolerance import CONFIG_DIR
 
-REQUIRED = ("key", "name", "form", "area", "quantity", "summary", "needs", "gives", "preview", "uses", "limits")
-SHOWN = ("key", "name", "form", "area", "quantity", "summary", "needs", "gives", "uses", "limits")
+REQUIRED = ("key", "name", "short", "form", "area", "quantity", "summary", "needs", "gives", "preview", "uses", "limits")
+SHOWN = ("key", "name", "short", "form", "area", "quantity", "summary", "needs", "gives", "uses", "limits")
 
 
 @lru_cache(maxsize=1)

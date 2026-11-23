@@ -15,6 +15,7 @@ forms:
 items:
 - key: fastening_shape
   name: 볼트 조인트 3D CAD
+  short: 치수를 넣으면 3D 형상이 나옵니다
   form: 3d
   area: 체결
   quantity: 형상
@@ -41,6 +42,7 @@ items:
     - M24
 - key: fastening_hidden
   name: 숨은 물리 3D
+  short: 판 속 눌리는 곳을 색으로 봅니다
   form: 3d
   area: 체결
   quantity: 응력 · 압력
@@ -65,6 +67,7 @@ items:
     - M20
 - key: fastening_drawing
   name: 단면도
+  short: 치수가 적힌 단면도
   form: image
   area: 체결
   quantity: 형상
@@ -83,6 +86,7 @@ items:
     sizes: *id001
 - key: fastening_field
   name: 축 방향 압축 응력 분포
+  short: 판 안에서 압축이 퍼지는 모습
   form: image
   area: 체결
   quantity: 응력 · 압력
@@ -105,6 +109,7 @@ items:
     - M16
 - key: field_mises
   name: 등가응력 분포
+  short: 응력이 몰리는 곳
   form: image
   area: 체결
   quantity: 응력 · 압력
@@ -124,6 +129,7 @@ items:
     sizes: *id002
 - key: field_radial
   name: 반지름 방향 응력 분포
+  short: 판이 눌리고 당겨지는 곳
   form: image
   area: 체결
   quantity: 응력 · 압력
@@ -142,6 +148,7 @@ items:
     sizes: *id002
 - key: field_shear
   name: 전단 응력 분포
+  short: 미끄러지려는 힘이 생기는 곳
   form: image
   area: 체결
   quantity: 응력 · 압력
@@ -160,6 +167,7 @@ items:
     sizes: *id002
 - key: field_displacement
   name: 축 방향 변위 분포
+  short: 조일 때 판이 움직이는 양
   form: image
   area: 체결
   quantity: 변형 · 변위
@@ -179,6 +187,7 @@ items:
     sizes: *id002
 - key: interface_pressure
   name: 판 사이 면의 압력
+  short: 맞닿은 면의 압력
   form: graph
   area: 체결
   quantity: 응력 · 압력
@@ -196,6 +205,7 @@ items:
     sizes: *id001
 - key: fastening_diagram
   name: 체결 선도
+  short: 볼트와 판이 힘을 나눠 받는 모습
   form: graph
   area: 체결
   quantity: 힘 · 체결력
@@ -213,6 +223,7 @@ items:
     sizes: *id001
 - key: fastening_torque
   name: 토크와 체결력
+  short: 조이는 힘과 체결력의 관계
   form: graph
   area: 체결
   quantity: 힘 · 체결력
@@ -230,6 +241,7 @@ items:
     sizes: *id001
 - key: fastening_safety
   name: 안전율 막대
+  short: 안전한 정도를 막대로 한눈에
   form: graph
   area: 체결
   quantity: 힘 · 체결력
@@ -248,6 +260,7 @@ items:
     sizes: *id001
 - key: fastening_process
   name: 조이는 과정
+  short: 조이는 과정을 재생합니다
   form: 4d
   area: 체결
   quantity: 힘 · 체결력
@@ -268,6 +281,7 @@ items:
   preview_note: 재생은 체결 화면에서 봅니다. 미리보기는 그 장면들입니다.
 - key: fastening_video
   name: 조이는 과정 영상
+  short: 조이는 과정을 영상 파일로
   form: video
   area: 체결
   quantity: 힘 · 체결력
@@ -286,6 +300,7 @@ items:
   preview_note: 영상은 체결 화면에서 브라우저가 만듭니다. 미리보기는 처음과 끝 장면입니다.
 - key: fastening_estimate
   name: 늘어남에서 체결력 추정
+  short: 볼트 늘어남으로 체결력 추정
   form: number
   area: 체결
   quantity: 변형 · 변위
@@ -310,6 +325,7 @@ items:
     count: 5
 - key: fastening_sensing
   name: 센서와 연결 추천
+  short: 무엇으로 재야 하는지 추천
   form: judge
   area: 체결
   quantity: 계측
@@ -331,6 +347,7 @@ items:
     - M16
 - key: signal_drive
   name: 구동계 신호
+  short: 전류·진동·온도를 평소와 비교
   form: signal
   area: 설비 공통
   quantity: 전류 · 진동
@@ -348,6 +365,7 @@ items:
   module: drive
 - key: signal_pressure
   name: 압력 · 유동계 신호
+  short: 압력·유량을 평소와 비교
   form: signal
   area: 설비 공통
   quantity: 압력 · 유량
@@ -365,6 +383,7 @@ items:
   module: pressure_flow
 - key: signal_thermal
   name: 열관리계 신호
+  short: 온도 계통을 평소와 비교
   form: signal
   area: 설비 공통
   quantity: 온도
@@ -381,6 +400,7 @@ items:
   module: thermal
 - key: signal_cycle
   name: 동작 사이클 신호
+  short: 동작 시간을 평소와 비교
   form: signal
   area: 설비 공통
   quantity: 시간 · 사이클
@@ -398,6 +418,7 @@ items:
   module: cycle
 - key: trend
   name: 상태 추이
+  short: 벗어난 시간이 늘고 있는지
   form: graph
   area: 설비 공통
   quantity: 시간 · 사이클
@@ -414,6 +435,7 @@ items:
   - guidance
 - key: guidance
   name: 원인 후보와 점검 안내
+  short: 원인 후보와 다음 점검
   form: judge
   area: 설비 공통
   quantity: 점검
@@ -431,6 +453,7 @@ items:
     max: 8
 - key: stroke_curve
   name: 스트로크 부하 곡선
+  short: 프레스 부하를 정상 범위와 비교
   form: graph
   area: 프레스
   quantity: 힘 · 체결력
@@ -446,6 +469,7 @@ items:
   - guidance
 - key: quality_prediction
   name: 두께 예측
+  short: 공정 값으로 두께 예측
   form: graph
   area: 압출
   quantity: 품질 치수
@@ -462,6 +486,7 @@ items:
   - signal_drive
 - key: cutting_force
   name: 선삭의 절삭력
+  short: 절삭 조건에서 절삭력 계산
   form: number
   area: 절삭
   quantity: 힘 · 체결력
@@ -491,6 +516,7 @@ items:
     depth: 2.0
 - key: cutting_curve
   name: 이송과 절삭력
+  short: 이송에 따라 커지는 절삭력
   form: graph
   area: 절삭
   quantity: 힘 · 체결력
