@@ -31,6 +31,7 @@ dialog.bld{max-width:min(1440px,calc(100vw - 24px));width:100%;height:calc(100dv
 .bw header input[type=text]{height:40px;width:170px;padding:0 12px;border-radius:10px;border:1px solid var(--line);font-size:14px}
 .bw header button{height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:14px;white-space:nowrap}.bw header button.pri{background:var(--t);border-color:var(--t);color:#fff;font-weight:600}.bw header button[aria-pressed=true]{border-color:var(--ink);background:var(--ink);color:#fff}
 .bw .main{display:grid;grid-template-columns:minmax(0,1fr) 320px;flex:1;min-height:0}.bw .canvas{overflow-y:auto;padding:18px 20px;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;align-content:start;background:var(--g)}
+.bw .canvas .reqs{grid-column:1/-1;border:1px dashed #B8C1CA;border-radius:14px;padding:14px 16px;background:#FBFCFD}.reqs h3{font-size:15px;font-weight:600;margin-bottom:4px}.reqs ul{list-style:none;margin:8px 0;padding:0;display:grid;gap:4px}.reqs li{display:flex;align-items:center;gap:10px;font-size:13.5px}.reqs li span{flex:1}.reqs li button{height:36px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:#fff}.reqs .note{font-size:12.5px;color:var(--sub)}
 .bw .canvas .empty{grid-column:1/-1;font-size:14.5px;color:var(--sub);padding:40px 0;text-align:center}
 .tile{border:1px solid var(--line);border-radius:16px;background:#fff;overflow:hidden;display:flex;flex-direction:column;cursor:pointer}.tile.s-S{grid-column:span 4}.tile.s-M{grid-column:span 6}.tile.s-L{grid-column:span 12}.tile.sel{border-color:var(--t);box-shadow:0 0 0 1px var(--t)}
 .tile .pv{height:200px;border:0;padding:0;width:100%;cursor:inherit}.tile.s-L .pv{height:320px}.tile .pv{flex:none}.tile .pv .c3{width:100%;height:100%;object-fit:contain}.tile .plst{padding:6px}.tile .plst svg{width:auto;height:150px}.tile.s-L .plst svg{height:260px}.tile .plst .cap{font-size:13px}.tile .tb{padding:10px 14px 12px;display:flex;flex-direction:column;gap:3px}.tile h3{font-size:15px;font-weight:600}.tile .cd{font-size:13px;color:var(--ink)}.tile .stt{font-size:12.5px;color:var(--sub)}.tile .warn{font-size:12.5px;color:var(--warn)}
@@ -44,7 +45,7 @@ dialog.bld{max-width:min(1440px,calc(100vw - 24px));width:100%;height:calc(100dv
 
 BUILD_JS = r"""
 /* ---------- 내 FAB: 담은 것(조건과 보던 설정까지) ---------- */
-var picks=[],seq=0,sel=null,activeV=null,plTimer=null,STORE_KEY='cont-fab-mine',YAW=-0.785,PITCH=0.36;
+var picks=[],reqs=[],seq=0,sel=null,activeV=null,plTimer=null,STORE_KEY='cont-fab-mine',YAW=-0.785,PITCH=0.36;
 var PARTS=[['bolt','볼트'],['plate_head','위 판'],['plate_nut','아래 판'],['zone','눌리는 영역']],UI={bolt_head:'bolt',bolt_shank:'bolt',nut:'bolt',plate_head:'plate_head',plate_nut:'plate_nut',zone:'zone'};
 var C3={bolt:[174,182,191],plate_head:[74,84,95],plate_nut:[61,70,80],zone:[217,164,65]},R3=[[0,[168,178,188]],[.5,[184,153,92]],[.8,[217,164,65]],[1,[245,204,112]]];
 function uid(){seq+=1;return 'c'+Date.now().toString(36)+seq;}
@@ -58,9 +59,15 @@ function isPlay(it,s){return (it.form==='4d'||it.form==='video')&&figs(s.html).l
 function defView(it,s){if(is3(it,s))return {yaw:YAW,pitch:PITCH,zoom:1,off:[],see:!!s.view3d.hidden};if(isPlay(it,s))return {frame:0};return {};}
 function addPick(k,si,view){var it=item(k),s=it.samples[si]||it.samples[0],i=-1;picks.forEach(function(p,j){if(p.key===k&&p.label===s.label)i=j;});
 if(i>=0){picks.splice(i,1);return false;}picks.push({id:uid(),key:k,label:s.label,params:s.params||{},size:'M',view:view||defView(it,s),data:{source:'engine',channel:'',note:''}});return true;}
+function typ(k){return (D.types||[]).filter(function(t){return t.key===k;})[0];}
+function hasReq(k){return reqs.some(function(r){return r.key===k;});}
+function toggleReq(k){if(!typ(k))return false;var i=-1;reqs.forEach(function(r,j){if(r.key===k)i=j;});if(i>=0){reqs.splice(i,1);bar();return false;}reqs.push({key:k});bar();return true;}
+function reqHtml(){if(!reqs.length)return '';var by={};reqs.forEach(function(r){var t=typ(r.key);by[t.engine_name]=(by[t.engine_name]||0)+1;});
+return '<section class="reqs"><h3>엔진 필요 목록 ('+reqs.length+')</h3><p class="note">진열대에서 "필요해요"를 누른 것입니다. 요청이며 계산된 값이 아닙니다. 저장 파일에는 requests로 남습니다.</p><ul>'+reqs.map(function(r){var t=typ(r.key);return '<li><span><b>'+esc(t.name)+'</b> · '+esc(t.form_label)+' — '+esc(t.engine_name)+'</span><button type="button" data-rq-rm="'+esc(r.key)+'">빼기</button></li>';}).join('')+'</ul><p class="note">엔진별 요청: '+Object.keys(by).map(function(k){return esc(k)+' '+by[k];}).join(' · ')+'</p></section>';}
 function dropPick(id){picks=picks.filter(function(p){return p.id!==id;});if(sel===id)sel=null;}
 function bar(){$('#got').innerHTML=picks.length?picks.map(function(p){var f=found(p);return '<span class="gt"><i class="mini">'+f.s.html+'</i><em><b>'+esc(f.it.name)+'</b><small>'+esc(p.label)+'</small></em><button type="button" data-drop="'+esc(p.id)+'" aria-label="'+esc(f.it.name)+' 빼기">×</button></span>';}).join(''):'<span>아직 담은 것이 없습니다. 카드의 "담기"를 눌러 보세요.</span>';
-$('#pk').textContent=picks.length;$('#save').disabled=!picks.length;$('#bopen').disabled=!picks.length&&!readLocal();$('#cmpb').disabled=cmp.length<2;$('#cmpb').textContent='견주기 '+cmp.length;}
+if(reqs.length)$('#got').insertAdjacentHTML('beforeend','<span class="gt rq"><em><b>엔진 필요 '+reqs.length+'</b><small>'+esc(reqs.map(function(r){return typ(r.key).name;}).join(', '))+'</small></em></span>');
+$('#pk').textContent=picks.length;$('#save').disabled=!picks.length&&!reqs.length;$('#bopen').disabled=!picks.length&&!reqs.length&&!readLocal();$('#cmpb').disabled=cmp.length<2;$('#cmpb').textContent='견주기 '+cmp.length;}
 /* ---------- 3D: 돌리고 확대하고 부품을 끈다 ---------- */
 function ramp3(u){u=Math.max(0,Math.min(1,u));for(var i=1;i<R3.length;i++){if(u<=R3[i][0]){var a=R3[i-1],b=R3[i],k=(u-a[0])/(b[0]-a[0]);return a[1].map(function(c,j){return Math.round(c+(b[1][j]-c)*k);});}}return R3[R3.length-1][1];}
 function draw3d(cv,m,v,meta){var W=cv.width,H=cv.height,x=cv.getContext('2d');x.fillStyle='#14181D';x.fillRect(0,0,W,H);
@@ -100,7 +107,7 @@ var ctrl='<div class="tc" role="group" aria-label="배치">'+['S','M','L'].map(f
 return '<article class="tile s-'+p.size+(sel===p.id?' sel':'')+'" data-id="'+esc(p.id)+'"><div class="pv'+pad(it)+'"></div><div class="tb"><h3>'+esc(it.name)+'</h3><div class="cd">'+esc(p.label)+'</div>'+(f.missing?'<div class="warn">저장한 조건이 이 목록에 없어 첫 조건 그림을 보입니다.</div>':'')+'<div class="stt" data-st>'+statusOf(p)+'</div>'+ctrl+'</div></article>';}
 function paintTile(el,p){var f=found(p),box=$('.pv',el);stopPlay();if(is3(f.it,f.s)){box.innerHTML='<canvas class="c3" width="640" height="420"></canvas>';var cv=$('canvas',box),m=D.meshes[f.s.view3d.size],red=function(){draw3d(cv,m,p.view,f.s.view3d);};red();bind3d(cv,p.view,red);}
 else if(isPlay(f.it,f.s)){var fr=figs(f.s.html);box.innerHTML=frameHtml(fr,Math.min(p.view.frame||0,fr.length-1));}else box.innerHTML=f.s.html;}
-function renderBuild(){var cv=$('#b-canvas');cv.innerHTML=picks.length?picks.map(tileHtml).join(''):'<p class="empty">아직 담은 것이 없습니다. 진열대에서 카드를 골라 "담기"를 누르면 여기에 놓입니다.</p>';picks.forEach(function(p){paintTile($('.tile[data-id="'+p.id+'"]',cv),p);});side();}
+function renderBuild(){var cv=$('#b-canvas');cv.innerHTML=picks.length?picks.map(tileHtml).join(''):'<p class="empty">아직 담은 것이 없습니다. 진열대에서 카드를 골라 "담기"를 누르면 여기에 놓입니다.</p>';picks.forEach(function(p){paintTile($('.tile[data-id="'+p.id+'"]',cv),p);});cv.insertAdjacentHTML('beforeend',reqHtml());side();}
 function side(){var s=$('#b-side'),p=picks.filter(function(x){return x.id===sel;})[0];activeV=null;if(!p){s.innerHTML='<h3>고른 것 설정</h3><p class="note">구성 화면의 칸을 누르면 데이터 연결과 보존된 설정을 여기서 고칩니다. 크기(S·M·L)와 순서는 칸 아래 단추로 바꿉니다.</p>';return;}
 var f=found(p),it=f.it,keep=[];keep.push('조건 · '+p.label);if(is3(it,f.s))keep.push('3D 시점과 보이는 부품');if(isPlay(it,f.s))keep.push('재생 단계 '+((p.view.frame||0)+1)+' / '+figs(f.s.html).length);
 s.innerHTML='<h3>'+esc(it.name)+'</h3><h4>필요한 입력</h4><p>'+esc(it.needs)+'</p><h4>저장되는 설정</h4><p>'+keep.map(esc).join('<br>')+'</p>'+(is3(it,f.s)?'<div class="ctl" id="b-ctl">'+ctl3(p.view)+'</div>':'')
@@ -111,19 +118,19 @@ if(is3(it,f.s)){var cvv=$('.tile[data-id="'+p.id+'"] canvas'),m=D.meshes[f.s.vie
 function picked1(){return picks.filter(function(x){return x.id===sel;})[0];}
 function msg(t){$('#b-msg').textContent=t;}
 function doc(){return {format:'cont-fab-selection',version:2,site:($('#site').value||$('#b-site').value||'').trim(),saved_at:new Date().toISOString(),
-items:picks.map(function(p,i){var it=item(p.key);return {id:p.id,key:p.key,name:it.name,form:it.form,needs:it.needs,condition:{label:p.label,params:p.params},layout:{order:i,size:p.size},view:p.view,data:p.data};})};}
+items:picks.map(function(p,i){var it=item(p.key);return {id:p.id,key:p.key,name:it.name,form:it.form,needs:it.needs,condition:{label:p.label,params:p.params},layout:{order:i,size:p.size},view:p.view,data:p.data};}),requests:reqs.map(function(r){var t=typ(r.key);return {key:r.key,name:t.name,form:t.form,engine:t.engine,kind:'engine_request'};})};}
 function readLocal(){try{var t=localStorage.getItem(STORE_KEY);return t?JSON.parse(t):null;}catch(e){return null;}}
 function saveLocal(){try{localStorage.setItem(STORE_KEY,JSON.stringify(doc()));return true;}catch(e){return false;}}
 function loadDoc(d){if(!d||d.format!=='cont-fab-selection'||!d.items)return {ok:false,text:'이 파일은 ConT FAB 구성 파일이 아닙니다.'};var skipped=0,list=d.items.slice();list.sort(function(a,b){return ((a.layout||{}).order||0)-((b.layout||{}).order||0);});picks=[];
 list.forEach(function(r){var it=D.items.filter(function(x){return x.key===r.key;})[0];if(!it){skipped++;return;}var s=it.samples[0],lb=(r.condition&&r.condition.label)||s.label,fs=it.samples.filter(function(x){return x.label===lb;})[0]||s;
 var dv=defView(it,fs),v=r.view&&typeof r.view==='object'?Object.assign(dv,r.view):dv;picks.push({id:r.id||uid(),key:r.key,label:lb,params:(r.condition&&r.condition.params)||{},size:['S','M','L'].indexOf((r.layout||{}).size)>=0?r.layout.size:'M',view:v,data:Object.assign({source:'engine',channel:'',note:''},r.data||{})});});
-$('#site').value=$('#b-site').value=d.site||'';sel=null;return {ok:true,text:picks.length+'개를 열었습니다.'+(skipped?' 이 목록에 없는 '+skipped+'개는 건너뛰었습니다.':'')};}
+reqs=(d.requests||[]).filter(function(r){return r&&typ(r.key);}).map(function(r){return {key:r.key};});$('#site').value=$('#b-site').value=d.site||'';sel=null;return {ok:true,text:picks.length+'개를 열었습니다.'+(skipped?' 이 목록에 없는 '+skipped+'개는 건너뛰었습니다.':'')};}
 function download(){var out=doc();var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(out,null,2)],{type:'application/json'}));a.download='my-fab.json';document.body.appendChild(a);a.click();a.remove();window.__lastSelection=out;}
 function openBuild(){$('#b-site').value=$('#site').value;var d=$('#build');if(!d.open)d.showModal();renderBuild();}
 document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('button'),t=e.target.closest&&e.target.closest('.tile');
 if(t&&!b&&!e.target.closest('select,input,canvas')){sel=t.dataset.id;all('.tile').forEach(function(x){x.classList.toggle('sel',x===t);});side();return;}if(t&&e.target.closest('canvas')){sel=t.dataset.id;all('.tile').forEach(function(x){x.classList.toggle('sel',x===t);});side();return;}
 if(!b)return;var id=t&&t.dataset.id,p=id&&picks.filter(function(x){return x.id===id;})[0];
-if(b.id==='bopen'){openBuild();return;}if(b.id==='b-close'){stopPlay();$('#build').close();bar();apply();return;}
+if(b.dataset.rqRm){toggleReq(b.dataset.rqRm);renderBuild();apply();return;}if(b.id==='bopen'){openBuild();return;}if(b.id==='b-close'){stopPlay();$('#build').close();bar();apply();return;}
 if(b.id==='b-prv'){var on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',on?'true':'false');$('#build').classList.toggle('prv',on);return;}
 if(b.id==='b-save'){msg(saveLocal()?'저장했습니다. 이 브라우저에서 “저장된 구성 불러오기”로 다시 열 수 있습니다. 다른 곳에서 열려면 내려받기를 쓰세요.':'이 화면에서는 브라우저에 저장할 수 없습니다. 내려받기로 파일에 저장하세요.');return;}
 if(b.id==='b-dl'){download();msg('my-fab.json을 내려받았습니다.');return;}if(b.id==='b-fbtn'){$('#b-file').click();return;}

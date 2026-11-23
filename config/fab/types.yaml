@@ -1,0 +1,90 @@
+# ConT FAB 표현 유형 (진열대에서 고를 수 있어야 하는 결과의 종류).
+# 상품(catalog.yaml)은 지금 코드에 엔진이 있는 것이고, 이 파일은 "무엇을 보여 줄 수 있어야 하는가"의 목록이다.
+# 엔진이 없는 유형(covered_by가 없는 것)은 진열대에서 "준비 중 · 엔진 없음" 카드로 보이고, 결과처럼 보이는 그림이나 숫자를 만들지 않는다.
+# covered_by가 있는 유형은 지금 그 상품으로 (체결 사례에 한해) 되는 것이다. 상품 키는 catalog.yaml의 key.
+# 자리: 유형 이름은 "응력 이미지 1"이 아니라 결과가 바로 보이는 이름으로 붙인다.
+engines:
+  thermal: {name: 열 해석, summary: 열전도·대류·열응력으로 온도와 열유속을 계산하는 엔진}
+  structural: {name: 구조 해석 확장, summary: 임의 형상에서 응력·변형을 계산하는 엔진 (지금은 축대칭 판 하나)}
+  contact: {name: 접촉응력 해석, summary: 맞닿은 면의 접촉 압력과 미끄럼을 계산하는 엔진}
+  flow: {name: 유동 해석, summary: 유체의 속도·압력과 흐름 경로를 계산하는 엔진}
+  modal: {name: 진동 모드 해석, summary: 고유진동수와 모드 형상을 계산하는 엔진}
+  transient: {name: 시간 영역 해석, summary: 하중·열·유체가 시간에 따라 변하는 과정을 계산하는 엔진}
+  cad: {name: 형상 생성 확장, summary: 부품·조립체·배관을 치수로 만드는 엔진 (지금은 볼트 조인트 하나)}
+  scan: {name: 실측 형상 처리, summary: 스캔 메시·점군을 읽고 기준 형상과 비교하는 엔진}
+  photo: {name: 사진 위치 대응, summary: 설비 사진 위에 측정 위치와 계산 영역을 맞추는 기능}
+  signal: {name: 신호 분석, summary: 파형을 주파수와 시간–주파수로 나누고 통계를 내는 엔진}
+  motion: {name: 로봇·기구 운동 해석, summary: 로봇 궤적과 기구 동작, 도달 범위를 계산하는 엔진}
+  process: {name: 가공·성형 과정 해석, summary: 공구 이동과 소재 제거, 성형 변화를 계산하는 엔진}
+  layout: {name: 설비 배치 모델, summary: 설비와 센서의 위치 관계를 담는 모델}
+  video: {name: 결과 영상 만들기, summary: 계산 결과와 현장 영상을 구간·자막과 함께 영상으로 묶는 기능}
+  knowledge: {name: 점검 지식표 확장, summary: 이상 징후에 맞는 점검·보류 근거를 담은 지식표 (지금은 가상 설비 몇 가지)}
+  calc: {name: 계산식 엔진 확장, summary: 열량·압력손실 같은 값을 입력 조건에서 계산하는 엔진}
+types:
+# ---- 이미지 · 분포 이미지: 어떤 상태가 어디에 나타나는가
+- {key: dist_color, form: image, group: 분포 이미지, name: 색상 분포도, shows: 부품 표면의 온도·응력·압력을 색으로 보입니다, controls: [물리량, 표시 범위, 색상], quantity: 응력 · 압력, uses: [설계할 때, 보고할 때], covered_by: [field_mises, fastening_field, field_radial, field_shear, field_displacement], note: 체결 판 해석 하나만 됩니다}
+- {key: dist_contour, form: image, group: 분포 이미지, name: 온도 등고선, shows: 같은 값(온도·압력·응력)을 선으로 이어 보입니다, controls: [등고선 간격, 값 표시], engine: thermal, quantity: 온도, uses: [설계할 때, 조건 잡을 때], sketch: contour, needs: 대상 형상, 경계조건, 재료 물성, ready: 부품 안에서 같은 온도인 곳이 선으로 이어져 보입니다}
+- {key: dist_deform, form: image, group: 분포 이미지, name: 변형 전·후 겹쳐 보기, shows: 원래 형상과 변형된 형상을 겹쳐 보입니다, controls: [변형 배율, 겹침 정도], engine: structural, quantity: 변형 · 변위, uses: [설계할 때, 보고할 때], sketch: deform, needs: 대상 형상, 하중, 재료 물성, ready: 하중을 받아 변형된 모양이 원래 모양 위에 겹쳐 보입니다}
+- {key: dist_hotspot, form: image, group: 분포 이미지, name: 집중 영역 강조, shows: 고온부·고응력부 같은 특정 범위만 강조합니다, controls: [강조 기준, 관심 영역], engine: structural, quantity: 응력 · 압력, uses: [설계할 때, 점검할 때], sketch: hotspot, needs: 분포 해석 결과, 기준값, ready: 기준을 넘는 곳만 따로 표시되어 어디를 볼지 바로 알 수 있습니다}
+- {key: dist_diff, form: image, group: 분포 이미지, name: 기준 대비 차이 지도, shows: 기준 조건과 현재 조건의 차이를 색으로 보입니다, controls: [비교 기준, 차이·변화율], engine: structural, quantity: 응력 · 압력, uses: [조건 잡을 때, 감시할 때], sketch: diff, needs: 두 조건의 분포 해석 결과, ready: 조건을 바꿨을 때 어디가 얼마나 달라지는지 한 장으로 보입니다}
+- {key: dist_photo, form: image, group: 분포 이미지, name: 현장 사진 위 물리 정보, shows: 설비 사진 위에 측정 위치와 물리 정보를 표시합니다, controls: [사진, 위치 대응, 투명도], engine: photo, quantity: 계측, uses: [감시할 때, 점검할 때], sketch: photo, needs: 설비 사진, 측정 위치, 계산 또는 측정 값, note: 실측 지점과 계산으로 추정한 영역을 구분해 표시합니다. 사진만으로 물리 분포를 만들지 않습니다, ready: 사진 위에 실측 지점과 계산 영역이 구분되어 겹쳐 보입니다}
+- {key: dist_layout, form: image, group: 분포 이미지, name: 위치별 상태 지도, shows: 설비 배치도 위에 센서별 상태를 표시합니다, controls: [센서, 배치, 표시 물리량], engine: layout, quantity: 계측, uses: [감시할 때, 점검할 때], sketch: layout, needs: 설비 배치도, 센서 위치, 센서 값, ready: 배치도 위에서 어느 센서가 평소와 다른지 한눈에 보입니다}
+- {key: dist_uncertain, form: image, group: 분포 이미지, name: 불확실한 영역 표시, shows: 추정 오차가 큰 영역을 따로 보입니다, controls: [불확실성 지표, 표시 범위], engine: structural, quantity: 응력 · 압력, uses: [보고할 때, 점검할 때], sketch: uncertain, needs: 분포 해석 결과, 오차 추정 방법, ready: 믿어도 되는 곳과 오차가 큰 곳이 구분되어 보입니다}
+# ---- 이미지 · 단면·벡터: 내부 구조와 방향을 어떻게 보는가
+- {key: cut_plane, form: image, group: 단면·벡터, name: 평면 절단면, shows: 부품을 한 평면으로 잘라 내부를 보입니다, controls: [절단 방향, 위치], quantity: 형상, uses: [설계할 때, 보고할 때], covered_by: [fastening_drawing], note: 체결 조인트 단면만 됩니다}
+- {key: cut_multi, form: image, group: 단면·벡터, name: 여러 위치 단면 나란히, shows: 여러 위치의 단면을 나란히 보입니다, controls: [단면 수, 간격], engine: structural, quantity: 형상, uses: [설계할 때, 보고할 때], sketch: multicut, needs: 대상 형상, 분포 해석 결과, ready: 길이를 따라 달라지는 모습을 단면 여러 장으로 비교합니다}
+- {key: cut_longtrans, form: image, group: 단면·벡터, name: 길이 방향·가로 방향 단면 비교, shows: 길이 방향과 가로 방향 단면을 함께 보입니다, controls: [기준축, 절단 위치], engine: structural, quantity: 형상, uses: [설계할 때], sketch: longtrans, needs: 대상 형상, 분포 해석 결과, ready: 두 방향 단면을 한 화면에서 맞대어 봅니다}
+- {key: cut_open, form: image, group: 단면·벡터, name: 내부 노출도, shows: 외피 일부를 걷어 유로·접합부·내부 구조를 보입니다, controls: [제거 영역, 투명도], engine: cad, quantity: 형상, uses: [설계할 때, 점검할 때], sketch: cutaway, needs: 조립체 형상, ready: 겉을 일부 걷어 낸 모습으로 안쪽 구조를 확인합니다}
+- {key: vec_force, form: image, group: 단면·벡터, name: 힘·토크 화살표, shows: 힘의 방향과 크기, 회전 방향을 화살표로 보입니다, controls: [하중 종류, 화살표 배율], engine: structural, quantity: 힘 · 체결력, uses: [설계할 때, 조건 잡을 때], sketch: forcevec, needs: 대상 형상, 하중 조건, ready: 어디에 어느 방향으로 얼마나 힘이 걸리는지 화살표로 보입니다}
+- {key: vec_disp, form: image, group: 단면·벡터, name: 변위·속도 벡터, shows: 각 위치의 이동 방향과 크기를 화살표로 보입니다, controls: [변위·속도, 표시 밀도], engine: transient, quantity: 변형 · 변위, uses: [설계할 때, 점검할 때], sketch: dispvec, needs: 변위 또는 속도 해석 결과, ready: 부품이 어느 쪽으로 얼마나 움직이는지 화살표 격자로 보입니다}
+- {key: vec_flux, form: image, group: 단면·벡터, name: 열이 흐르는 방향, shows: 열이 이동하는 방향과 크기를 보입니다, controls: [표시 면, 벡터 배율], engine: thermal, quantity: 온도, uses: [설계할 때, 조건 잡을 때], sketch: fluxvec, needs: 대상 형상, 열 경계조건, ready: 열이 어디서 어디로 빠져나가는지 화살표로 보입니다}
+- {key: vec_flow, form: image, group: 단면·벡터, name: 유동 방향과 흐름 경로, shows: 유체의 속도 방향과 흐름 경로를 보입니다, controls: [시작 위치, 밀도, 색상 기준], engine: flow, quantity: 압력 · 유량, uses: [설계할 때, 조건 잡을 때], sketch: streamline, needs: 유로 형상, 유량·압력 조건, ready: 유체가 어디로 흐르고 어디서 정체하는지 흐름 선으로 보입니다}
+# ---- 그래프·신호
+- {key: sig_time, form: signal, group: 신호, name: 시간에 따른 신호 변화, shows: 온도·전류·압력이 시간에 따라 어떻게 변하는지 보입니다, controls: [신호, 시간 구간], quantity: 전류 · 진동, uses: [감시할 때], covered_by: [signal_drive, signal_pressure, signal_thermal, signal_cycle], note: 가상 설비 신호만 됩니다}
+- {key: gr_response, form: graph, group: 그래프, name: 조건에 따른 결과 곡선, shows: 입력 조건과 결과의 관계를 곡선으로 보입니다, controls: [가로축 조건, 세로축 물리량], quantity: 힘 · 체결력, uses: [설계할 때, 조건 잡을 때], covered_by: [fastening_torque, cutting_curve], note: 토크–체결력, 이송–절삭력만 됩니다}
+- {key: sig_multi, form: signal, group: 신호, name: 여러 신호 겹쳐 비교, shows: 전류·진동·온도 등을 시간에 맞춰 함께 보입니다, controls: [신호 조합, 축, 정규화], quantity: 전류 · 진동, uses: [감시할 때, 점검할 때], covered_by: [signal_drive], note: 가상 설비 신호만 됩니다}
+- {key: sig_band, form: signal, group: 신호, name: 정상 범위와 현재 신호 비교, shows: 현재 신호를 운전조건별 정상 범위와 비교합니다, controls: [기준 조건, 비교 구간], quantity: 전류 · 진동, uses: [감시할 때], covered_by: [signal_drive, stroke_curve], note: 가상 설비 신호만 됩니다}
+- {key: sig_spectrum, form: signal, group: 신호, name: 진동의 주파수 성분, shows: 진동·음향 신호를 주파수별 크기로 보입니다, controls: [주파수 범위, 분석 구간], engine: signal, quantity: 전류 · 진동, uses: [감시할 때, 점검할 때], sketch: spectrum, needs: 진동 또는 음향 파형, 샘플링 주파수, ready: 어느 주파수에서 진동이 큰지 봉우리로 보입니다}
+- {key: sig_spectrogram, form: signal, group: 신호, name: 시간별 주파수 변화 지도, shows: 시간에 따라 달라지는 주파수 성분을 색으로 보입니다, controls: [시간·주파수 범위, 해상도], engine: signal, quantity: 전류 · 진동, uses: [감시할 때, 점검할 때], sketch: spectrogram, needs: 진동 또는 음향 파형, 샘플링 주파수, ready: 시간이 지나며 주파수 성분이 어떻게 이동하는지 한 장으로 보입니다}
+- {key: gr_repeat, form: graph, group: 그래프, name: 반복 작업의 편차 분포, shows: 반복 작업의 편차를 막대 분포와 상자 그림으로 보입니다, controls: [작업 묶음, 통계량], engine: signal, quantity: 품질 치수, uses: [감시할 때, 보고할 때], sketch: hist, needs: 반복 작업의 측정값, ready: 작업마다 얼마나 흩어지는지 분포로 보입니다}
+- {key: gr_predact, form: graph, group: 그래프, name: 실측과 예측 비교, shows: 실제 값과 예측값, 오차 범위를 함께 보입니다, controls: [대상 값, 구간, 오차 표시], quantity: 품질 치수, uses: [보고할 때, 감시할 때], covered_by: [quality_prediction], note: 가상 두께 예측만 됩니다}
+# ---- 3D
+- {key: m3_part, form: 3d, group: 3D, name: 치수로 만드는 부품 모델, shows: 볼트·축·판·배관 등을 치수로 정의해 입체로 보입니다, controls: [치수 변경, 회전, 확대], quantity: 형상, uses: [설계할 때], covered_by: [fastening_shape], note: 볼트 조인트만 됩니다}
+- {key: m3_assembly, form: 3d, group: 3D, name: 조립된 장치 모델, shows: 여러 부품이 결합된 장치·설비를 입체로 보입니다, controls: [부품 선택, 숨김, 투명화], engine: cad, quantity: 형상, uses: [설계할 때, 점검할 때], sketch: assembly, needs: 부품 목록, 결합 관계, ready: 장치를 돌려 보며 부품을 골라 숨기거나 투명하게 합니다}
+- {key: m3_exploded, form: 3d, group: 3D, name: 분해 조립도, shows: 부품을 조립 방향으로 벌려 놓은 구조를 보입니다, controls: [분해 거리, 부품 순서], engine: cad, quantity: 형상, uses: [점검할 때, 보고할 때], sketch: exploded, needs: 조립체 형상, 조립 순서, ready: 부품이 어떤 순서와 방향으로 끼워지는지 벌려 놓고 봅니다}
+- {key: m3_field, form: 3d, group: 3D, name: 물리량을 입힌 모델, shows: 표면에 온도·응력·압력을 입힌 입체 모델을 보입니다, controls: [물리량·범례 전환, 값 조회], quantity: 응력 · 압력, uses: [설계할 때, 보고할 때], covered_by: [fastening_hidden], note: 볼트 조인트만 됩니다}
+- {key: m3_deformed, form: 3d, group: 3D, name: 변형된 형상 모델, shows: 하중이나 열로 변형된 형상을 입체로 보입니다, controls: [변형 배율, 원형 비교], engine: structural, quantity: 변형 · 변위, uses: [설계할 때, 점검할 때], sketch: deformed, needs: 대상 형상, 하중 또는 열 조건, ready: 변형된 모양을 원래 모양과 번갈아 돌려 봅니다}
+- {key: m3_mesh, form: 3d, group: 3D, name: 해석에 쓴 격자 모델, shows: 계산에 쓴 요소·절점·경계조건을 입체로 보입니다, controls: [격자·경계 표시, 영역 선택], engine: structural, quantity: 형상, uses: [설계할 때, 보고할 때], sketch: mesh, needs: 해석 입력 모델, ready: 계산이 어떤 격자와 경계조건으로 이뤄졌는지 직접 확인합니다}
+- {key: m3_scan, form: 3d, group: 3D, name: 실측 스캔 형상, shows: 스캔 메시·점군으로 얻은 실제 형상을 보입니다, controls: [단면, 거리 측정, 기준 형상 비교], engine: scan, quantity: 형상, uses: [점검할 때, 감시할 때], sketch: scan, needs: 스캔 메시 또는 점군 파일, 기준 형상, note: 실측 자료이며 계산 결과가 아닙니다, ready: 실제 부품의 형상을 기준 형상과 겹쳐 차이를 잽니다}
+- {key: m3_cell, form: 3d, group: 3D, name: 설비 배치와 작업 영역, shows: 설비·로봇·작업물의 공간 배치를 입체로 보입니다, controls: [위치·자세, 도달 범위 확인], engine: motion, quantity: 형상, uses: [설계할 때, 조건 잡을 때], sketch: workcell, needs: 설비·로봇 형상, 배치 좌표, ready: 로봇이 닿는 범위와 작업물 위치를 입체로 확인합니다}
+# ---- 4D · 과정 재생
+- {key: p4_load, form: 4d, group: 4D, name: 하중이 커지는 과정, shows: 하중이 늘 때 응력과 변형이 변하는 과정을 재생합니다, controls: [하중 단계], engine: transient, quantity: 응력 · 압력, uses: [설계할 때, 조건 잡을 때], sketch: film_load, needs: 대상 형상, 하중 단계, note: 재생 기준은 조건 단계입니다, ready: 하중 단계를 따라 응력이 커지는 모습을 단계별로 재생합니다}
+- {key: p4_assembly, form: 4d, group: 4D, name: 체결·조립 과정, shows: 체결 순서와 토크 변화에 따른 상태 변화를 재생합니다, controls: [작업·토크 단계], quantity: 힘 · 체결력, uses: [설계할 때, 점검할 때], covered_by: [fastening_process], note: 볼트 조임만 됩니다. 재생 기준은 조건 단계입니다}
+- {key: p4_heat, form: 4d, group: 4D, name: 가열·냉각 과정, shows: 부품 내부와 표면의 온도 변화를 재생합니다, controls: [해석 시간], engine: thermal, quantity: 온도, uses: [설계할 때, 조건 잡을 때], sketch: film_heat, needs: 대상 형상, 열 경계조건, 시간 범위, note: 재생 기준은 해석 시간입니다, ready: 시간이 지나며 열이 퍼지고 식는 모습을 재생합니다}
+- {key: p4_fill, form: 4d, group: 4D, name: 충전·배출 과정, shows: 유체 충전과 배출, 압력·유속 변화를 재생합니다, controls: [해석 시간], engine: flow, quantity: 압력 · 유량, uses: [설계할 때, 조건 잡을 때], sketch: film_fill, needs: 유로 형상, 유량·압력 조건, 시간 범위, note: 재생 기준은 해석 시간입니다, ready: 유체가 채워지고 빠지는 동안 압력과 속도가 변하는 모습을 재생합니다}
+- {key: p4_mode, form: 4d, group: 4D, name: 진동 모드 재생, shows: 특정 고유모드의 진동 형상을 재생합니다, controls: [모드, 위상], engine: modal, quantity: 전류 · 진동, uses: [설계할 때, 점검할 때], sketch: film_mode, needs: 대상 형상, 재료 물성, 경계조건, note: 모드 형상의 재생이며, 실제 진폭을 예측한 시간 응답이 아닙니다, ready: 고유모드마다 부품이 어떻게 흔들리는지 재생합니다}
+- {key: p4_robot, form: 4d, group: 4D, name: 로봇·기구 동작, shows: 로봇 궤적과 기구 동작, 작업물 이송을 재생합니다, controls: [시간·경로 진행률], engine: motion, quantity: 시간 · 사이클, uses: [설계할 때, 조건 잡을 때], sketch: film_robot, needs: 로봇·기구 형상, 경로, note: 재생 기준은 경로 진행률입니다, ready: 로봇이 경로를 따라 움직이는 모습을 단계별로 재생합니다}
+- {key: p4_machining, form: 4d, group: 4D, name: 가공·성형 과정, shows: 공구 이동과 소재 제거 또는 성형 변화를 재생합니다, controls: [공정 단계, 해석 시간], engine: process, quantity: 힘 · 체결력, uses: [조건 잡을 때, 설계할 때], sketch: film_machining, needs: 공구 경로, 소재 형상, 가공 조건, note: 재생 기준은 공정 단계입니다, ready: 공구가 지나가며 소재가 깎이는 과정을 단계별로 재생합니다}
+- {key: p4_record, form: 4d, group: 4D, name: 현장 기록 다시 보기, shows: 과거 신호와 설비 상태를 시간에 맞춰 재현합니다, controls: [기록 시각], engine: layout, quantity: 계측, uses: [감시할 때, 점검할 때], sketch: film_record, needs: 과거 신호 기록, 설비 상태 기록, note: 재생 기준은 현장 기록 시각입니다, ready: 이상이 있던 때의 신호와 설비 상태를 시간 순서대로 다시 봅니다}
+# ---- 영상
+- {key: v_result, form: video, group: 영상, name: 해석 결과 영상, shows: 응력·온도·유동 변화를 렌더링한 영상을 보입니다, controls: [물리량, 카메라, 구간], quantity: 힘 · 체결력, uses: [보고할 때], covered_by: [fastening_video], note: 볼트 조임 장면을 영상 파일로 만드는 것만 됩니다 (체결 화면)}
+- {key: v_process, form: video, group: 영상, name: 공정 단계 설명 영상, shows: 작업 순서와 물리 변화를 단계별로 설명합니다, controls: [단계, 자막, 속도], engine: video, quantity: 시간 · 사이클, uses: [보고할 때, 점검할 때], sketch: vid_process, needs: 공정 단계, 해석 결과, ready: 작업 순서마다 자막과 함께 설명하는 영상을 만듭니다, note: 설명용으로 만든 영상입니다. 현장 촬영이 아닙니다}
+- {key: v_compare, form: video, group: 영상, name: 조건 비교 영상, shows: 서로 다른 조건의 결과를 좌우로 비교합니다, controls: [비교 조건, 동기 재생], engine: video, quantity: 힘 · 체결력, uses: [조건 잡을 때, 보고할 때], sketch: vid_compare, needs: 두 조건의 해석 결과, ready: 두 조건을 같은 시간에 나란히 재생해 비교합니다, note: 계산 결과로 만든 영상입니다}
+- {key: v_sync, form: video, group: 영상, name: 현장 영상과 신호 함께 보기, shows: 설비 촬영 영상과 전류·진동 그래프를 함께 보입니다, controls: [신호, 시간 정렬], engine: video, quantity: 계측, uses: [감시할 때, 점검할 때], sketch: vid_sync, needs: 설비 촬영 영상, 같은 시간대 신호, note: 현장 촬영 영상과 실측 신호를 쓰는 유형입니다, ready: 영상의 장면과 같은 시각의 신호를 나란히 봅니다}
+- {key: v_event, form: video, group: 영상, name: 이상 발생 전후 장면, shows: 이상이 생긴 때 전후의 현장 장면을 잘라 보입니다, controls: [이벤트, 전후 구간], engine: video, quantity: 점검, uses: [점검할 때, 보고할 때], sketch: vid_event, needs: 설비 촬영 영상, 이상 발생 시각, note: 현장 촬영 영상을 쓰는 유형입니다, ready: 이상이 감지된 시각 앞뒤의 장면만 모아 봅니다}
+- {key: v_explain3d, form: video, group: 영상, name: 3D 구조 설명 영상, shows: 회전·단면·분해 장면으로 내부 구조를 설명합니다, controls: [시점, 단면, 분해 순서], engine: video, quantity: 형상, uses: [보고할 때, 점검할 때], sketch: vid_3d, needs: 조립체 형상, 설명 순서, note: 설명용으로 만든 영상입니다, ready: 돌리고 자르고 분해하며 구조를 설명하는 영상을 만듭니다}
+- {key: v_inspect, form: video, group: 영상, name: 점검 절차 안내 영상, shows: 점검 위치와 순서를 현장 영상이나 3D로 안내합니다, controls: [점검 항목, 강조 위치], engine: video, quantity: 점검, uses: [점검할 때], sketch: vid_inspect, needs: 점검 항목과 순서, 설비 영상 또는 3D, ready: 어디를 어떤 순서로 점검할지 화면 위에 표시하며 안내합니다}
+- {key: v_summary, form: video, group: 영상, name: 결과 요약 영상, shows: 입력 조건·핵심 결과·비교 장면을 보고용으로 묶습니다, controls: [포함 항목, 길이, 해상도], engine: video, quantity: 점검, uses: [보고할 때], sketch: vid_summary, needs: 입력 조건, 핵심 결과, note: 보고용으로 만든 영상입니다, ready: 조건과 결과를 한 편의 짧은 영상으로 묶어 공유합니다}
+# ---- 계산값
+- {key: calc_preload, form: number, group: 계산값, name: 체결력, shows: 조임 토크와 마찰에서 체결력을 계산합니다, controls: [입력 조건, 단위], quantity: 힘 · 체결력, uses: [설계할 때, 조건 잡을 때], covered_by: [fastening_estimate, fastening_torque], note: 볼트 조임만 됩니다}
+- {key: calc_torque, form: number, group: 계산값, name: 조임 토크, shows: 원하는 체결력에서 필요한 토크를 구합니다, controls: [입력 조건, 단위], quantity: 힘 · 체결력, uses: [조건 잡을 때], covered_by: [fastening_torque], note: 볼트 조임만 됩니다}
+- {key: calc_cutforce, form: number, group: 계산값, name: 절삭력, shows: 절삭 조건과 재료에서 절삭력을 계산합니다, controls: [입력 조건, 단위], quantity: 힘 · 체결력, uses: [조건 잡을 때, 설계할 때], covered_by: [cutting_force], note: 선삭만 됩니다}
+- {key: calc_power, form: number, group: 계산값, name: 소요 동력, shows: 절삭에 드는 동력을 계산합니다, controls: [입력 조건, 단위], quantity: 힘 · 체결력, uses: [조건 잡을 때], covered_by: [cutting_force], note: 선삭만 됩니다}
+- {key: calc_heat, form: number, group: 계산값, name: 열량, shows: 온도 차와 유량에서 주고받는 열량을 계산합니다, controls: [입력 조건, 단위], engine: calc, quantity: 온도, uses: [설계할 때, 조건 잡을 때], sketch: calc, args: [온도 차, 유량, 열량], needs: 온도 차, 유량, 유체 물성, ready: 입력을 바꾸면 열량이 바로 다시 계산됩니다}
+- {key: calc_pressloss, form: number, group: 계산값, name: 압력손실, shows: 배관 형상과 유량에서 압력손실을 계산합니다, controls: [입력 조건, 단위], engine: calc, quantity: 압력 · 유량, uses: [설계할 때, 조건 잡을 때], sketch: calc, args: [배관 지름, 유량, 압력손실], needs: 배관 지름·길이, 유량, 유체 물성, ready: 배관 조건을 바꾸면 압력손실이 바로 다시 계산됩니다}
+# ---- 판단 · 점검
+- {key: j_anomaly, form: judge, group: 판단 · 점검, name: 이상 징후, shows: 평소와 다른 변화를 관찰 사실로 정리합니다, controls: [대상 계통, 기간], quantity: 점검, uses: [감시할 때], covered_by: [trend, guidance], note: 가상 설비만 됩니다}
+- {key: j_cause, form: judge, group: 판단 · 점검, name: 원인 후보, shows: 관찰된 변화에 맞는 원인 후보를 지식표에서 보입니다, controls: [대상 계통], quantity: 점검, uses: [점검할 때], covered_by: [guidance], note: 후보이며 확정이 아닙니다. 가상 설비만 됩니다}
+- {key: j_order, form: judge, group: 판단 · 점검, name: 점검 순서, shows: 원인 후보마다 무엇을 어떤 순서로 점검할지 보입니다, controls: [대상 계통], quantity: 점검, uses: [점검할 때], covered_by: [guidance], note: 가상 설비만 됩니다}
+- {key: j_measure, form: judge, group: 판단 · 점검, name: 추가 계측 안내, shows: 더 알려면 무엇을 어디서 재야 하는지 안내합니다, controls: [대상, 계측 단계], quantity: 계측, uses: [점검할 때, 조건 잡을 때], covered_by: [fastening_sensing], note: 볼트 조임만 됩니다}
+- {key: j_hold, form: judge, group: 판단 · 점검, name: 적용을 미루는 이유, shows: 지금 결과를 쓰기 어려운 이유와 필요한 입력을 보입니다, controls: [대상, 근거 보기], engine: knowledge, quantity: 점검, uses: [점검할 때, 보고할 때], sketch: judge, args: [입력이 부족합니다, 검증 전의 값입니다, 대상이 범위를 벗어납니다], needs: 판단 근거와 입력 목록, ready: 결과를 바로 쓰지 말아야 하는 이유와 채워야 할 입력을 근거와 함께 보입니다}
