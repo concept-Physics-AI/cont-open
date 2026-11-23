@@ -1,0 +1,32 @@
+# 체결 팩의 표준 데이터 (C2 물리 지식). 단위: mm, MPa.
+# 값을 고치거나 규격을 추가할 때는 이 파일만 바꾼다. 코드에는 숫자를 두지 않는다.
+# 출처: 보통나사 피치 ISO 261, 통과 구멍(중간급) ISO 273, 육각 머리 좌면 지름 d_w(최소)·맞변 거리 s ISO 4014/4017,
+#       강도 등급 Rp0.2(최소) ISO 898-1. 머리 높이 k(호칭) ISO 4014, 너트 높이 m(최대) ISO 4032 (형상에만 쓰고 계산에는 쓰지 않는다).
+#       슬라이스 2(기준값 세트)에서 원문과 다시 대조한다.
+threads:
+  M6:  {d: 6.0,  pitch_coarse: 1.0,  hole_medium: 6.6,  head_bearing_dw: 8.88,  across_flats: 10.0, head_height: 4.0, nut_height: 5.2}
+  M8:  {d: 8.0,  pitch_coarse: 1.25, hole_medium: 9.0,  head_bearing_dw: 11.63, across_flats: 13.0, head_height: 5.3, nut_height: 6.8}
+  M10: {d: 10.0, pitch_coarse: 1.5,  hole_medium: 11.0, head_bearing_dw: 14.63, across_flats: 16.0, head_height: 6.4, nut_height: 8.4}
+  M12: {d: 12.0, pitch_coarse: 1.75, hole_medium: 13.5, head_bearing_dw: 16.63, across_flats: 18.0, head_height: 7.5, nut_height: 10.8}
+  M16: {d: 16.0, pitch_coarse: 2.0,  hole_medium: 17.5, head_bearing_dw: 22.49, across_flats: 24.0, head_height: 10.0, nut_height: 14.8}
+  M20: {d: 20.0, pitch_coarse: 2.5,  hole_medium: 22.0, head_bearing_dw: 28.19, across_flats: 30.0, head_height: 12.5, nut_height: 18.0}
+  M24: {d: 24.0, pitch_coarse: 3.0,  hole_medium: 26.0, head_bearing_dw: 33.61, across_flats: 36.0, head_height: 15.0, nut_height: 21.5}
+
+# rp02: [d 이하 한계(mm), Rp0.2 최소] 목록. 위에서부터 처음 맞는 줄을 쓴다.
+property_classes:
+  "8.8":  {rp02: [[16.0, 640.0], [.inf, 660.0]]}
+  "10.9": {rp02: [[.inf, 940.0]]}
+  "12.9": {rp02: [[.inf, 1100.0]]}
+
+# VDI 2230 계산에 쓰는 계수. 표준에서 정한 값이며 환경 설정이 아니다.
+vdi2230:
+  youngs_modulus_bolt: 205000.0      # 강 볼트 E_S
+  head_length_factor_hex: 0.5        # 육각 머리 대체 길이 l_SK = 0.5 d
+  engaged_thread_length_factor: 0.5  # 물린 나사산 l_G = 0.5 d
+  nut_length_factor_through: 0.4     # 너트 대체 길이 l_M = 0.4 d (관통 체결 DSV)
+  torsion_residual_factor: 0.5       # 운전 중 남는 비틀림 비율 k_tau
+  fatigue_cycles_reference: 2000000  # 피로 한도 기준 반복 수 N_D
+
+# 형상(C5)을 만들 때 쓰는 값. 계산에는 쓰지 않는다.
+shape:
+  thread_protrusion_pitches: 2.0     # 너트 밖으로 나오는 나사 길이 (피치의 배수). 볼트 길이 = 체결 길이 + 너트 높이 + 이 값

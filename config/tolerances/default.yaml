@@ -1,0 +1,16 @@
+# Default profile: no limits decided yet -> report deviations only, no pass/fail.
+# Add a profile in profiles/ when an environment needs judgement.
+name: default
+quantities:
+  dimension:            {mode: absolute,    unit: mm, limit: null}
+  torque_to_preload:    {mode: relative,    limit: null}
+  friction_scatter:     {mode: range_match, limit: null}
+  bolt_equivalent_stress: {mode: relative,  limit: null}
+  stiffness_vs_formula: {mode: relative,    limit: null}
+  stiffness_vs_fem:     {mode: relative,    limit: null}
+  load_factor:          {mode: relative,    limit: null}
+  slip_and_opening:     {mode: relative,    limit: null}
+  surface_pressure:     {mode: relative,    limit: null}
+  fatigue:              {mode: relative,    limit: null}
+  thread_shear:         {mode: relative,    limit: null}
+  recommendation_rank:  {mode: rank,        limit: null}

@@ -1,0 +1,24 @@
+# 특화 진단: 연속 압출. 규칙은 일반적인 공정 지식으로 쓴 출발점이며 현장에서 고친다.
+special: extrusion
+title: 연속 압출
+rules:
+  - key: discharge_drop
+    label: 토출량 감소
+    when: {module: pressure_flow, change: flow_decrease}
+    meaning: 같은 조건에서 토출 유량이 줄었다. 원료 공급 불안정이나 스크루·다이 쪽 막힘에서 나타날 수 있다
+    checks: [호퍼의 원료 공급 상태 확인, 스크린·다이 막힘 확인, 스크루 속도 지령과 실제 속도 확인]
+  - key: die_restriction
+    label: 다이·스크린 막힘 의심
+    when: {module: pressure_flow, change: pressure_rise, onset: gradual}
+    meaning: 같은 조건에서 압력이 서서히 올랐다. 스크린이나 다이에 이물이 쌓일 때 나타나는 모습이다
+    checks: [스크린 교체 주기와 오염 상태 확인, 다이 입구의 탄화물·이물 확인]
+  - key: pressure_surge
+    label: 토출 압력 급변
+    when: {module: pressure_flow, change: pressure_rise, onset: abrupt}
+    meaning: 같은 조건에서 압력이 갑자기 올랐다
+    checks: [다이·스크린의 급한 막힘 확인, 온도 구역의 급한 변화 확인]
+  - key: melt_temperature_drift
+    label: 용융 온도 이탈
+    when: {module: thermal, change: tracking_under}
+    meaning: 가열 구역 온도가 설정보다 낮게 벗어났다. 용융 상태가 달라져 치수에 영향을 줄 수 있다
+    checks: [해당 구역 히터 통전 상태 확인, 온도 센서 고정 상태 확인, 토출량 변화와 함께 나타났는지 확인]

@@ -1,0 +1,23 @@
+# 공통 진단 모듈: 압력·유동계 (유압, 공압, 펌프, 밸브, 토출·공급 라인). 설비 이름과 무관하게 재사용한다.
+module: pressure_flow
+title: 압력·유동계
+keywords: [압력, 유량, 유압, 공압, 펌프, 밸브, 차압, 토출]   # 질문에서 이 계통을 가리키는 말 (대화용)
+roles:
+  pressure:      {label: 압력, unit: bar}
+  flow:          {label: 유량, unit: L/min}
+  pressure_drop: {label: 차압, unit: bar}
+  pulsation:     {label: 압력 맥동, unit: bar}
+  response_time: {label: 밸브 응답 시간, unit: ms}
+conditions:
+  setpoint: {label: 설정 압력·유량}
+  speed:    {label: 펌프 속도}
+  valve:    {label: 밸브 개도}
+change_types:
+  - {role: pressure,      direction: down, key: pressure_drop,        label: "압력 저하 (같은 조건에서 압력 하락)"}
+  - {role: pressure,      direction: up,   key: pressure_rise,        label: "압력 상승 (같은 조건에서 압력 상승)"}
+  - {role: flow,          direction: down, key: flow_decrease,        label: "유량 감소 (같은 조건에서 유량 하락)"}
+  - {role: flow,          direction: up,   key: flow_increase,        label: "유량 증가 (같은 조건에서 유량 상승)"}
+  - {role: pressure_drop, direction: up,   key: restriction_increase, label: "유로 저항 증가 (같은 조건에서 차압 상승)"}
+  - {role: pressure_drop, direction: down, key: restriction_decrease, label: "유로 저항 감소 (같은 조건에서 차압 하락)"}
+  - {role: pulsation,     direction: up,   key: pulsation_increase,   label: "압력 맥동 증가"}
+  - {role: response_time, direction: up,   key: valve_response_lag,   label: "밸브 응답 지연"}

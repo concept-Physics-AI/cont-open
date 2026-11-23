@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cont"
+version = "0.0.1"
+description = "ConT - physics-based generative AI agent (Do)"
+requires-python = ">=3.11"
+dependencies = ["pyyaml>=6", "numpy>=1.26"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+cad = ["cadquery-ocp>=7.8"]   # STEP 내보내기 (OpenCascade). 화면용 3D와 STL에는 필요 없다
+openai = ["openai>=1.40"]
+anthropic = ["anthropic>=0.40"]
+gemini = ["google-genai>=1.0"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"cont.packs.fastening" = ["tables/*.yaml"]
+"cont.packs.machining" = ["tables/*.yaml"]
+"cont.packs.diagnosis" = ["tables/*.yaml", "tables/special/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

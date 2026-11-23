@@ -1,0 +1,14 @@
+# 체결 팩 설정. 표준 데이터(숫자)는 여기가 아니라 packs/fastening/tables/에 있다.
+recommend:
+  show: 3                # 추천을 몇 개까지 보일지
+  torque_step: 0.5       # 추천 토크를 이 단위(N·m)로 맞춘다
+  torque_samples: 240    # 목표를 만족하는 토크 범위를 찾을 때 훑는 점의 수
+field:                   # 판 안의 응력 분포 (축대칭 수치해석)
+  poisson_ratio: 0.3     # 판 재료의 푸아송비. 강을 가정한 값이며 판마다 따로 주는 자리는 아직 없다
+  radial_cells_under_head: 8    # 좌면 아래(구멍 가장자리 ~ 좌면 바깥)를 반지름 방향으로 나누는 수
+  radial_cells_outside: 14      # 좌면 바깥 ~ 체결부 바깥지름
+  axial_cells: 32               # 두 판을 합쳐 두께 방향으로 나누는 수 (판 두께에 비례해 나눈다)
+estimate:                # 볼트 늘어남 측정에서 체결력을 추정할 때
+  bolt_resilience_relative_uncertainty: 0.05   # 볼트 컴플라이언스(계산값)가 실제와 다를 수 있는 정도. 표준에서 온 값이 아니라 잠정으로 둔 가정이다
+  coverage_factor: 2.0                         # 범위를 낼 때 표준 불확도에 곱하는 수 (2 = 약 95%)
+  weak_identifiability_relative_uncertainty: 0.25   # 추정값의 상대 표준 불확도가 이보다 크면 식별가능성을 "약함"으로 적는다. 표준에서 온 값이 아니라 잠정으로 둔 경계다

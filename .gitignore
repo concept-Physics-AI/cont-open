@@ -1,0 +1,30 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+build/
+dist/
+*.egg-info/
+.env
+.env.*
+!.env.example
+config/tolerances/profiles/*.local.yaml
+config/llm/providers.local.yaml
+# data and models live on Z:, never in git
+data/
+models/
+runs/
+*.pt
+*.pth
+*.safetensors
+*.ckpt
+*.npz
+*.npy
+*.h5
+*.parquet
+# site settings and site data stay out of git
+config/diagnosis/sites/
+config/diagnosis/profiles/*.local.yaml

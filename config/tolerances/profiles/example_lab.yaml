@@ -1,0 +1,8 @@
+# EXAMPLE ONLY - shows the format. Values are placeholders, not decided limits.
+# Copy to profiles/<your_env>.yaml (or .local.yaml to keep it out of git) and edit.
+name: example_lab
+extends: default
+quantities:
+  dimension:           {limit: 0.01}
+  torque_to_preload:   {limit: 0.02}
+  recommendation_rank: {limit: 3}

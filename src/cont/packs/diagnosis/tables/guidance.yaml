@@ -1,0 +1,104 @@
+# 원인 후보와 점검 항목: 공통 진단의 상태 변화마다, 흔한 원인 후보와 먼저 확인할 것을 적는다.
+# 일반적인 설비 지식으로 쓴 출발점이다. 확률 순서가 아니라 "확인하기 쉬운 것부터"의 순서이며, 현장의 정비 이력으로 고쳐 나간다.
+# 형식: <모듈>: <상태 변화 키>: [{cause: 원인 후보, check: 확인할 것}, ...]
+drive:
+  load_increase:
+    - {cause: 실제 부하가 늘었다 (소재·품목·적재 변화), check: 같은 시각의 작업 조건과 품목이 평소와 같은지 확인}
+    - {cause: 기계적 저항이 커졌다 (윤활 부족·이물·정렬 불량), check: 윤활 상태와 구동부 이물·걸림 여부 확인}
+    - {cause: 베어링·감속기 마모, check: 소음·발열·진동이 함께 커졌는지 확인}
+  load_decrease:
+    - {cause: 실제 부하가 줄었다 (소재 누락·공회전), check: 소재 공급과 작업이 실제로 이루어졌는지 확인}
+    - {cause: 동력 전달이 끊기거나 미끄러진다 (벨트·커플링), check: 벨트 장력과 커플링 체결 상태 확인}
+    - {cause: 전류 센서 이상, check: 센서 배선과 다른 계측값(토크·속도)과의 일치 여부 확인}
+  torque_increase:
+    - {cause: 기계적 저항 증가, check: 윤활 상태와 걸림 여부 확인}
+    - {cause: 부하 조건 변화, check: 작업 조건과 품목 확인}
+  torque_decrease:
+    - {cause: 부하 감소 또는 동력 전달 미끄러짐, check: 소재 공급과 벨트·커플링 상태 확인}
+  vibration_increase:
+    - {cause: 체결 풀림, check: 구동부와 받침의 볼트 체결 상태 확인}
+    - {cause: 불평형·정렬 불량, check: 회전체에 이물 부착이나 축 정렬 변화가 있는지 확인}
+    - {cause: 베어링 손상, check: 소음과 베어링부 온도 확인. 주파수 분석이 가능하면 결함 주파수 확인}
+  response_lag:
+    - {cause: 부하 과대 또는 기계적 걸림, check: 전류·토크가 함께 커졌는지 확인}
+    - {cause: 제어 설정 변경, check: 최근 제어 이득·속도 설정 변경 이력 확인}
+  overheating:
+    - {cause: 냉각 불량 (팬·통풍구 막힘), check: 냉각 팬 동작과 통풍구 먼지 확인}
+    - {cause: 과부하 운전, check: 전류가 함께 커졌는지 확인}
+    - {cause: 윤활 부족, check: 윤활유 양과 상태 확인}
+pressure_flow:
+  pressure_drop:
+    - {cause: 누설, check: 배관 이음부·실린더·밸브의 누유·누기 확인}
+    - {cause: 펌프 성능 저하, check: 같은 속도에서 유량도 함께 줄었는지 확인}
+    - {cause: 릴리프 밸브 설정·고착, check: 릴리프 밸브 설정값과 동작 확인}
+  pressure_rise:
+    - {cause: 하류 막힘 (필터·노즐·다이), check: 필터 차압과 하류 유로 막힘 확인}
+    - {cause: 밸브가 덜 열린다, check: 밸브 개도 지령과 실제 동작 확인}
+  flow_decrease:
+    - {cause: 유로 막힘 (필터·스트레이너), check: 필터 차압과 교체 주기 확인}
+    - {cause: 펌프 흡입 불량 또는 마모, check: 흡입측 유량·기포와 펌프 소음 확인}
+    - {cause: 누설, check: 배관과 이음부 누설 확인}
+  flow_increase:
+    - {cause: 밸브가 더 열리거나 우회 유로가 생겼다, check: 밸브 개도와 바이패스 상태 확인}
+    - {cause: 유량 센서 이상, check: 다른 계측값과의 일치 여부 확인}
+  restriction_increase:
+    - {cause: 필터 막힘, check: 필터 오염 상태와 교체 주기 확인}
+    - {cause: 유체 점도 변화 (온도 저하·오염), check: 유체 온도와 오염 상태 확인}
+  restriction_decrease:
+    - {cause: 필터 파손·우회, check: 필터 엘리먼트 파손과 바이패스 밸브 상태 확인}
+  pulsation_increase:
+    - {cause: 축압기 가스 압력 저하, check: 축압기 충전 압력 확인}
+    - {cause: 펌프 내부 마모·기포 혼입, check: 펌프 소음과 작동유 기포 확인}
+  valve_response_lag:
+    - {cause: 밸브 고착·오염, check: 밸브 스풀 오염과 파일럿 압력 확인}
+    - {cause: 구동 신호 이상, check: 솔레노이드 전류와 배선 확인}
+thermal:
+  overheating:
+    - {cause: 냉각 능력 저하, check: 냉각수 유량·온도와 냉각 유로 막힘 확인}
+    - {cause: 히터 제어 이상 (접점 고착), check: 히터 출력 지령과 실제 통전 상태 확인}
+  underheating:
+    - {cause: 히터 단선·열화, check: 히터 저항과 통전 전류 확인}
+    - {cause: 열 손실 증가 (단열 손상·문 열림), check: 단열 상태와 개구부 확인}
+  tracking_over:
+    - {cause: 냉각 부족 또는 히터 접점 고착, check: 냉각수 유량과 히터 통전 상태 확인}
+    - {cause: 온도 센서 위치·접촉 불량, check: 센서 고정 상태와 다른 센서와의 차이 확인}
+  tracking_under:
+    - {cause: 히터 능력 부족 (일부 단선), check: 히터별 전류 확인}
+    - {cause: 처리량·주변 조건 변화, check: 처리량과 주변 온도가 평소와 같은지 확인}
+    - {cause: 온도 센서 이상, check: 센서 고정 상태와 배선 확인}
+  heating_effort_increase:
+    - {cause: 히터 열화로 같은 온도에 더 많은 출력이 든다, check: 히터 저항 변화와 사용 시간 확인}
+    - {cause: 열 손실 증가, check: 단열 상태와 냉각수 과다 여부 확인}
+  heating_effort_decrease:
+    - {cause: 냉각 부족으로 열이 덜 빠진다, check: 냉각수 유량과 유로 막힘 확인}
+    - {cause: 온도 센서가 실제보다 높게 읽는다, check: 센서 교정 상태 확인}
+  cooling_load_increase:
+    - {cause: 냉각수 유량 감소, check: 냉각수 유량계와 밸브 개도 확인}
+    - {cause: 발열 증가, check: 처리량과 가열 출력 확인}
+  cooling_load_decrease:
+    - {cause: 열교환 불량 (스케일·오염), check: 냉각 유로 스케일과 입출구 온도 확인}
+    - {cause: 냉각수 유량 과다, check: 유량 설정 확인}
+cycle:
+  cycle_slowdown:
+    - {cause: 특정 구간 동작이 늦어졌다, check: 구간별 동작 시간에서 늘어난 구간 확인}
+    - {cause: 구동·유압 계통의 힘 부족, check: 구동계와 압력·유동계 진단 결과를 함께 확인}
+    - {cause: 대기·이송 지연, check: 이송 장치와 센서 대기 시간 확인}
+  cycle_shortening:
+    - {cause: 일부 동작이 생략되거나 조건이 바뀌었다, check: 작업 프로그램과 설정 변경 이력 확인}
+  step_delay:
+    - {cause: 해당 구간의 구동·밸브 응답 저하, check: 그 구간을 움직이는 실린더·밸브·모터 상태 확인}
+    - {cause: 위치 감지 센서 지연, check: 센서 위치와 감지 상태 확인}
+  step_shortening:
+    - {cause: 설정 변경 또는 동작 미완료, check: 설정 변경 이력과 동작 끝 위치 확인}
+  peak_load_increase:
+    - {cause: 소재·품목 변화, check: 소재 두께·경도와 품목 확인}
+    - {cause: 금형·공구의 이물·마모, check: 금형과 공구 상태 확인}
+    - {cause: 윤활 부족, check: 윤활 공급 상태 확인}
+  peak_load_decrease:
+    - {cause: 소재 누락·이송 불량, check: 소재 공급과 이송 상태 확인}
+    - {cause: 하중 센서 이상, check: 센서 영점과 배선 확인}
+  energy_increase:
+    - {cause: 기계적 저항 또는 누설 증가, check: 구동계와 압력·유동계 진단 결과를 함께 확인}
+  repeatability_decline:
+    - {cause: 기계적 유격 (체결 풀림·마모), check: 안내면·볼스크루·체결부 유격 확인}
+    - {cause: 위치 센서·원점 이상, check: 원점 복귀와 위치 센서 상태 확인}

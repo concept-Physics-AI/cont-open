@@ -1,0 +1,22 @@
+# 공통 진단 모듈: 열관리계 (히터, 냉각, 온도 제어 구역). 설비 이름과 무관하게 재사용한다.
+module: thermal
+title: 열관리계
+keywords: [온도, 히터, 냉각, 가열, 열관리]   # 질문에서 이 계통을 가리키는 말 (대화용)
+roles:
+  temperature:    {label: 온도, unit: "°C"}
+  tracking_error: {label: 설정 대비 온도 차이, unit: "°C"}
+  heater_output:  {label: 히터 출력, unit: "%"}
+  coolant_delta:  {label: 냉각수 입출구 온도차, unit: "°C"}
+conditions:
+  setpoint: {label: 설정 온도}
+  ambient:  {label: 주변 온도}
+  load:     {label: 처리량}
+change_types:
+  - {role: temperature,    direction: up,   key: overheating,            label: "과열 (같은 조건에서 온도 상승)"}
+  - {role: temperature,    direction: down, key: underheating,           label: "온도 부족 (같은 조건에서 온도 하락)"}
+  - {role: tracking_error, direction: up,   key: tracking_over,          label: "온도 추종 불량 (설정보다 높게 벗어남)"}
+  - {role: tracking_error, direction: down, key: tracking_under,         label: "온도 추종 불량 (설정보다 낮게 벗어남)"}
+  - {role: heater_output,  direction: up,   key: heating_effort_increase, label: "가열 부담 증가 (같은 조건에서 히터 출력 상승)"}
+  - {role: heater_output,  direction: down, key: heating_effort_decrease, label: "가열 부담 감소 (같은 조건에서 히터 출력 하락)"}
+  - {role: coolant_delta,  direction: up,   key: cooling_load_increase,  label: "냉각 부담 증가 (냉각수 온도차 확대)"}
+  - {role: coolant_delta,  direction: down, key: cooling_load_decrease,  label: "냉각 열교환 감소 (냉각수 온도차 축소)"}

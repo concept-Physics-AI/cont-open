@@ -1,0 +1,24 @@
+# 공통 진단 모듈: 구동계 (모터, 서보, 스핀들, 감속기). 설비 이름과 무관하게 재사용한다.
+# roles: 이 계통에서 보는 신호의 역할. 현장 신호(태그)는 현장 설정에서 이 역할에 연결한다.
+# conditions: 정상 기준을 나누는 운전조건 역할.
+# change_types: (신호 역할, 방향) → 일반적인 상태 변화 이름. 공정별 해석(특화 진단)은 여기에 넣지 않는다.
+module: drive
+title: 구동계
+keywords: [구동, 모터, 서보, 스핀들, 감속기, 주축]   # 질문에서 이 계통을 가리키는 말 (대화용)
+roles:
+  current:        {label: 전류, unit: A}
+  torque:         {label: 토크, unit: N·m}
+  vibration:      {label: 진동, unit: mm/s}
+  tracking_error: {label: 지령 대비 응답 차이, unit: ""}
+  temperature:    {label: 구동부 온도, unit: "°C"}
+conditions:
+  load:  {label: 부하}
+  speed: {label: 속도}
+change_types:
+  - {role: current,        direction: up,   key: load_increase,     label: "부하 증가 (같은 조건에서 전류 상승)"}
+  - {role: current,        direction: down, key: load_decrease,     label: "부하 감소 (같은 조건에서 전류 하락)"}
+  - {role: torque,         direction: up,   key: torque_increase,   label: "토크 증가 (같은 조건에서 토크 상승)"}
+  - {role: torque,         direction: down, key: torque_decrease,   label: "토크 감소 (같은 조건에서 토크 하락)"}
+  - {role: vibration,      direction: up,   key: vibration_increase, label: "진동 증가 (같은 조건에서 진동 상승)"}
+  - {role: tracking_error, direction: up,   key: response_lag,      label: "응답 지연 (지령 대비 응답 차이 확대)"}
+  - {role: temperature,    direction: up,   key: overheating,       label: "발열 증가 (같은 조건에서 온도 상승)"}

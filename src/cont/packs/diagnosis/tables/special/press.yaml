@@ -1,0 +1,24 @@
+# 특화 진단: 프레스 성형. 규칙은 일반적인 공정 지식으로 쓴 출발점이며 현장에서 고친다.
+special: press
+title: 프레스 성형
+rules:
+  - key: forming_overload
+    label: 가공 부하 과대
+    when: {module: cycle, change: peak_load_increase}
+    meaning: 같은 조건에서 스트로크의 최대 가공 부하가 커졌다. 소재 두께·경도 증가, 금형 이물, 윤활 부족에서 나타날 수 있다
+    checks: [소재 두께·재질(로트) 확인, 금형 안 이물과 스크랩 걸림 확인, 윤활 공급 상태 확인]
+  - key: forming_underload
+    label: 가공 부하 부족
+    when: {module: cycle, change: peak_load_decrease}
+    meaning: 같은 조건에서 스트로크의 최대 가공 부하가 작아졌다. 소재 누락, 두께 부족, 이송 불량에서 나타날 수 있다
+    checks: [소재 공급과 이송 피치 확인, 소재 두께 확인, 하중 센서 영점 확인]
+  - key: slow_stroke
+    label: 스트로크 지연
+    when: {module: cycle, change: cycle_slowdown}
+    meaning: 같은 조건에서 사이클 시간이 길어졌다. 구동부 부담이나 이송 지연에서 나타날 수 있다
+    checks: [구동부(모터·클러치·브레이크) 상태 확인, 이송 장치 대기 시간 확인]
+# 스트로크 위치를 0(시작)~1(끝)로 놓았을 때의 구간 이름. 부하 곡선의 어느 구간이 평소와 다른지 말할 때 쓴다.
+stroke_zones:
+  - {name: 접촉 초기, from: 0.0, to: 0.3}
+  - {name: 성형 구간, from: 0.3, to: 0.8}
+  - {name: 하사점 부근, from: 0.8, to: 1.0}

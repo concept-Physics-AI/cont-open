@@ -1,0 +1,16 @@
+# 진단 설정 기본값. 현장마다 다르므로 코드에 두지 않는다.
+# 고르기: CONT_DIAGNOSIS_PROFILE=<이름>  (profiles/<이름>.local.yaml > profiles/<이름>.yaml > default)
+# 아래 값은 출발점이며 현장 데이터로 검증한 값이 아니다.
+name: default
+baseline:
+  bins_per_condition: 4        # 운전조건 하나를 몇 구간으로 나눌지
+  min_samples_per_bin: 30      # 구간에 정상 표본이 이보다 적으면 전체 기준을 대신 쓴다
+detection:
+  z_limit: 4.0                 # 같은 조건 정상 산포의 몇 배를 넘으면 이탈로 볼지
+  min_run: 5                   # 이탈이 연속 몇 표본 이어져야 이상 구간으로 볼지
+  merge_gap: 3                 # 이상 구간 사이가 이 표본 수 이하면 하나로 합친다
+special:
+  abrupt_jump_ratio: 0.75      # 이상 구간이 시작될 때 이탈이 z_limit의 이 비율 이상 한 번에 뛰면 "갑자기", 아니면 "서서히"
+  min_training_samples: 50     # 예측 모델(두께 등)을 만들 때 필요한 정답 표본 수의 하한
+trend:
+  windows: 12                  # 상태 추이를 볼 때 진단 구간을 몇 토막으로 나눌지

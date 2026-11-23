@@ -1,0 +1,16 @@
+# 절삭가공 재료 데이터: 키엔츨레(Kienzle) 식의 비절삭저항.
+#   specific_cutting_force: k_c1.1 (N/mm^2). 칩 두께 1 mm, 칩 폭 1 mm일 때의 비절삭저항
+#   exponent: m_c. 칩 두께가 얇아질수록 비절삭저항이 커지는 정도
+# 주의: 아래 값은 원문(공구 제조사 자료, 기계 편람)과 대조하지 않았다. 자료마다 값이 다르다.
+#       verified가 false인 재료로 계산한 결과에는 그 사실이 근거에 적힌다. 원문을 받으면 값을 맞추고 true로 바꾼다.
+materials:
+  C45:
+    label: 탄소강 C45 (기계구조용)
+    specific_cutting_force: 2220
+    exponent: 0.14
+    verified: false
+  42CrMo4:
+    label: 합금강 42CrMo4
+    specific_cutting_force: 2500
+    exponent: 0.26
+    verified: false

@@ -1,0 +1,30 @@
+# 특화 진단: 절삭가공. 공통 진단이 찾은 변화가 "이 공정에서 무엇을 뜻하는가"를 적는다.
+# 아래 규칙은 일반적인 공정 지식으로 쓴 출발점이다. 공구 교체·정비 기록과 맞춰 본 뒤 현장에서 고친다.
+special: cutting
+title: 절삭가공
+rules:
+  - key: tool_breakage
+    label: 공구 파손 의심
+    when: {module: drive, change: load_decrease, onset: abrupt}
+    meaning: 절삭 중 주축 부하가 같은 조건의 평소보다 갑자기 떨어졌다. 공구가 부러져 소재를 깎지 못할 때 나타나는 모습이다
+    checks: [공구 날의 파손 여부를 눈으로 확인, 직전 가공품의 가공 상태와 치수 확인, 같은 시각의 절삭 조건(이송·절입) 변경 이력 확인]
+  - key: tool_wear
+    label: 공구 마모 진행 의심
+    when: {module: drive, change: load_increase, onset: gradual}
+    meaning: 같은 절삭 조건에서 주축 부하가 서서히 커졌다. 날이 무뎌져 절삭 저항이 커질 때 나타나는 모습이다
+    checks: [공구 날 끝 마모량 확인, 공구 사용 시간·가공 수량이 교체 기준에 가까운지 확인, 가공면 거칠기 변화 확인]
+  - key: overload
+    label: 절삭 부하 급증
+    when: {module: drive, change: load_increase, onset: abrupt}
+    meaning: 같은 절삭 조건에서 주축 부하가 갑자기 커졌다. 날 끝 손상, 칩 걸림, 소재 변화에서 나타날 수 있다
+    checks: [칩 걸림과 날 끝 손상 확인, 소재 로트·경도 변화 확인]
+  - key: chatter
+    label: 떨림(채터) 의심
+    when: {module: drive, change: vibration_increase, onset: abrupt}
+    meaning: 같은 조건에서 진동이 갑자기 커졌다. 절삭 중 떨림이나 공구 고정 불량에서 나타날 수 있다
+    checks: [공구·홀더 고정 상태와 돌출 길이 확인, 가공면의 떨림 무늬 확인, 회전수·이송 조건 확인]
+  - key: vibration_growth
+    label: 진동 점증
+    when: {module: drive, change: vibration_increase, onset: gradual}
+    meaning: 같은 조건에서 진동이 서서히 커졌다. 공구 마모나 주축 베어링 상태 변화에서 나타날 수 있다
+    checks: [공구 마모 상태 확인, 주축 베어링 소음·발열 확인]

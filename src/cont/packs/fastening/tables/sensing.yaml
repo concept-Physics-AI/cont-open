@@ -1,0 +1,66 @@
+# 체결 현장 계측: 체결력을 알아내는 데 쓸 수 있는 계측 방법과 연결 방법.
+# 제품 이름, 가격, 제품별 정확도는 적지 않는다 (확인하지 않은 값을 싣지 않는다). 방법의 원리와 연결만 적고,
+# 이 조인트에서 나오는 신호의 크기는 코드가 계산한다 (packs/fastening/sensing.py).
+# source는 그 줄의 사실을 확인한 자료다.
+constants:
+  sound_speed_longitudinal: 5900     # 강에서 종파의 속도 (m/s). 교과서 값이며 재료마다 조금 다르다. 실제로는 볼트 재료로 교정한다
+  tof_stress_share: 0.6667           # 조였을 때 늘어난 초음파 왕복 시간 가운데 응력(음속 감소)이 차지하는 몫. 나머지가 늘어난 길이의 몫
+  tof_stress_share_source: "US 4,899,591 (Ultrasonic load indicating member): 응력에 따른 음속 감소가 측정된 비행 시간 증가의 약 3분의 2"
+
+methods:
+  tool_controller:
+    label: 체결 공구 제어기의 토크·각도 기록
+    measures: 조임 토크와 회전각 (체결력은 아님)
+    hardware: [전동 체결 공구 (토크·각도 센서 내장), 공구 제어기]
+    chain: [체결 공구, 공구 제어기, 공장 이더넷, ConT]
+    protocol: "Open Protocol (TCP/IP, 기본 포트 4545). 결과 구독 MID 0060을 보내면 조일 때마다 MID 0061(마지막 체결 결과: 토크, 각도)이 온다"
+    into_cont: 조임 토크가 사람이 넣은 "입력"에서 "관측"으로 바뀐다. 체결력은 여전히 마찰을 가정해 계산한다
+    cautions: [제어기마다 지원하는 메시지 판(revision)이 다르다, 토크만으로는 마찰의 흩어짐을 줄이지 못한다]
+    sources:
+      - "Atlas Copco Open Protocol 문서 (MID 0060/0061/0062), https://picontent.atlascopco.com/cont/external/dir/e9/28497819787__html5_external/en-US/12590675595.html"
+      - "기본 포트 4545: https://maplesystems.com/support-center/controller-connection-guides/atlas-copco-torque-tool-open-protocol-ebpro/"
+  ultrasonic:
+    label: 초음파 볼트 늘어남 측정
+    measures: 조이기 전과 후의 초음파 왕복 시간 차이 → 볼트 늘어남 → 체결력
+    hardware: [초음파 탐촉자 (볼트 끝면에 붙임), 초음파 송수신 계측기, 접촉 매질 또는 볼트에 붙인 압전 소자]
+    chain: [볼트 끝면의 탐촉자, 초음파 송수신 계측기, PC, ConT]
+    protocol: 계측기 제조사의 출력 형식 (파일 또는 통신). 정해진 공통 규격은 확인하지 않았다
+    into_cont: "늘어남 값이 `ElongationMeasurement`로 들어가 체결력과 마찰계수를 추정한다 (이미 있는 기능)"
+    cautions:
+      - 조이기 전의 기준 측정이 반드시 있어야 한다
+      - 조이기 전과 후의 온도가 다르면 오차가 난다
+      - 탐촉자와 볼트 사이의 접촉 상태가 결과를 흔든다
+      - 작은 볼트에서는 정확도가 제한된다
+      - 볼트의 양 끝면이 평평하고 서로 나란해야 한다
+    sources:
+      - "US 5,970,798 (Ultrasonic bolt gage, NASA KSC): 온도 변화와 탐촉자 접촉이 정확도에 영향"
+      - "PMC11642192: 종파 방법은 작은 볼트에서 정확도가 제한됨"
+      - "US 7,360,435 (Ultrasonic control of bolt tightening): 왕복 시간으로 늘어남을 잰다"
+  load_washer:
+    label: 와셔형 로드셀 (하중 와셔)
+    measures: 좌면이 받는 힘 = 체결력 (직접)
+    hardware: [와셔형 로드셀, 브리지 증폭기, 데이터 수집 장치]
+    chain: [머리 아래의 와셔형 로드셀, 브리지 증폭기, 데이터 수집 장치, PC, ConT]
+    protocol: 증폭기의 아날로그 출력을 데이터 수집 장치로 읽는다
+    into_cont: "체결력을 직접 관측한다. 지금 추정 기능은 늘어남만 받으므로 받는 자리를 새로 만들어야 한다 (아직 없음)"
+    cautions:
+      - 와셔 두께만큼 체결 길이가 늘어 조인트의 강성이 달라진다. 양산 조인트와 같은 조건이 아니다
+      - 볼트 크기에 맞는 것이 있어야 한다 (크기 제한)
+      - 양산품에 넣기보다 검증용 시편에 쓴다
+    sources:
+      - "US 9,719,900 (Strain-gauged washer): 두꺼운 계측 칼라는 조인트의 형상을 바꾼다"
+      - "US 11,885,703: 와셔형 로드셀은 크기 제한에 주의"
+  strain_gauge_bolt:
+    label: 변형률 게이지 볼트
+    measures: 볼트 축의 변형률 → 체결력 (볼트마다 교정)
+    hardware: [게이지를 넣은 볼트 (볼트 가운데에 구멍을 내어 심음), 브리지 증폭기, 데이터 수집 장치]
+    chain: [게이지 볼트, 브리지 증폭기, 데이터 수집 장치, PC, ConT]
+    protocol: 증폭기의 아날로그 출력을 데이터 수집 장치로 읽는다
+    into_cont: "체결력을 직접 관측한다 (교정 계수로 환산). 받는 자리를 새로 만들어야 한다 (아직 없음)"
+    cautions:
+      - 볼트를 가공해야 한다. 가운데 구멍이 필요해 큰 볼트에 주로 쓴다
+      - 볼트마다 하중으로 교정해야 한다
+      - 온도와 배선이 측정을 흔든다
+    sources:
+      - "US 9,127,998: 잘 배치한 변형률 게이지는 약 1% 정확도까지 가능"
+      - "US 11,885,703: 게이지를 심을 구멍 때문에 큰 볼트로 제한됨"
