@@ -103,3 +103,46 @@ def selection(keys: list[str], site: str = "") -> dict[str, Any]:
     picked = list(dict.fromkeys(keys))
     return {"format": "cont-fab-selection", "version": 1, "site": site,
             "items": [{"key": k, "name": known[k]["name"], "needs": known[k]["needs"]} for k in picked]}
+
+
+TYPE_REQUIRED = ("key", "form", "group", "name", "shows", "controls", "quantity", "uses")
+TYPE_OPEN = ("engine", "sketch", "needs", "ready")           # 엔진이 없는 유형(준비 중 카드)에 꼭 있어야 하는 것
+
+
+@lru_cache(maxsize=1)
+def _types_yaml() -> dict[str, Any]:
+    return yaml.safe_load((CONFIG_DIR / "fab" / "types.yaml").read_text(encoding="utf-8"))
+
+
+def types_data() -> dict[str, Any]:
+    """표현 유형 목록. 엔진이 없는 유형은 개념도(선으로 그린 예시 그림)가 붙는다. covered_by가 있으면 지금 그 상품으로 되는 것이다."""
+    from cont.fab.sketches import SKETCHES, sketch
+    raw, cat = _types_yaml(), load()
+    forms, quantities, uses = cat["forms"], set(cat["quantities"]), set(cat["uses"])
+    item_keys = {i["key"] for i in cat["items"]}
+    engines = raw["engines"]
+    for k, e in engines.items():
+        if not (e.get("name") and e.get("summary")):
+            raise ValueError(f"engine {k!r} needs name and summary")
+    out, seen = [], set()
+    for t in raw["types"]:
+        miss = [k for k in TYPE_REQUIRED if not t.get(k)]
+        if miss or t["key"] in seen:
+            raise ValueError(f"type {t.get('key')!r}: missing {miss} or duplicate key")
+        seen.add(t["key"])
+        if t["form"] not in forms or t["quantity"] not in quantities or not set(t["uses"]) <= uses:
+            raise ValueError(f"type {t['key']!r} uses an unknown form, quantity or use")
+        covered = list(t.get("covered_by") or [])
+        if not set(covered) <= item_keys:
+            raise ValueError(f"type {t['key']!r} names an unknown item in covered_by")
+        if not covered:
+            if any(not t.get(k) for k in TYPE_OPEN) or t["engine"] not in engines or t["sketch"] not in SKETCHES:
+                raise ValueError(f"type {t['key']!r} has no engine yet, so it needs engine, sketch, needs and ready")
+            if t["sketch"] in ("calc", "judge") and len(t.get("args") or []) != 3:
+                raise ValueError(f"type {t['key']!r}: sketch {t['sketch']} needs three args")
+        svg = "" if covered else sketch(t["sketch"], t["name"], t.get("args") or ())
+        out.append({"key": t["key"], "form": t["form"], "form_label": forms[t["form"]], "group": t["group"], "name": t["name"], "shows": t["shows"],
+                    "controls": list(t["controls"]), "quantity": t["quantity"], "uses": list(t["uses"]), "covered_by": covered, "note": t.get("note", ""),
+                    "engine": "" if covered else t["engine"], "engine_name": "" if covered else engines[t["engine"]]["name"],
+                    "needs": t.get("needs", ""), "ready": t.get("ready", ""), "sketch_svg": svg})
+    return {"engines": {k: dict(v) for k, v in engines.items()}, "types": out}

@@ -167,3 +167,39 @@ def test_my_fab_keeps_the_condition_and_view_and_can_be_reopened():
         assert w in page
     assert "다음: 꾸리기 (준비 중)" not in page and "picked=[" not in page                       # 이름만 담던 옛 목록이 남지 않았다
     assert "condition:{label:p.label,params:p.params}" in page and "view:p.view" in page      # 조건과 보던 설정을 함께 저장한다
+
+
+# ---- 표현 유형 (엔진 없는 유형은 준비 중 카드) ----
+def test_types_counts_and_rules():
+    from cont.fab.catalog import types_data
+    from cont.fab.sketches import NOTE, SKETCHES
+    d = types_data(); ts = d["types"]
+    assert len(ts) == 59
+    open_ = [t for t in ts if not t["covered_by"]]
+    assert len(open_) == 40
+    assert len({t["key"] for t in ts}) == 59
+    for t in open_:
+        assert t["engine"] in d["engines"] and t["ready"] and t["needs"]
+        assert NOTE in t["sketch_svg"] and "viewBox" in t["sketch_svg"]
+    assert {t["sketch_svg"] and 1 for t in ts if t["covered_by"]} == {None} or all(t["sketch_svg"] == "" for t in ts if t["covered_by"])
+    assert len(SKETCHES) >= 38
+
+
+def test_types_validation_rejects_unknown_engine(monkeypatch):
+    import cont.fab.catalog as c
+    raw = c._types_yaml()
+    bad = {"engines": raw["engines"], "types": [dict(raw["types"][1], engine="nope")]}
+    monkeypatch.setattr(c, "_types_yaml", lambda: bad)
+    import pytest
+    with pytest.raises(ValueError):
+        c.types_data()
+
+
+def test_store_type_cards_and_requests():
+    from cont.fab.catalog import catalog
+    from cont.fab.store import render_store
+    page = render_store(catalog())
+    assert "준비 중 · 엔진 없음" in page and "필요해요" in page and "예시 그림 · 실제 결과 아님" in page
+    assert "kind:'engine_request'" in page and "requests:reqs" in page
+    assert 'id="tdetail"' in page and "지금 되는 것 (체결 사례)" in page
+    assert "data-req" in page and "tcard" in page
