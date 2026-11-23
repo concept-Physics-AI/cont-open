@@ -23,6 +23,7 @@ SAFETY_NAMES = (("safety_yield", "항복 안전율"), ("safety_opening", "벌어
                 ("safety_pressure_head", "면압 안전율"), ("safety_pressure_nut", "면압 안전율"), ("safety_fatigue", "피로 안전율"))
 RAISE = {"tightening_torque", "axial_load_max", "transverse_load"}      # 올리고 내린다고 말하는 항목
 ASK_FIELD, ASK_TRUST, ASK_SENSING = "응력 분포를 보여 줘", "이 결과를 믿어도 돼?", "현장에서는 무엇으로 재야 해?"
+ASK_PROCESS = "조이는 과정을 보여 줘"
 START = "예제 조인트로 시작해 줘"
 # 숫자를 읽었을 때 받침이 있는가 (0 영, 1 일, 3 삼, 6 육, 7 칠, 8 팔). 'ㄹ' 받침(일, 칠, 팔)은 "로"를 쓴다
 _DIGIT_BATCHIM = {"0": "ㅇ", "1": "ㄹ", "3": "ㅁ", "6": "ㄱ", "7": "ㄹ", "8": "ㄹ"}
@@ -126,7 +127,7 @@ def suggest(session: Session, last: str = "") -> list[str]:
         out.append(f"{low[0]} {target} 이상이 되게 해 줘")
     if not out:
         out.append(f"토크를 {session.load.tightening_torque + s['suggest_torque_step']:g} N·m로 올려 줘")
-    out += [ASK_FIELD, ASK_TRUST, ASK_SENSING]
+    out += [ASK_PROCESS, ASK_FIELD, ASK_TRUST, ASK_SENSING]
     seen: list[str] = []
     for t in out:
         if t != last and t not in seen:
@@ -143,6 +144,10 @@ def screen_intent(text: str, session: Session) -> dict[str, Any] | None:
         return {"view": "field", "open": None, "talk": {"alert": "", "alert_low": False, "text": (
             f"판 안의 응력 분포를 열었습니다. 판 사이 면의 최대 압력은 {f.value('interface_peak_pressure'):,.0f} MPa이고, "
             f"반지름 {f.value('pressed_radius'):.1f} mm까지 눌립니다. 볼트는 풀지 않고 좌면에 고른 압력을 건 계산이며, 실측과 대조하기 전입니다.")}}
+    if re.search(r"조이는\s*과정|4D|영상|조여\s*지는", t):
+        return {"view": "time", "open": None, "talk": {"alert": "", "alert_low": False, "text": (
+            f"조이는 과정을 열었습니다. 토크를 0에서 {l.tightening_torque:g} N·m까지 나눠 같은 계산식으로 다시 계산한 것입니다. "
+            "재생 단추를 누르거나 눈금을 끌어 보세요. 조이는 동안의 마찰 변화나 풀림은 담지 않습니다.")}}
     if re.search(r"믿어도|근거|검증|확실", t):
         spread = "마찰의 흩어짐만 반영했습니다." if l.friction_range else "불확실성은 반영하지 않았습니다."
         return {"view": None, "open": "trust", "talk": {"alert": "", "alert_low": False, "text": (

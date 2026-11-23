@@ -103,13 +103,19 @@ main.conv{max-width:none;margin:0}
 .stage.stage{flex:1 1 300px;min-height:220px;transition:flex-grow .38s cubic-bezier(.2,.7,.2,1),flex-basis .38s cubic-bezier(.2,.7,.2,1),min-height .38s cubic-bezier(.2,.7,.2,1);border-radius:26px;background:radial-gradient(60% 70% at 50% 52%,#242B33,#14181D 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
 .rcard.open .stage.stage{flex:0 0 56px;min-height:56px;cursor:pointer}.rcard.open .stage .vp{opacity:0;pointer-events:none}.stage .vp{transition:opacity .25s}
 .rcard.open .stage .tabs{padding-top:6px}.rcard.open .stage .xr,.rcard.open .stage .shot{display:none}.stage .tabs .shot{flex:none;white-space:nowrap;height:36px;padding:0 14px;margin-right:8px;font-size:13px;color:var(--vsub);border:1px solid var(--vline);border-radius:999px}.stage .tabs .shot:hover{color:var(--vink);border-color:var(--vsub)}.stage .fold{display:none;margin-left:auto;font-size:13px;color:var(--vsub);align-items:center;gap:6px;white-space:nowrap}.rcard.open .stage .fold{display:flex}.rcard.open .stage .sp{display:none}
-.stage .tabs{gap:24px;padding:10px 26px 0;align-items:center}.stage .tabs button{font-size:14px;height:44px;padding:0;border-bottom:2px solid transparent}
+.stage .tabs{gap:20px;padding:10px 22px 0;align-items:center;overflow-x:auto;scrollbar-width:none}.stage .tabs button{flex:none;white-space:nowrap;font-size:14px;height:44px;padding:0;border-bottom:2px solid transparent}
 .stage .tabs button[aria-selected=true]{border-bottom-color:var(--glow)}.stage .tabs .sp{margin-left:auto}
 .stage .tabs .xr{position:relative;border:1px solid var(--vline);border-radius:999px;right:auto;top:auto;flex:none;white-space:nowrap;height:36px;padding:0 14px 0 32px;font-size:13px;background:transparent;border-color:var(--vline)}.stage .tabs .xr[aria-pressed=true]{border-color:var(--glow)}
 .stage .vp{flex:1;height:auto;min-height:0}.stage .pane{padding:4px 22px 0;overflow:auto;scrollbar-width:thin;scrollbar-color:#4A5561 transparent}.stage #pane-shape{padding:0;overflow:hidden}
 .stage .hint{top:auto;bottom:16px;left:26px;right:auto}.stage .hint a{color:var(--vsub)}.stage .xray .hint{display:none}
 .stage .key{left:26px;bottom:14px}.stage .key .sc{background:linear-gradient(90deg,#A8B2BC,#B89A5C 50%,#D9A441 80%,#F5CC70)}
 .stage .badge{right:22px;bottom:14px;background:transparent}.stage .notes{top:14px;right:22px}.graphs{display:grid;gap:10px}
+.tl{display:none;position:absolute;left:26px;right:26px;bottom:14px;z-index:3;color:var(--vsub);font-size:12.5px}.timeon .tl{display:block}.timeon .key,.timeon .badge,.timeon .hint,.timeon .notes{display:none!important}
+.tlrow{display:flex;align-items:center;gap:12px}.tl button{flex:none;height:36px;padding:0 14px;border-radius:18px;border:1px solid var(--vline);background:rgba(20,24,29,.6);color:var(--vink);font-size:13px;white-space:nowrap}
+.tl button:hover{border-color:var(--vsub)}.tl button[disabled]{opacity:.5;cursor:default}#tlplay{min-width:64px;border-color:var(--glow)}
+.tl input[type=range]{flex:1;min-width:0;height:36px;accent-color:#D9A441;background:transparent}
+.tlv{margin-top:6px;color:var(--vsub);font-size:13px;font-variant-numeric:tabular-nums;line-height:1.6}.tlv b{color:var(--vink);font-weight:500;font-size:15px}.tlv b.low{color:#FF8A7A}.tlv i{display:inline-block;width:18px}
+.tln{margin-top:2px;font-size:12px;line-height:1.5}#tlmsg{color:var(--glow)}
 .stats{display:flex;gap:18px;padding:2px 6px 0}.stat{flex:1;min-width:0;padding-left:18px;border-left:1px solid var(--line);position:relative}.stat:first-child{padding-left:0;border-left:0}
 .stat .k{font-size:13px;color:var(--sub);line-height:1.4}.stat .v{display:flex;align-items:baseline;flex-wrap:wrap;margin-top:4px}
 .stat .num{font-size:32px;font-weight:300;letter-spacing:-.03em;line-height:1.15;font-variant-numeric:tabular-nums}.stat .v.low .num{color:var(--bad)}
@@ -136,7 +142,7 @@ body{overflow:auto}.app.app,.app[data-mode=talk]{display:block;height:auto;min-h
 .sugg{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.sugg button{flex:none;white-space:nowrap}
 .result{padding:8px 0 0}.rcard{padding:14px 14px 16px;border-radius:24px;gap:14px}.stage.stage,.rcard.open .stage.stage{flex:none;min-height:0;cursor:auto}.stage .vp{height:auto}
 .stage .tabs{gap:16px;padding:6px 16px 0;overflow-x:auto;scrollbar-width:none}.stage .tabs button{flex:none;white-space:nowrap;font-size:13px}.stage .pane{position:static;padding:4px 12px 12px}
-.stage #pane-shape{position:relative}.stage .hint{display:none}.stage .key{position:static;padding:0 14px 12px;max-width:none}.stage .badge{display:none!important}
+.stage #pane-shape{position:relative}.stage .hint{display:none}.stage .key{position:static;padding:0 14px 12px;max-width:none}.tl{position:static;padding:0 14px 12px}.tlrow{flex-wrap:wrap}.tl input[type=range]{flex:1 1 100%;order:3}.stage .badge{display:none!important}
 .stats{gap:12px;padding:0 2px}.stat{padding-left:12px}.stat .num{font-size:24px}.stat .k{font-size:12px}.drawer[hidden]{display:none}.rcard.open .stage .vp{opacity:1;pointer-events:auto}.rcard.open .stage .xr,.rcard.open .stage .shot{display:block}.rcard.open .stage .fold{display:none}.seg{flex-direction:column}.seg button{flex:none}.thread .result{padding:0;display:block}.drawer{flex:none;overflow:visible;padding:4px 14px 14px}
 #latest{position:fixed;left:50%;transform:translateX(-50%);bottom:150px;z-index:21}
 }
@@ -157,13 +163,40 @@ thread.addEventListener('scroll',watch);window.addEventListener('scroll',watch);
 
 /* ---------- 결과: 보기와 묶음 ---------- */
 var tabs=document.querySelectorAll('.tabs button[data-v]');
-function view(v){tabs.forEach(function(x){var on=x.dataset.v===v;x.setAttribute('aria-selected',on?'true':'false');if(on)x.classList.remove('new');});
-document.querySelectorAll('.pane').forEach(function(p){p.classList.toggle('on',p.id==='pane-'+v);});if(v==='shape')V.draw();}
+function view(v){var pv=v==='time'?'shape':v;tabs.forEach(function(x){var on=x.dataset.v===v;x.setAttribute('aria-selected',on?'true':'false');if(on)x.classList.remove('new');});
+document.querySelectorAll('.pane').forEach(function(p){p.classList.toggle('on',p.id==='pane-'+pv);});$('.vp').classList.toggle('timeon',v==='time');stop();
+if(v==='time'&&cur)frame(cur.timeline.length-1);else if(cur)V.hidden($('#xr').getAttribute('aria-pressed')==='true',cur.hidden.use);if(pv==='shape')V.draw();}
+/* ---------- 4D: 조이는 과정. 토크마다 다시 계산한 값을 눈금으로 오간다 ---------- */
+var TL={i:0,raf:0,rec:null},tlr=$('#tlr'),tlplay=$('#tlplay'),tlrec=$('#tlrec');
+function frame(i){if(!cur)return;var n=cur.timeline.length-1;i=Math.max(0,Math.min(n,i));TL.i=i;var a=cur.timeline[Math.floor(i)],b=cur.timeline[Math.ceil(i)],k=i-Math.floor(i),mix=function(q){return a[q]+(b[q]-a[q])*k;};
+tlr.max=n;tlr.value=i;$('#tlt').textContent=fmt(mix('torque'),1);$('#tlf').textContent=fmt(mix('preload'),0);$('#tlu').textContent=fmt(mix('use'),2);$('#tle').textContent=fmt(mix('elongation')*1000,0);
+$('#tlu').classList.toggle('low',mix('use')>1);V.hidden(true,mix('use'));return {torque:mix('torque'),preload:mix('preload'),use:mix('use'),elongation:mix('elongation')};}
+function stop(){if(TL.raf)cancelAnimationFrame(TL.raf);TL.raf=0;tlplay.setAttribute('aria-pressed','false');tlplay.textContent='재생';}
+function play(each,done){stop();var n=cur.timeline.length-1,ms=cur.play_seconds*1000,t0=performance.now();tlplay.setAttribute('aria-pressed','true');tlplay.textContent='멈춤';
+(function f(now){var k=Math.min(1,(now-t0)/ms),r=frame(n*k);if(each)each(r,k);if(k<1)TL.raf=requestAnimationFrame(f);else{stop();if(done)done();}})(t0);}
+tlplay.addEventListener('click',function(){if(TL.raf)stop();else play();});tlr.addEventListener('input',function(){stop();frame(Number(tlr.value));});
+/* 영상: 재생하는 화면을 글자와 함께 한 장씩 그려 녹화한다 (브라우저 안에서 만든다) */
+function record(){if(!cur||TL.rec)return;var c=document.createElement('canvas'),x=c.getContext('2d'),W=1280,H=720,F='"IBM Plex Sans KR","Malgun Gothic",sans-serif',cv=$('#cv');c.width=W;c.height=H;
+if(!c.captureStream||!window.MediaRecorder){$('#tlmsg').textContent='이 브라우저에서는 영상을 만들 수 없습니다.';return;}
+var mime=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm','video/mp4'].filter(function(m){return MediaRecorder.isTypeSupported(m);})[0];if(!mime){$('#tlmsg').textContent='이 브라우저에서는 영상을 만들 수 없습니다.';return;}
+var rec=new MediaRecorder(c.captureStream(30),{mimeType:mime,videoBitsPerSecond:4000000}),parts=[];TL.rec=rec;tlrec.disabled=true;$('#tlmsg').textContent='영상을 만드는 중입니다.';
+function paint(r,k){V.draw();x.fillStyle='#14181D';x.fillRect(0,0,W,H);var g=x.createRadialGradient(W/2,330,40,W/2,330,640);g.addColorStop(0,'#242B33');g.addColorStop(1,'#14181D');x.fillStyle=g;x.fillRect(0,0,W,H);
+fit(x,cv,240,96,800,470);x.textBaseline='alphabetic';x.textAlign='left';x.fillStyle='#EEF1F4';x.font='600 32px '+F;x.fillText(cur.size+' 볼트 조인트 · 조이는 과정',56,68);
+x.textAlign='right';x.fillStyle='#A3ABB4';x.font='400 20px '+F;x.fillText('계산값 · 검증 전',W-56,68);x.textAlign='left';
+x.fillStyle='#2C343D';x.fillRect(56,596,W-112,4);x.fillStyle='#D9A441';x.fillRect(56,596,(W-112)*k,4);
+[['조임 토크',fmt(r.torque,1),'N·m'],['체결력',fmt(r.preload,0),'N'],['조립 시 응력 ÷ 항복강도',fmt(r.use,2),''],['볼트 늘어남',fmt(r.elongation*1000,0),'µm']].forEach(function(t,i){var sx=56+i*((W-112)/4);
+x.fillStyle='#A3ABB4';x.font='400 18px '+F;x.fillText(t[0],sx,638);x.fillStyle=(i===2&&r.use>1)?'#FF8A7A':'#EEF1F4';x.font='300 38px '+F;x.fillText(t[1],sx,684);var w=x.measureText(t[1]).width;x.fillStyle='#A3ABB4';x.font='400 18px '+F;x.fillText(t[2],sx+w+8,684);});
+x.fillStyle='#6E7781';x.font='400 15px '+F;x.fillText('ConT · 토크마다 같은 계산식으로 다시 계산한 것이며 실측과 대조하기 전입니다',56,H-14);}
+rec.ondataavailable=function(e){if(e.data&&e.data.size)parts.push(e.data);};
+rec.onstop=function(){var b=new Blob(parts,{type:mime}),a=document.createElement('a'),name='ConT_'+cur.size+'_tightening.'+(mime.indexOf('mp4')>=0?'mp4':'webm');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();a.remove();
+setTimeout(function(){URL.revokeObjectURL(a.href);},4000);TL.rec=null;tlrec.disabled=false;$('#tlmsg').textContent='';window.__lastVideo={name:name,size:b.size,type:mime};};
+paint(frame(0),0);rec.start();play(paint,function(){setTimeout(function(){rec.stop();},500);});}
+tlrec.addEventListener('click',record);
 tabs.forEach(function(b){b.addEventListener('click',function(){view(b.dataset.v);});});
 $('.stage').addEventListener('click',function(){if(card.classList.contains('open')&&!narrow()){drawer.hidden=true;open(null);}});
 $('.stage').addEventListener('transitionend',function(e){if(e.target===this)V.draw();});
 function dot(v,on){var b=$('.tabs button[data-v="'+v+'"]');if(b)b.classList.toggle('new',on&&b.getAttribute('aria-selected')!=='true');}
-$('#xr').addEventListener('click',function(){var on=this.getAttribute('aria-pressed')!=='true';this.setAttribute('aria-pressed',on?'true':'false');V.hidden(on,cur?cur.hidden.use:0);});
+$('#xr').addEventListener('click',function(){var on=this.getAttribute('aria-pressed')!=='true';this.setAttribute('aria-pressed',on?'true':'false');if(!$('.vp').classList.contains('timeon'))V.hidden(on,cur?cur.hidden.use:0);});
 var segs=document.querySelectorAll('.seg button'),drawer=$('#drawer');
 function open(name){var same=name&&!drawer.hidden&&!$('#d-'+name).hidden;if(same)name=null;
 segs.forEach(function(b){b.setAttribute('aria-expanded',b.dataset.d===name?'true':'false');});
@@ -181,7 +214,7 @@ function exportImage(){if(!cur)return;var on=$('.tabs button[aria-selected=true]
 x.fillStyle='#14181D';x.fillRect(0,0,W,H);var g=x.createRadialGradient(W/2,470,60,W/2,470,760);g.addColorStop(0,'#242B33');g.addColorStop(1,'#14181D');x.fillStyle=g;x.fillRect(0,0,W,H);
 x.textBaseline='alphabetic';x.fillStyle='#EEF1F4';x.font='600 44px '+F;x.fillText(cur.size+' 볼트 조인트',72,96);x.fillStyle='#A3ABB4';x.font='400 24px '+F;x.fillText('강도 등급 '+cur.grade+' · '+cur.sub,72,138);
 x.textAlign='right';x.fillStyle='#D9A441';x.font='500 24px '+F;x.fillText(on.textContent.trim(),W-72,96);x.fillStyle='#A3ABB4';x.font='400 22px '+F;x.fillText('계산값 · 검증 전',W-72,138);x.textAlign='left';
-var jobs=[];if(v==='shape'){V.draw();jobs=[Promise.resolve($('#cv'))];}else jobs=[].map.call(document.querySelectorAll('#pane-'+v+' svg'),svgImage);
+var jobs=[];if(v==='shape'||v==='time'){V.draw();jobs=[Promise.resolve($('#cv'))];}else jobs=[].map.call(document.querySelectorAll('#pane-'+v+' svg'),svgImage);
 return Promise.all(jobs).then(function(ims){ims=ims.filter(Boolean);var bw=(W-144-(ims.length-1)*32)/Math.max(1,ims.length);ims.forEach(function(im,i){fit(x,im,72+i*(bw+32),176,bw,640);});
 x.strokeStyle='#2C343D';x.beginPath();x.moveTo(72,848);x.lineTo(W-72,848);x.stroke();
 cur.core.forEach(function(t,i){var sx=72+i*((W-144)/3);x.fillStyle='#A3ABB4';x.font='400 22px '+F;x.fillText(t.label,sx,896);x.fillStyle=t.low?'#FF8A7A':'#EEF1F4';x.font='300 56px '+F;var n=fmt(t.value,t.digits);x.fillText(n,sx,962);
@@ -206,7 +239,7 @@ s.safety.forEach(function(x,i){var r=$('#sf'+i),f=$('.fill',r),n=$('.n',r),was=$
 r.classList.toggle('off',x.value==null);r.title=x.value==null?x.note:'';var ch=animate&&old!=null&&x.value!=null&&fmt(old,2)!==fmt(x.value,2);r.classList.toggle('moved',!!ch);if(ch)was.style.left=(Math.min(old/top,1)*100)+'%';
 $('.one',r).style.left=(100/top)+'%';f.style.width=(x.value==null?0:Math.min(x.value/top,1)*100)+'%';f.classList.toggle('low',x.value!=null&&x.value<1);n.classList.toggle('low',x.value!=null&&x.value<1);n.textContent=x.value==null?'-':fmt(x.value,2);});
 ['section','diagram','torque','field'].forEach(function(k){var box=$('#sw-'+k),ch=animate&&prev&&prev.views[k]!==s.views[k];dot(k==='diagram'||k==='torque'?'graph':k,!!ch);box.innerHTML=s.views[k];});
-V.hidden($('#xr').getAttribute('aria-pressed')==='true',s.hidden.use);$('#useat').style.left=(Math.min(s.hidden.use,1)*100)+'%';$('#usev').textContent=fmt(s.hidden.use,2);$('#usedet').textContent=fmt(s.hidden.stress,0)+' ÷ '+fmt(s.hidden.yield,0)+' MPa';
+stop();if($('.vp').classList.contains('timeon'))frame(s.timeline.length-1);else V.hidden($('#xr').getAttribute('aria-pressed')==='true',s.hidden.use);$('#useat').style.left=(Math.min(s.hidden.use,1)*100)+'%';$('#usev').textContent=fmt(s.hidden.use,2);$('#usedet').textContent=fmt(s.hidden.stress,0)+' ÷ '+fmt(s.hidden.yield,0)+' MPa';
 V.set(s.viewer,animate&&!!prev);V.mark(animate?s.marks:{glow:[],tags:[],notes:[]});dot('shape',animate&&s.marks.glow.length>0);
 $('#more').innerHTML=s.more;}
 
@@ -219,7 +252,7 @@ if(m.detail)h+='<details><summary>자세히</summary><pre>'+esc(m.detail)+'</pre
 var el=document.createElement('div');el.className='bot';el.innerHTML=MARK+'<div class="b">'+h+'</div>';thread.appendChild(el);if(narrow())return;if(stick)toBottom();else latest.hidden=false;}
 function suggest(list){var box=$('#sugg');box.innerHTML=(list||[]).map(function(t){return '<button type="button" data-say="'+esc(t)+'">'+esc(t)+'</button>';}).join('');}
 function apply(m){if(app.dataset.mode!=='talk'){app.dataset.mode='talk';input.placeholder='이어서 말해 보세요';}
-if(m.state&&m.state!==cur)show(m.state,true);addBot(m);if(m.ui){if(m.ui.view){drawer.hidden=true;open(null);}if(m.ui.view)view(m.ui.view==='diagram'||m.ui.view==='torque'?'graph':m.ui.view);if(m.ui.open){drawer.hidden=true;open(m.ui.open);}}
+if(m.state&&m.state!==cur)show(m.state,true);addBot(m);if(m.ui){if(m.ui.view){drawer.hidden=true;open(null);}if(m.ui.view)view(m.ui.view==='diagram'||m.ui.view==='torque'?'graph':m.ui.view);if(m.ui.view==='time')play();if(m.ui.open){drawer.hidden=true;open(m.ui.open);}}
 suggest(m.suggest);place();if(narrow())toBottom();}
 var result=$('.result');
 function place(){if(narrow()){if(app.dataset.mode==='talk')thread.appendChild(result);}else if(result.parentNode!==app)app.appendChild(result);V.draw();}
@@ -293,13 +326,18 @@ def render_app(data: Mapping[str, Any], ask_url: str | None = None, title: str =
 <div class="stage">
 <div class="tabs" role="tablist" aria-label="보기"><button type="button" role="tab" data-v="shape" aria-selected="true">3D CAD</button>
 <button type="button" role="tab" data-v="section" aria-selected="false">단면</button><button type="button" role="tab" data-v="graph" aria-selected="false">그래프</button>
-<button type="button" role="tab" data-v="field" aria-selected="false">물리 이미지</button><span class="sp"></span><button type="button" class="shot" id="shot">이미지로 저장</button><span class="fold">그림 펼치기{CHEV}</span><button type="button" class="xr" id="xr" aria-pressed="true">숨은 물리</button></div>
+<button type="button" role="tab" data-v="field" aria-selected="false">물리 이미지</button><button type="button" role="tab" data-v="time" aria-selected="false">4D</button><span class="sp"></span><button type="button" class="shot" id="shot">이미지 저장</button><span class="fold">그림 펼치기{CHEV}</span><button type="button" class="xr" id="xr" aria-pressed="true">숨은 물리</button></div>
 <div class="vp">
 <div class="pane on" id="pane-shape"><canvas id="cv" tabindex="0" role="img" aria-label="볼트 조인트 3D 형상. 끌거나 화살표 키로 돌리고 휠이나 +, - 키로 확대합니다"></canvas>
 <div class="notes" id="notes" aria-live="polite"></div><div class="hint"><span id="cvmsg"></span>끌어서 돌리고 휠로 확대합니다.{files}</div>
 <div class="key"><div>볼트의 색: 등가응력 ÷ 항복강도 <b id="usev"></b> <span id="usedet"></span></div><div class="sc"><i id="useat"></i></div><div class="ends"><span>0</span><span>1.0</span></div>
 <div class="z"><i></i>판이 눌리는 영역. 계산 모형의 모양이며 관측한 것이 아닙니다.</div></div>
-<div class="badge">숨은 물리 <b>해석</b> · 관측 없음</div></div>
+<div class="badge">숨은 물리 <b>해석</b> · 관측 없음</div>
+<div class="tl" id="tl"><div class="tlrow"><button type="button" id="tlplay" aria-pressed="false">재생</button>
+<input type="range" id="tlr" min="0" max="1" step="0.01" value="0" aria-label="조임 토크를 0에서 지금 값까지">
+<button type="button" id="tlrec">영상 저장</button></div>
+<div class="tlv">조임 토크 <b id="tlt"></b> N·m<i></i>체결력 <b id="tlf"></b> N<i></i>조립 시 응력 ÷ 항복강도 <b id="tlu"></b><i></i>볼트 늘어남 <b id="tle"></b> µm</div>
+<div class="tln">토크마다 같은 계산식으로 다시 계산한 것입니다. 조이는 동안의 마찰 변화나 풀림은 담지 않습니다. <span id="tlmsg" aria-live="polite"></span></div></div></div>
 <div class="pane" id="pane-section"><div class="swap" id="sw-section"></div></div>
 <div class="pane" id="pane-graph"><div class="graphs"><div class="swap" id="sw-diagram"></div><div class="swap" id="sw-torque"></div></div></div>
 <div class="pane" id="pane-field"><div class="swap" id="sw-field"></div></div>

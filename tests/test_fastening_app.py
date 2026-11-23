@@ -5,7 +5,7 @@ import threading
 import urllib.request
 
 from cont.dialogue.fastening_chat import Session
-from cont.dialogue.fastening_talk import ASK_FIELD, ASK_SENSING, ASK_TRUST, START, josa, screen_intent, settings, suggest, talk
+from cont.dialogue.fastening_talk import ASK_FIELD, ASK_PROCESS, ASK_SENSING, ASK_TRUST, START, josa, screen_intent, settings, suggest, talk
 from cont.dialogue.serve_fastening import app_page, example, main, make_server, message, tree
 from cont.view.fastening_app import IDEAS, render_app
 
@@ -129,8 +129,32 @@ def test_server_answers_the_chat_screen_and_starts_over_on_reset():
 def test_picture_can_be_saved_as_an_image_and_the_field_uses_one_hue():
     from cont.view.field_image import BELOW, RAMP
     page = app_page(Session(*example()))
-    assert 'id="shot"' in page and "이미지로 저장" in page and "function exportImage()" in page and "toBlob" in page
+    assert 'id="shot"' in page and "이미지 저장" in page and "function exportImage()" in page and "toBlob" in page
     assert "실측과 대조하기 전입니다" in page[page.index("function exportImage()"):]                 # 내보낸 그림에도 값의 지위를 적는다
     light = [sum(c) for _, c in RAMP]
     assert light == sorted(light) and all(c[0] >= c[2] for _, c in RAMP[1:])                       # 값이 클수록 밝고, 푸른 쪽으로 가지 않는다
     assert BELOW[2] > BELOW[0]                                                                      # 0보다 작은 곳은 다른 색(청회색)
+
+
+def test_tightening_process_recomputes_each_torque_step_and_can_be_played_and_recorded():
+    from dataclasses import replace
+
+    from cont.packs.fastening.pack import answer
+    from cont.packs.fastening.process import settings as process_settings, tightening
+    j, l = example()
+    frames = tightening(j, l)
+    assert len(frames) == process_settings()["steps"] + 1 and frames[0] == {"torque": 0.0, "preload": 0.0, "stress": 0.0, "use": 0.0, "elongation": 0.0}
+    last, full = frames[-1], answer(j, l)
+    assert last["torque"] == l.tightening_torque and last["preload"] == full.value("preload")            # 마지막 칸은 지금 설계의 값과 같다
+    assert last["stress"] == full.value("bolt_equivalent_stress_assembly") and abs(last["use"] - last["stress"] / j.yield_strength) < 1e-12
+    half = answer(j, replace(l, tightening_torque=frames[12]["torque"]))
+    assert frames[12]["preload"] == half.value("preload")                                                # 가운데 칸도 그 토크로 다시 계산한 값이다
+    assert [f["preload"] for f in frames] == sorted(f["preload"] for f in frames) and len(tightening(j, l, steps=4)) == 5
+    s = Session(*example())
+    m = message(s, ASK_PROCESS)
+    assert m["ui"] == {"view": "time", "open": None} and m["state"] is None and "풀림은 담지 않습니다" in m["talk"]["text"] and not s.turns
+    assert ASK_PROCESS in suggest(s)
+    page = app_page(s)
+    assert all(x in page for x in ('data-v="time"', 'id="tlplay"', 'id="tlr"', 'id="tlrec"', "영상 저장", "MediaRecorder", "조이는 동안의 마찰 변화나 풀림은 담지 않습니다"))
+    data = json.loads(re.search(r'id="app-data">(.*?)</script>', page, re.S).group(1))
+    assert len(data["states"]["s0"]["timeline"]) == len(frames) and data["states"]["s0"]["play_seconds"] == process_settings()["play_seconds"]
