@@ -1,105 +1,287 @@
 # ConT Fab에서 고를 수 있는 물리 정보의 목록.
-# 여기에는 지금 코드에 실제로 있는 엔진만 적는다. preview는 cont.fab.previews에 있는 함수 이름이며, 그 함수가 엔진을 돌려 미리보기를 만든다.
-# form: 형태 (image | 3d | 4d | signal | judge | number).  area: 물리 영역.
+# 여기에는 지금 코드에 실제로 있는 엔진만 적는다. preview는 cont.fab.previews에 있는 함수 이름이며, 그 함수가 엔진을 돌려 샘플을 만든다.
+# 상품(item) 하나 = 엔진 하나. 샘플 = 그 엔진을 어떤 조건으로 돌린 결과. samples에 조건을 적으면 그만큼 샘플이 만들어진다.
+# sample_rule.yield_safety: 규격별 샘플의 조임 토크를 정할 때 쓰는 예시 목표 (추천 엔진이 이 목표를 만족하는 토크를 고른다). 판정 기준이 아니다.
 forms:
-  image: 이미지 · 그래프
+  image: 이미지
+  graph: 그래프
   3d: 3D
-  4d: 4D · 영상
+  4d: 4D
+  video: 영상
   signal: 신호
-  judge: 판단 · 점검
   number: 계산값
+  judge: 판단 · 점검
 items:
-  - key: fastening_shape
-    name: 볼트 조인트 3D CAD
-    form: 3d
-    area: 체결
-    summary: 치수를 넣으면 형상이 만들어집니다. STEP · STL로 내려받습니다.
-    needs: 치수, 강도 등급
-    gives: 3D 형상, 단면, CAD 파일
-    preview: fastening_section
-    preview_note: 미리보기는 단면입니다. 3D는 체결 화면에서 돌려 봅니다.
-    doc: docs/shape.md
-  - key: fastening_field
-    name: 판 응력 분포
-    form: image
-    area: 체결
-    summary: 판 안에서 압축이 퍼지는 모습을 수치해석으로 그립니다.
-    needs: 조인트, 조임 토크
-    gives: 물리 이미지, 판 사이 면의 압력
-    preview: fastening_field
-    doc: docs/fastening_field.md
-  - key: fastening_process
-    name: 조이는 과정
-    form: 4d
-    area: 체결
-    summary: 토크를 0에서 지금 값까지 나눠 다시 계산해 재생합니다.
-    needs: 조인트, 조임 토크
-    gives: 4D 재생, 영상, 토크마다의 체결력
-    preview: fastening_process
-    preview_note: 미리보기는 토크마다 다시 계산한 체결력입니다. 재생은 체결 화면에서 봅니다.
-    doc: docs/fastening_screen.md
-  - key: fastening_diagram
-    name: 체결 선도와 안전율
-    form: image
-    area: 체결
-    summary: 볼트와 판이 힘을 나눠 받는 모습과 안전율을 그립니다.
-    needs: 조인트, 하중
-    gives: 체결 선도, 안전율
-    preview: fastening_diagram
-    doc: docs/fastening_screen.md
-  - key: fastening_sensing
-    name: 센서와 연결 추천
-    form: judge
-    area: 체결
-    summary: 이 조인트에서 무엇으로 재야 하는지, 신호가 얼마나 나오는지.
-    needs: 조인트, 조임 토크
-    gives: 단계별 센서, 연결 순서, 신호의 크기
-    preview: fastening_sensing
-    doc: docs/fastening_sensing.md
-  - key: signal_baseline
-    name: 신호와 정상 범위
-    form: signal
-    area: 설비 공통
-    summary: 같은 운전조건의 평소와 지금을 비교해 벗어난 구간을 찾습니다.
-    needs: 설비 신호, 운전조건
-    gives: 벗어난 구간, 벗어난 정도
-    preview: signal_baseline
-    doc: docs/diagnosis.md
-  - key: guidance
-    name: 원인 후보와 점검 안내
-    form: judge
-    area: 설비 공통
-    summary: 찾아낸 변화를 관찰 사실, 원인 후보, 다음 점검으로 정리합니다.
-    needs: 진단 결과
-    gives: 관찰 사실, 원인 후보, 다음 점검
-    preview: guidance
-    doc: docs/diagnosis_screen.md
-  - key: stroke_curve
-    name: 스트로크 부하 곡선
-    form: signal
-    area: 프레스
-    summary: 프레스의 부하 곡선을 위치별 정상 범위와 비교합니다.
-    needs: 스트로크별 부하
-    gives: 벗어난 스트로크, 벗어난 구간
-    preview: stroke_curve
-    doc: docs/diagnosis.md
-  - key: quality_prediction
-    name: 두께 예측
-    form: image
-    area: 압출
-    summary: 공정 값으로 품질 값을 예측해 규격과 비교합니다.
-    needs: 공정 값, 실측 표본
-    gives: 예측 값, 규격 이탈 예측 구간
-    preview: quality_prediction
-    doc: docs/diagnosis.md
-  - key: cutting_force
-    name: 선삭의 절삭력
-    form: number
-    area: 절삭
-    summary: 절삭 조건과 재료에서 절삭력, 토크, 동력을 계산합니다.
-    needs: 절삭 조건, 재료
-    gives: 주절삭력, 토크, 절삭 동력
-    preview: cutting_force
-    example: {material: C45, diameter: 50.0, cutting_speed: 200.0, feed: 0.25, depth: 2.0}   # 미리보기에 쓰는 예제 조건
-    preview_note: 재료 값은 원문과 대조하지 않은 값입니다.
-    doc: docs/machining_slice1.md
+- key: fastening_shape
+  name: 볼트 조인트 3D CAD
+  form: 3d
+  area: 체결
+  summary: 치수를 넣으면 형상이 만들어집니다. STEP · STL로 내려받습니다.
+  needs: 치수, 강도 등급
+  gives: 3D 형상, 단면, CAD 파일
+  preview: fastening_section
+  preview_note: 미리보기는 단면입니다. 3D는 체결 화면에서 돌려 봅니다.
+  doc: docs/shape.md
+  uses:
+  - 설계할 때
+  - 보고할 때
+  limits: 볼트 조인트 하나의 형상입니다. 나사산은 그리지 않습니다.
+  together:
+  - fastening_field
+  - fastening_process
+  samples:
+    sizes:
+    - M6
+    - M8
+    - M10
+    - M12
+    - M16
+    - M20
+    - M24
+- key: fastening_field
+  name: 판 응력 분포
+  form: image
+  area: 체결
+  summary: 판 안에서 압축이 퍼지는 모습을 수치해석으로 그립니다.
+  needs: 조인트, 조임 토크
+  gives: 물리 이미지, 판 사이 면의 압력
+  preview: fastening_field
+  doc: docs/fastening_field.md
+  uses:
+  - 설계할 때
+  - 조건 잡을 때
+  limits: 볼트는 풀지 않고 좌면에 고른 압력을 건 계산입니다. 두 판은 붙어 있다고 봅니다.
+  together:
+  - fastening_shape
+  - fastening_diagram
+  samples:
+    sizes:
+    - M8
+    - M10
+    - M12
+    - M16
+    - M20
+- key: fastening_process
+  name: 조이는 과정
+  form: 4d
+  area: 체결
+  summary: 토크를 0에서 지금 값까지 나눠 다시 계산해 재생합니다.
+  needs: 조인트, 조임 토크
+  gives: 4D 재생, 영상, 토크마다의 체결력
+  preview: fastening_process
+  preview_note: 미리보기는 토크마다 다시 계산한 체결력입니다. 재생은 체결 화면에서 봅니다.
+  doc: docs/fastening_screen.md
+  uses:
+  - 조건 잡을 때
+  - 보고할 때
+  limits: 시간에 따른 거동의 해석이 아닙니다. 조이는 동안의 마찰 변화나 풀림은 담지 않습니다.
+  together:
+  - fastening_sensing
+  - fastening_shape
+  samples:
+    sizes:
+    - M8
+    - M10
+    - M12
+    - M16
+    - M20
+- key: fastening_diagram
+  name: 체결 선도와 안전율
+  form: graph
+  area: 체결
+  summary: 볼트와 판이 힘을 나눠 받는 모습과 안전율을 그립니다.
+  needs: 조인트, 하중
+  gives: 체결 선도, 안전율
+  preview: fastening_diagram
+  doc: docs/fastening_screen.md
+  uses:
+  - 설계할 때
+  limits: 동심 체결과 동심 하중, 판 두 장, 열 하중 없음.
+  together:
+  - fastening_field
+  samples:
+    sizes:
+    - M8
+    - M10
+    - M12
+    - M16
+- key: fastening_torque
+  name: 토크와 체결력
+  form: graph
+  area: 체결
+  summary: 조임 토크에 따라 체결력이 어떻게 달라지는지, 마찰에 따른 폭과 함께 그립니다.
+  needs: 조인트, 마찰 범위
+  gives: 토크-체결력 그래프, 마찰에 따른 범위
+  preview: fastening_torque
+  doc: docs/fastening_screen.md
+  uses:
+  - 조건 잡을 때
+  limits: 마찰계수의 범위는 넣은 값입니다. 실제 흩어짐은 재서 확인해야 합니다.
+  together:
+  - fastening_sensing
+  samples:
+    sizes:
+    - M8
+    - M10
+    - M12
+    - M16
+- key: fastening_video
+  name: 조이는 과정 영상
+  form: video
+  area: 체결
+  summary: 조이는 과정의 재생을 글자와 함께 영상으로 내려받습니다.
+  needs: 조인트, 조임 토크
+  gives: 영상 파일 (1280 × 720)
+  preview: fastening_video
+  preview_note: 영상은 체결 화면에서 브라우저가 만듭니다. 미리보기는 그 첫 장면과 끝 장면입니다.
+  doc: docs/fastening_screen.md
+  uses:
+  - 보고할 때
+  limits: 브라우저가 녹화 기능을 지원해야 합니다.
+  together:
+  - fastening_process
+  samples:
+    sizes:
+    - M10
+    - M16
+- key: fastening_sensing
+  name: 센서와 연결 추천
+  form: judge
+  area: 체결
+  summary: 이 조인트에서 무엇으로 재야 하는지, 신호가 얼마나 나오는지.
+  needs: 조인트, 조임 토크
+  gives: 단계별 센서, 연결 순서, 신호의 크기
+  preview: fastening_sensing
+  doc: docs/fastening_sensing.md
+  uses:
+  - 감시할 때
+  - 조건 잡을 때
+  limits: 센서의 종류와 연결 순서를 권하는 것이며, 제품 이름이나 가격은 다루지 않습니다.
+  together:
+  - fastening_process
+  samples:
+    sizes:
+    - M8
+    - M10
+    - M16
+- key: signal_baseline
+  name: 신호와 정상 범위
+  form: signal
+  area: 설비 공통
+  summary: 같은 운전조건의 평소와 지금을 비교해 벗어난 구간을 찾습니다.
+  needs: 설비 신호, 운전조건
+  gives: 벗어난 구간, 벗어난 정도
+  preview: signal_baseline
+  doc: docs/diagnosis.md
+  uses:
+  - 감시할 때
+  limits: 정상 운전 데이터가 있어야 합니다. 벗어난 정도만 보고하며 합격·불합격을 말하지 않습니다.
+  together:
+  - guidance
+  samples:
+    max: 10
+- key: guidance
+  name: 원인 후보와 점검 안내
+  form: judge
+  area: 설비 공통
+  summary: 찾아낸 변화를 관찰 사실, 원인 후보, 다음 점검으로 정리합니다.
+  needs: 진단 결과
+  gives: 관찰 사실, 원인 후보, 다음 점검
+  preview: guidance
+  doc: docs/diagnosis_screen.md
+  uses:
+  - 점검할 때
+  limits: 원인 후보는 일반적인 설비 지식에서 온 것이며 판정이 아닙니다.
+  together:
+  - signal_baseline
+  samples:
+    max: 8
+- key: stroke_curve
+  name: 스트로크 부하 곡선
+  form: graph
+  area: 프레스
+  summary: 프레스의 부하 곡선을 위치별 정상 범위와 비교합니다.
+  needs: 스트로크별 부하
+  gives: 벗어난 스트로크, 벗어난 구간
+  preview: stroke_curve
+  doc: docs/diagnosis.md
+  uses:
+  - 감시할 때
+  limits: 가상 곡선으로 확인했습니다. 구간 이름과 기준값은 현장에서 정해야 합니다.
+  together:
+  - guidance
+- key: quality_prediction
+  name: 두께 예측
+  form: graph
+  area: 압출
+  summary: 공정 값으로 품질 값을 예측해 규격과 비교합니다.
+  needs: 공정 값, 실측 표본
+  gives: 예측 값, 규격 이탈 예측 구간
+  preview: quality_prediction
+  doc: docs/diagnosis.md
+  uses:
+  - 감시할 때
+  - 조건 잡을 때
+  limits: 정답이 있는 표본으로 만든 1차식입니다. 학습 범위 밖은 믿기 어렵다고 표시합니다.
+  together:
+  - signal_baseline
+- key: cutting_force
+  name: 선삭의 절삭력
+  form: number
+  area: 절삭
+  summary: 절삭 조건과 재료에서 절삭력, 토크, 동력을 계산합니다.
+  needs: 절삭 조건, 재료
+  gives: 주절삭력, 토크, 절삭 동력
+  preview: cutting_force
+  example:
+    material: C45
+    diameter: 50.0
+    cutting_speed: 200.0
+    feed: 0.25
+    depth: 2.0
+  preview_note: 재료 값은 원문과 대조하지 않은 값입니다.
+  doc: docs/machining_slice1.md
+  uses:
+  - 조건 잡을 때
+  limits: 재료 값은 원문과 대조하지 않은 값입니다. 보정 계수는 모두 1로 봅니다.
+  together:
+  - signal_baseline
+  samples:
+    materials:
+    - C45
+    - 42CrMo4
+    feeds:
+    - 0.15
+    - 0.25
+    - 0.4
+uses:
+- 설계할 때
+- 조건 잡을 때
+- 감시할 때
+- 점검할 때
+- 보고할 때
+sample_rule:
+  yield_safety: 1.5
+  process_frames: 4
+sets:
+- key: set_fastening
+  name: 체결 공정 세트
+  summary: 형상, 판 응력, 조이는 과정, 센서 추천을 한 번에 담습니다.
+  items:
+  - fastening_shape
+  - fastening_field
+  - fastening_process
+  - fastening_sensing
+- key: set_monitor
+  name: 설비 감시 세트
+  summary: 신호를 평소와 비교하고, 찾아낸 변화를 점검 안내로 잇습니다.
+  items:
+  - signal_baseline
+  - guidance
+- key: set_cutting
+  name: 절삭 설비 세트
+  summary: 절삭력 계산과 주축 신호 감시, 점검 안내.
+  items:
+  - cutting_force
+  - signal_baseline
+  - guidance
