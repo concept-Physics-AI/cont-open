@@ -15,6 +15,7 @@ import html
 import json
 from typing import Any, Mapping
 
+from cont.view.switcher import with_switcher
 from cont.view.diagnosis_html import CSS
 from cont.view.fastening_html import EXTRA_CSS
 from cont.view.fastening_live import GROUPS, LIVE_CSS, LIVE_JS
@@ -357,5 +358,6 @@ def render_app(data: Mapping[str, Any], ask_url: str | None = None, title: str =
 <script type="application/json" id="app-data">{blob}</script><script>{APP_JS}</script>"""
     fonts = ('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
              '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">')
-    return (f'<!DOCTYPE html>\n<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n'
+    page = (f'<!DOCTYPE html>\n<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n'
             f"<title>{e(title)}</title>{fonts}<style>{CSS}{EXTRA_CSS}{LIVE_CSS}{FIELD_CSS}{APP_CSS}</style></head><body>\n{body}\n</body></html>")
+    return with_switcher(page, "studio")

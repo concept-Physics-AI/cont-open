@@ -16,6 +16,7 @@ import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Mapping, Sequence
 
+from cont.view.switcher import with_switcher
 from cont.fab.catalog import catalog, load, make, meshes, types_data
 from cont.view.diagnosis_html import CSS
 from cont.view.fastening_html import EXTRA_CSS
@@ -240,8 +241,9 @@ def render_store(items: Sequence[Mapping[str, Any]], data: Mapping[str, Any] | N
 <script type="application/json" id="store-data">{blob}</script><script>{STORE_JS.replace("/*BUILD*/", BUILD_JS)}</script>"""
     fonts = ('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
              '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">')
-    return (f'<!DOCTYPE html>\n<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">\n'
+    page = (f'<!DOCTYPE html>\n<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">\n'
             f"<title>{e(title)}</title>{fonts}<style>{CSS}{EXTRA_CSS}{FIELD_CSS}{STORE_CSS}{BUILD_CSS}{SKETCH_CSS}</style></head><body>\n{body}\n</body></html>")
+    return with_switcher(page, "fab")
 
 
 def make_server(port: int = 8768) -> ThreadingHTTPServer:

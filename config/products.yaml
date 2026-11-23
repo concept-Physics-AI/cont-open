@@ -1,0 +1,18 @@
+# ConT 세 제품의 이름과 위치. 화면 맨 위의 전환 틀이 이 파일을 읽는다.
+# 주소는 이 컴퓨터에서 서버를 띄웠을 때의 기본값이며, 환경 변수(url_env)로 바꿀 수 있다. 값이 비어 있으면 그 탭은 눌러도 이동하지 않는다.
+products:
+- key: studio
+  name: Studio
+  role: 대화로 물리와 일반 AI를 다루는 통합 작업 공간
+  url_env: CONT_STUDIO_URL
+  default_url: http://127.0.0.1:8766
+- key: physics
+  name: Physics
+  role: Studio와 FAB이 함께 쓰는 물리·AI 엔진과 서비스
+  url_env: CONT_PHYSICS_URL
+  default_url: http://127.0.0.1:8769
+- key: fab
+  name: FAB
+  role: 물리 정보를 골라 내 현장 화면을 꾸리는 곳
+  url_env: CONT_FAB_URL
+  default_url: http://127.0.0.1:8768
