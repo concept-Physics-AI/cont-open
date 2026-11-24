@@ -2,13 +2,15 @@
 
 모든 물리 팩은 이 형식 하나로만 결과를 낸다. 화면(C4)과 검증(C6)은 이 묶음만 본다.
 항목: 질문 · 물리량(이름, 값, 단위, 예상 범위, 지위) · 값의 지위 · 증거 연결과 식별가능성(추정값) · 계산 방법 · 근거 · 신뢰도 · 불확실성 · 물리잔차 ·
-검증 상태 · 적용 범위 · 실패 조건 · 물리장(면에 퍼진 값) · 표현 지시 · 보관.
+검증 상태 · 적용 범위 · 실패 조건 · 물리장(면에 퍼진 값) · 표현 지시 · 보관 · 출처(내용 해시와 개정 ID는 내용에서 계산).
 값의 지위와 믿을 근거의 뜻은 docs/hidden_physics.md에 있다. 값을 내지 않은 항목은 비워 두고, trust()가 "보고하지 않음"이라고 적는다.
 형식을 바꾸는 변경은 기능 변경과 섞지 않고 별도 PR로 다룬다 (ARCHITECTURE.md).
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+import hashlib
+import json
+from dataclasses import asdict, dataclass, field, replace
 from typing import Any
 
 RETENTION_EPHEMERAL = "ephemeral"  # 보고 나면 사라지는 일회성 (기본)
@@ -95,6 +97,22 @@ class Confidence:
 
 
 @dataclass(frozen=True)
+class Provenance:
+    """출처: 이 묶음을 누가, 어느 실행에서, 어느 개정을 바탕으로 만들었는가. 내용 해시에는 넣지 않는다."""
+    producer: str = ""             # 만든 곳 (예: "pack:fastening")
+    run_id: str = ""               # 실행 ID. 서비스 층이 붙인다
+    parent_revision: str = ""      # 바탕이 된 개정 (조건을 바꿔 다시 계산한 경우)
+
+
+# 해시에 넣지 않는 항목: 보이는 방식, 보관 방식, 출처. 결과의 내용만 해시로 알아본다.
+_NOT_HASHED = ("presentation", "retention", "provenance")
+
+
+def _plain(o: Any) -> Any:
+    return float(o) if hasattr(o, "item") and not isinstance(o, (list, tuple, dict)) else str(o)
+
+
+@dataclass(frozen=True)
 class PhysicsAnswer:
     question: str
     quantities: tuple[Quantity, ...]
@@ -112,6 +130,7 @@ class PhysicsAnswer:
     scope: str = ""                                       # 적용 범위
     failure_conditions: tuple[str, ...] = ()              # 이 결과가 맞지 않게 되는 조건
     fields: tuple[Field, ...] = ()                        # 물리장. 팩이 분포를 계산했을 때만 채운다
+    provenance: Provenance = field(default_factory=Provenance)  # 출처. 내용 해시에는 넣지 않는다
 
     def get(self, key: str) -> Quantity:
         for q in self.quantities:
@@ -167,6 +186,19 @@ class PhysicsAnswer:
                 seen.append(st)
         return tuple(seen)
 
+    def content_hash(self) -> str:
+        """결과의 내용으로 만든 SHA-256 (16진수 64자). 같은 내용이면 같고, 값이 하나라도 바뀌면 달라진다. 변조 방지가 아니라 같은 결과인지 알아보는 표식이다."""
+        body = {k: v for k, v in asdict(self).items() if k not in _NOT_HASHED}
+        return hashlib.sha256(json.dumps(body, sort_keys=True, ensure_ascii=False, separators=(",", ":"), default=_plain).encode("utf-8")).hexdigest()
+
+    def revision_id(self) -> str:
+        return "rev-" + self.content_hash()[:12]
+
+    def stamped(self, producer: str, run_id: str = "", parent: "PhysicsAnswer | str | None" = None) -> "PhysicsAnswer":
+        """출처를 붙인 사본. 내용은 그대로라 개정 ID도 그대로다."""
+        pr = parent.revision_id() if isinstance(parent, PhysicsAnswer) else (parent or "")
+        return replace(self, provenance=Provenance(producer, run_id, pr))
+
     def trust(self) -> list[list[str]]:
         """이 결과를 믿어도 되는가. 값을 내지 않은 항목은 생략하지 않고 "보고하지 않음"이라고 적는다."""
         kinds = self.statuses() or (self.status,)
@@ -185,6 +217,7 @@ class PhysicsAnswer:
             ["검증 상태", f"{VALIDATION_LABELS[self.validation]}. {self.confidence.reason}"],
             ["적용 범위", self.scope or NOT_REPORTED],
             ["실패 조건", "; ".join(self.failure_conditions) or NOT_REPORTED],
+            ["개정", f"{self.revision_id()}. 만든 곳: {self.provenance.producer or NOT_REPORTED}. 바탕 개정: {self.provenance.parent_revision or '없음'}"],
         ]
 
     def to_dict(self) -> dict[str, Any]:
