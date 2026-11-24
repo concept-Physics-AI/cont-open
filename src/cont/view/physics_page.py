@@ -14,6 +14,7 @@ import yaml
 
 from cont.fab.catalog import types_data
 from cont.tolerance import CONFIG_DIR
+from cont.view.physics_work import CSS as WB_CSS, render_workbench
 from cont.view.switcher import with_switcher
 
 
@@ -46,18 +47,19 @@ h2{font-size:21px;font-weight:600;margin:40px 0 4px}.sub{font-size:13.5px;color:
 .note{font-size:12.5px;color:#59636D;margin-top:28px;border-top:1px solid #DDE2E7;padding-top:12px}"""
 
 
-def render_physics(urls: dict[str, str] | None = None) -> str:
+def render_physics(urls: dict[str, str] | None = None, live: bool = False) -> str:
     e = html.escape
     ready, wanted = engines_ready(), engines_wanted()
     r = "".join(f'<article class="card"><h3>{e(x["name"])}</h3><p>{e(x["summary"])}</p><p class="lim">{e(x["limits"])}</p></article>' for x in ready)
     w = "".join(f'<article class="card want"><h3>{e(x["name"])}</h3><p>{e(x["summary"])}</p><span class="n">기다리는 표현 유형 {len(x["types"])}개</span>'
                 f'<ul>{"".join(f"<li>{e(t)}</li>" for t in x["types"][:4])}{"<li>…</li>" if len(x["types"]) > 4 else ""}</ul></article>' for x in wanted)
     body = (f'<main class="pg"><h1>물리·AI 엔진</h1><p class="lead">Studio와 FAB은 같은 엔진을 씁니다. 화면마다 계산을 따로 하지 않고, 물리 값은 여기 있는 엔진만 냅니다.</p>'
+            f'{render_workbench(live)}'
             f'<h2>지금 있는 엔진 {len(ready)}개</h2><p class="sub">코드에 있고 실제로 돌아갑니다. 한계를 함께 적었습니다.</p><div class="grid">{r}</div>'
             f'<h2>아직 없는 엔진 {len(wanted)}개</h2><p class="sub">FAB 진열대에서 "필요해요"로 요청이 쌓이는 곳입니다. 기다리는 유형이 많은 순서입니다.</p><div class="grid">{w}</div>'
             f'<p class="note">엔진이 낸 값은 계산값이며 실측과 대조하기 전입니다. 엔진이 돌았다는 것이 물리적으로 맞다는 뜻은 아닙니다.</p></main>')
     page = (f'<!DOCTYPE html>\n<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">\n'
-            f'<title>ConT Physics</title><style>{CSS}</style></head><body>\n{body}\n</body></html>')
+            f'<title>ConT Physics</title><style>{CSS}{WB_CSS}</style></head><body>\n{body}\n</body></html>')
     return with_switcher(page, "physics", urls)
 
 

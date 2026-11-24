@@ -15,6 +15,8 @@ class PhysicsPack(Protocol):
 
     def solve(self, inputs: Mapping[str, Any], question: str = "") -> PhysicsAnswer: ...
 
+    # 선택: actions = {"이름": 함수}. 함수는 solve와 같은 모양 (입력, 질문) -> PhysicsAnswer. 서비스가 /v1/packs/{영역}/{이름}으로 전달한다.
+
 
 _REGISTRY: dict[str, PhysicsPack] = {}
 

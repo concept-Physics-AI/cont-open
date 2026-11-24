@@ -40,20 +40,26 @@ def make_server(port: int | None = None, host: str = HOST) -> ThreadingHTTPServe
                 return self._send(200, {"ok": True})
             if self.path == "/v1/packs":
                 return self._send(200, {"packs": api.list_packs()})
+            if self.path in ("/physics", "/"):
+                from cont.view.physics_page import render_physics
+                b = render_physics(live=True).encode("utf-8")
+                self.send_response(200); self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(b))); self.end_headers()
+                return self.wfile.write(b)
             self._send(404, {"error": "없는 주소입니다"})
 
         def do_POST(self) -> None:  # noqa: N802
             parts = self.path.strip("/").split("/")
-            if not (len(parts) == 4 and parts[0] == "v1" and parts[1] == "packs" and parts[3] == "solve"):
+            if not (len(parts) == 4 and parts[0] == "v1" and parts[1] == "packs"):
                 return self._send(404, {"error": "없는 주소입니다"})
             try:
                 n = int(self.headers.get("Content-Length", "0"))
                 if not 0 < n <= limit:
                     return self._send(413, {"error": "요청 본문이 비었거나 너무 큽니다"})
                 d = json.loads(self.rfile.read(n))
-                self._send(200, api.solve(parts[2], d.get("inputs", {}), str(d.get("question", ""))))
+                self._send(200, api.solve(parts[2], d.get("inputs", {}), str(d.get("question", "")), parts[3]))
             except api.NotFound:
-                self._send(404, {"error": f"'{parts[2]}' 팩이 없습니다", "available": [p['key'] for p in api.list_packs()]})
+                self._send(404, {"error": f"'{parts[2]}/{parts[3]}'는 없는 팩이거나 없는 동작입니다", "available": [p['key'] for p in api.list_packs()]})
             except Exception as exc:            # 계산할 수 없는 입력이면 이유를 돌려준다
                 self._send(400, {"error": f"계산하지 못했습니다: {exc}"})
 
