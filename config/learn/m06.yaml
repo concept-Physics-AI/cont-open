@@ -1,0 +1,24 @@
+# M06 체결력 = 물리 기준 + 보정 (Y5). 합성 자료이며 실제 계측이 아니다. 값은 코드에 박지 않는다.
+# 결과는 기준 대비 오차를 보고할 뿐 합격/불합격을 판정하지 않는다.
+joint:
+  size: M10
+  property_class: "10.9"
+  plate_thickness_mm: 15.0
+  plate_e_mpa: 205000.0
+  outer_diameter_mm: 40.0
+nominal: {friction_thread: 0.12, friction_head: 0.12}      # 물리 기준이 쓰는 대표 마찰
+synthetic:
+  lots: 12
+  runs_per_lot: 8
+  torque_setpoints_nm: [40.0, 50.0, 60.0]
+  lot_friction_spread: 0.25      # 로트마다 실제 마찰이 대표값에서 이 비율만큼 다르다 (±, 나사면·좌면 따로)
+  tool_error: 0.04               # 조임 공구가 실제로 거는 토크의 상대 흩어짐 (표준편차)
+  torque_meas_noise_nm: 0.3
+  angle_noise_deg: 4.0
+  embedding_angle_deg: 6.0       # 착좌·함몰로 늘어나는 각도 (기준모형이 모른다)
+  seed: 0
+split: {test_fraction: 0.25, seed: 0}
+correction:
+  features: [angle_dev, torque_rel]    # 실측 가능한 신호만. 정답 축력은 입력이 아니다
+  ridge: 1.0e-6
+  reference_torque_nm: 50.0
