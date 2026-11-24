@@ -1,0 +1,11 @@
+# 1차원 열전도 PINN 벤치마크용 설정. 값은 출발점이며 제품 기준이 아니다.
+seed: 0
+hidden: [32, 32, 32]
+activation: tanh
+epochs: 3000
+learning_rate: 0.003
+n_interior: 1000
+n_boundary: 100
+n_initial: 100
+weights: {pde: 1.0, boundary: 10.0, initial: 10.0}
+dtype: float64
