@@ -245,6 +245,7 @@ Studio 대화는 질문의 물리 영역을 먼저 알아본다 (`cont.dialogue.
 | E-1 | 숨은 물리의 복원: 볼트 늘어남 관측 → 체결력·마찰계수 추정 (불확실성·잔차 포함) | 완료, 합성 관측으로만 확인 ([docs/fastening_estimate.md](docs/fastening_estimate.md)) |
 | S-1 | 현장 계측 추천: 센서와 연결, 이 조인트에서 나오는 신호의 크기 | 완료. 연결 코드는 없음 ([docs/fastening_sensing.md](docs/fastening_sensing.md)) |
 | 2a | 측정 CSV 입력과 편차 보고 | 완료, **합성 데이터로만 확인.** 반복 측정 CSV(볼트 늘어남, 하중셀 값)를 읽어 평균과 불확도를 내고, 엔진의 추정을 기준 값에 견준 편차를 보고한다. 판정하지 않는다. 합성 표시가 있으면 보고서에 정확도 검증이 아니라고 적는다 ([docs/validation_intake.md](docs/validation_intake.md)) |
+| 2b | 토크계수 K와 마찰계수 mu의 변환, 해석 기준표 대조, 오차 예산 | 완료, **합성·가정한 식의 값으로만 확인.** K를 mu로 옮기는 식(`vdi2230`)을 두고, 기준표와 엔진을 같은 조건에서 견준다. 측정 CSV 보고서는 체결력 편차를 모형의 정의 차이와 남는 편차로 나누고 불확도 항목을 나란히 적는다. 판정하지 않는다 ([docs/validation_intake.md](docs/validation_intake.md)) |
 | 2 | 기준값 대조 | **틀만 있음.** 기준 사례는 비어 있다 (표준 원문이 오면 `config/reference/fastening/`에 옮겨 적는다). 수치해석과 VDI 식의 상호 대조는 있음 |
 
 2026-11-23 대표 결정으로 화면(5)과 대화로 수정(3)을 앞당겼다. 번호는 처음 정한 것을 그대로 둔다.

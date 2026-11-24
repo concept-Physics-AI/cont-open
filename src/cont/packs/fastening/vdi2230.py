@@ -152,6 +152,25 @@ class Result:
     safety_fatigue: float | None       # S_D = sigma_ASV / sigma_a
 
 
+def friction_from_torque_coefficient(joint: BoltedJoint, torque_coefficient: float) -> float:
+    """토크계수 K (T = K F d)를 나사면과 좌면이 같은 마찰계수 mu로 옮긴다: K d = 0.16 P + mu (0.58 d2 + D_Km / 2).
+
+    K는 토크에서 체결력을 곧바로 구하는 한 덩어리 계수이고, mu는 접촉면의 마찰이다. 둘은 같은 값이 아니다.
+    음수가 나오면 그 K는 이 규격에서 마찰이 없어도 나올 수 없는 값이다 (ValueError).
+    """
+    g = thread_geometry(joint.d, joint.p)
+    slope = 0.58 * g.d2 + (joint.bearing_diameter + joint.hole) / 4
+    mu = (torque_coefficient * joint.d - 0.16 * g.p) / slope
+    if mu <= 0:
+        raise ValueError(f"torque coefficient {torque_coefficient:g} is not reachable with positive friction for {joint.size}")
+    return mu
+
+
+def torque_coefficient_from_friction(joint: BoltedJoint, friction: float) -> float:
+    g = thread_geometry(joint.d, joint.p)
+    return (0.16 * g.p + friction * (0.58 * g.d2 + (joint.bearing_diameter + joint.hole) / 4)) / joint.d
+
+
 def calculate(joint: BoltedJoint, load: LoadCase) -> Result:
     g = thread_geometry(joint.d, joint.p)
     d_w, d_h = joint.bearing_diameter, joint.hole
