@@ -244,6 +244,7 @@ Studio 대화는 질문의 물리 영역을 먼저 알아본다 (`cont.dialogue.
 | F-1 | 판 안의 응력 분포: 축대칭 수치해석 → 물리장 → 물리 이미지 | 완료 ([docs/fastening_field.md](docs/fastening_field.md)) |
 | E-1 | 숨은 물리의 복원: 볼트 늘어남 관측 → 체결력·마찰계수 추정 (불확실성·잔차 포함) | 완료, 합성 관측으로만 확인 ([docs/fastening_estimate.md](docs/fastening_estimate.md)) |
 | S-1 | 현장 계측 추천: 센서와 연결, 이 조인트에서 나오는 신호의 크기 | 완료. 연결 코드는 없음 ([docs/fastening_sensing.md](docs/fastening_sensing.md)) |
+| 2a | 측정 CSV 입력과 편차 보고 | 완료, **합성 데이터로만 확인.** 반복 측정 CSV(볼트 늘어남, 하중셀 값)를 읽어 평균과 불확도를 내고, 엔진의 추정을 기준 값에 견준 편차를 보고한다. 판정하지 않는다. 합성 표시가 있으면 보고서에 정확도 검증이 아니라고 적는다 ([docs/validation_intake.md](docs/validation_intake.md)) |
 | 2 | 기준값 대조 | **틀만 있음.** 기준 사례는 비어 있다 (표준 원문이 오면 `config/reference/fastening/`에 옮겨 적는다). 수치해석과 VDI 식의 상호 대조는 있음 |
 
 2026-11-23 대표 결정으로 화면(5)과 대화로 수정(3)을 앞당겼다. 번호는 처음 정한 것을 그대로 둔다.
