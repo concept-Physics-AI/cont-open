@@ -16,6 +16,7 @@ from typing import Any
 
 from cont.packs.fastening import vdi2230
 from cont.packs.fastening.estimate import ElongationMeasurement, estimate
+from cont.packs.fastening.estimate import settings as estimate_settings
 from cont.packs.fastening.joint import BoltedJoint, LoadCase, Plate
 from cont.tolerance import Check, Tolerance, check, load_profile
 
@@ -118,6 +119,52 @@ class Row:
     note: str = ""
 
 
+@dataclass(frozen=True)
+class BudgetLine:
+    """오차 예산의 한 줄. kind가 '편차'이면 체결력 편차(로그 비율)를 나눈 몫이고, '불확도'이면 상대 표준 불확도(k=1)다."""
+    specimen: str
+    term: str
+    value: float
+    kind: str
+    note: str = ""
+
+
+def error_budget(s: Specimen, a: Assumptions) -> list[BudgetLine]:
+    """엔진의 체결력 추정과 하중셀의 편차를 항목으로 나눈다 (곱셈 관계라 로그 비율로 나눠야 합이 맞는다).
+
+    체결력 = 늘어남 / 컴플라이언스이므로 ln(엔진 / 하중셀) = ln(데이터 컴플라이언스 / 엔진 컴플라이언스) + ln(데이터 컴플라이언스로 환산한 체결력 / 하중셀).
+    앞의 항은 모형의 정의 차이, 뒤의 항은 관측과 하중셀과 그 밖의 것이 합쳐진 남는 편차다.
+    """
+    ref, ref_u = _force_reference(s)
+    if ref is None or not (s.leff and s.area and s.modulus):
+        return []
+    plates = tuple(Plate(t, s.modulus, None) for t in s.plate_thickness)
+    joint = BoltedJoint(s.bolt_size, s.strength_class, plates[0], plates[1], outer_diameter=a.outer_diameter)
+    load = LoadCase(s.torque, a.friction, a.friction)
+    measured = ElongationMeasurement(s.elongations, s.length_instrument_uncertainty, "측정 CSV")
+    est = estimate(joint, load, measured)
+    engine_comp = vdi2230.calculate(joint, load).delta_s
+    data_comp = s.leff / (s.modulus * s.area)
+    from_data = measured.mean / data_comp
+    total = math.log(est.preload / ref)
+    model_form = math.log(data_comp / engine_comp)
+    remainder = math.log(from_data / ref)
+    assumed = estimate_settings()["bolt_resilience_relative_uncertainty"]
+    lines = [
+        BudgetLine(s.specimen_id, "총 편차 (엔진 추정 대 하중셀)", total, "편차"),
+        BudgetLine(s.specimen_id, "모형의 정의 차이 (볼트 컴플라이언스)", model_form, "편차",
+                   "엔진은 머리·나사 물림·너트 변형을 포함하고 데이터는 Leff/(E·A) 하나로 둔다"),
+        BudgetLine(s.specimen_id, "남는 편차 (관측, 하중셀, 그 밖)", remainder, "편차", "데이터의 컴플라이언스로 환산해도 남는 몫"),
+        BudgetLine(s.specimen_id, "관측 (늘어남 평균)", measured.standard_uncertainty / measured.mean, "불확도"),
+        BudgetLine(s.specimen_id, "하중셀 기준", (ref_u or 0.0) / COVERAGE / ref, "불확도"),
+        BudgetLine(s.specimen_id, "엔진의 컴플라이언스 계산값 (잠정 가정)", assumed, "불확도", "표준에서 온 값이 아니라 잠정으로 둔 값"),
+    ]
+    if abs(model_form) > 2 * assumed:
+        lines.append(BudgetLine(s.specimen_id, "점검: 정의 차이가 잠정 불확도의 2배보다 크다", abs(model_form) / assumed, "점검",
+                                "엔진의 잠정 불확도로는 이 차이를 덮지 못한다. 실측이 오면 컴플라이언스 불확도를 다시 정한다"))
+    return lines
+
+
 def _force_reference(s: Specimen) -> tuple[float | None, float | None]:
     """하중셀 반복 읽기의 평균과 확장 불확도(k=2). 하중셀의 잔류 편향은 반복해도 줄어들지 않으므로 그대로 둔다."""
     if not s.forces:
@@ -163,7 +210,8 @@ def report(path: Path | str, assumptions: Assumptions | None = None, profile: di
     notes.append(f"CSV에 없어 가정한 값: 체결부 바깥지름 {a.outer_diameter:g} mm, 판 탄성계수 {a.plate_modulus:g} MPa (CSV에 없을 때), 마찰계수 {a.friction:g} (체결력 추정에는 쓰이지 않음)")
     judged = [r for r in rows if r.check is not None and r.check.passed is not None]
     notes.append("허용 오차를 정하지 않아 판정은 하지 않았다." if not judged else f"한계가 정해진 {len(judged)}개 중 {sum(bool(r.check.passed) for r in judged)}개가 한계 안이다.")
-    return {"specimens": len(specimens), "synthetic": synthetic, "rows": rows, "notes": notes}
+    budget = [b for s in specimens for b in error_budget(s, a)]
+    return {"specimens": len(specimens), "synthetic": synthetic, "rows": rows, "notes": notes, "budget": budget}
 
 
 def text(rep: dict[str, Any]) -> str:
@@ -176,6 +224,12 @@ def text(rep: dict[str, Any]) -> str:
         lines.append(f"{r.specimen} | {r.quantity} | 엔진 {r.engine:.6g} {r.unit} | 기준 {r.reference:.6g} {r.unit} | 상대 편차 {sign} (절대 {dev})")
         if r.note:
             lines.append(f"    {r.note}")
+    if rep.get("budget"):
+        lines += ["", "오차 예산 (편차는 로그 비율의 %, 합이 총 편차와 같다. 불확도는 상대 표준 불확도 k=1)"]
+        for b in rep["budget"]:
+            lines.append(f"{b.specimen} | {b.kind} | {b.term} | {b.value * 100:+.2f}%" if b.kind != "점검" else f"{b.specimen} | 점검 | {b.term} ({b.value:.1f}배)")
+            if b.note:
+                lines.append(f"    {b.note}")
     return "\n".join(lines)
 
 
