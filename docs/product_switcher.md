@@ -4,9 +4,9 @@
 
 | 제품 | 하는 일 | 화면 | 기본 주소 |
 |---|---|---|---|
-| Studio | 대화로 물리와 일반 AI를 다루는 통합 작업 공간 | 체결 대화 화면 (`cont.dialogue.serve_fastening`) | 127.0.0.1:8766 |
-| Physics | Studio와 FAB이 함께 쓰는 엔진과 서비스 | 엔진 목록 (`cont.view.physics_page`, 새로 만듦) | 127.0.0.1:8769 |
-| FAB | 물리 정보를 골라 내 현장 화면을 꾸리는 곳 | 고르기 화면 (`cont.fab.store`), 이상진단 화면(FAB으로 만든 화면)도 FAB 쪽 | 127.0.0.1:8768 |
+| Studio | 물리를 모르는 사람이 대화로 정확한 물리 기반 AI를 쓰는 곳 | 체결 대화 화면 (`cont.dialogue.serve_fastening`) | 127.0.0.1:8766 |
+| Physics | 물리·설계 전문가가 AI를 쉽게 쓰게 돕는 소프트웨어 | 제품 화면은 아직 없고, 코어 엔진 목록만 보인다 (`cont.view.physics_page`) | 127.0.0.1:8769 |
+| FAB | 자기만의 Physical AI를 쉽게 만드는 곳 | 고르기 화면 (`cont.fab.store`), 이상진단 화면(FAB으로 만든 화면)도 FAB 쪽 | 127.0.0.1:8768 |
 
 - 이름·한 줄 설명·주소는 `config/products.yaml`. 주소는 환경 변수 `CONT_STUDIO_URL`, `CONT_PHYSICS_URL`, `CONT_FAB_URL`로 바꾼다. 주소가 비어 있는 탭은 이동하지 않는다.
 - 막대를 다는 코드는 `cont.view.switcher.with_switcher()` 하나이며, 화면마다 이 함수만 부른다.
