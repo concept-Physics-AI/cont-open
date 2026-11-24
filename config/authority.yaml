@@ -1,0 +1,19 @@
+# 개념별 책임 모듈 (권위 표). 한 개념은 한 곳에서만 정의하고 다른 곳은 가져다 쓴다.
+# 점검: tests/test_authority.py. 표를 바꾸는 변경은 ARCHITECTURE.md의 "개념별 책임 모듈"을 먼저 고친다.
+concepts:
+- key: result_format
+  name: 공통 결과 형식 (물리 답변 묶음)
+  owner: src/cont/answer.py
+  defines: [Quantity, Residual, Field, Confidence, PhysicsAnswer]
+  rule: 물리 영역의 결과는 PhysicsAnswer로 낸다. 같은 이름의 클래스를 다른 곳에서 다시 정의하지 않는다.
+- key: tolerance
+  name: 허용 오차 프로파일과 편차 계산
+  owner: src/cont/tolerance.py
+  defines: [Tolerance, Check]
+  rule: 기본은 판정 없이 편차만 보고한다. 값은 config/tolerances에 둔다.
+sdk_boundaries:
+- key: llm_provider
+  name: LLM 공급자 SDK와 네트워크 호출
+  allowed_in: src/cont/llm
+  modules: [anthropic, openai, ollama, requests, httpx, urllib.request]
+  rule: 공급자 호출은 cont.llm 어댑터에서만 한다. 다른 모듈은 어댑터 인터페이스만 쓴다.

@@ -134,6 +134,18 @@ ConT가 다루는 물리는 두 층이다. **보이는 물리**는 직접 측정
 닫힌 식이 있으면 식을 쓰고, 대리모형은 물리 선생이 느릴 때만 보정 연산자로 시작하며, 잔차·불확실성·범위 밖 표시·선생으로 되돌아가기 없이는 켜지 않는다.
 자세한 내용과 옛 저장소의 설계, 공개 방법은 [docs/physics_models.md](docs/physics_models.md)에 있다.
 
+## 개념별 책임 모듈 (권위 표)
+
+한 개념은 한 곳에서만 정의하고, 다른 곳은 그것을 가져다 쓴다. 표는 `config/authority.yaml`, 점검은 `tests/test_authority.py`.
+
+| 개념 | 책임 모듈 | 규칙 |
+|---|---|---|
+| 공통 결과 형식 (Quantity, Residual, Field, Confidence, PhysicsAnswer) | `src/cont/answer.py` | 같은 이름을 다른 곳에서 다시 정의하지 않는다 |
+| 허용 오차와 편차 계산 (Tolerance, Check) | `src/cont/tolerance.py` | 기본은 판정 없이 편차만 보고한다 |
+| LLM 공급자 SDK와 네트워크 호출 | `src/cont/llm/` | 다른 모듈은 어댑터 인터페이스만 쓴다 |
+
+위반하면 테스트가 실패한다. 표에 개념을 더하거나 책임 모듈을 옮기려면 이 절을 먼저 고친다. 표가 막는 것은 중복 정의와 SDK 직접 호출뿐이며, 물리 값이 엔진에서만 나오는지는 이 점검이 보지 못한다.
+
 ## 설정으로 바뀌는 것 (코드에 고정하지 않음)
 
 - **허용 오차**: `config/tolerances/` 프로파일. 기본값은 *판정 없음(편차만 보고)*. 환경마다 프로파일을 만들어 `CONT_TOLERANCE_PROFILE`로 고른다.
