@@ -22,7 +22,7 @@ BUILD_CSS = """
 .myfab .cp.pri{background:#EEF1F4;color:#14181D;font-weight:600}
 .dl .ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 16px;border-top:1px solid var(--line);background:#fff;font-size:13px;color:var(--sub)}.dl .ctl:empty{display:none}
 .dl .ctl button{height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--line);background:#fff;font-size:13px}.dl .ctl label{display:inline-flex;gap:6px;align-items:center;min-height:36px}.dl .ctl input[type=checkbox]{width:16px;height:16px;accent-color:var(--t)}
-.dl .ctl input[type=range]{flex:1;min-width:120px;accent-color:var(--t)}.c3{display:block;width:100%;height:auto;touch-action:none;cursor:grab;background:#14181D}.c3:active{cursor:grabbing}
+.dl .ctl input[type=range]{flex:1;min-width:120px;accent-color:var(--t)}.no3{margin:6px 0;color:#5B6670}.c3{display:block;width:100%;height:auto;touch-action:none;cursor:grab;background:#14181D}.c3:active{cursor:grabbing}
 .plst{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px}.plst svg{width:min(100%,380px);height:auto}.plst .cap{font-size:15px;font-weight:600}
 .ev{margin:0 0 8px;padding:0;list-style:none;font-size:13.5px;line-height:1.55}.ev li{padding:6px 0;border-bottom:1px solid var(--line)}.ev b{display:inline-block;min-width:44px;color:var(--t);font-weight:600}
 #d-more h3{font-size:15px;font-weight:600;margin:6px 0}#d-more h4{font-size:13px;font-weight:600;color:var(--sub);margin:10px 0 4px}#d-more .steps{margin:0;padding-left:18px;font-size:13.5px}#d-more p{font-size:13.5px;margin:0}
@@ -54,7 +54,10 @@ function labelOf(k,si){var it=item(k),s=it.samples[si]||it.samples[0];return s.l
 function isIn(k,si){var lb=labelOf(k,si);return picks.some(function(p){return p.key===k&&p.label===lb;});}
 function found(p){var it=item(p.key),i=it.samples.map(function(x){return x.label;}).indexOf(p.label);return {it:it,s:it.samples[i<0?0:i],missing:i<0};}
 function figs(h){var t=document.createElement('div');t.innerHTML=h;return all('figure',t).map(function(f){var s=$('svg',f);return {svg:s?s.outerHTML:'',cap:($('figcaption',f)||{}).textContent||''};});}
-function is3(it,s){return !!(s.view3d&&D.meshes&&D.meshes[s.view3d.size]);}
+var CAN2=null;function can2(){if(CAN2===null){try{CAN2=!!document.createElement('canvas').getContext('2d');}catch(e){CAN2=false;}}return CAN2;}
+function is3(it,s){var m=s.view3d&&D.meshes&&D.meshes[s.view3d.size];return !!(m&&m.p&&m.p.length&&can2());}
+function no3(it,s){return !!s.view3d&&!is3(it,s);}
+var NO3='<p class="sm no3" role="status">3D를 쓸 수 없어 대표 단면으로 보여 드립니다. 제목과 핵심 수치는 그대로입니다.</p>';
 function isPlay(it,s){return (it.form==='4d'||it.form==='video')&&figs(s.html).length>1;}
 function defView(it,s){if(is3(it,s))return {yaw:YAW,pitch:PITCH,zoom:1,off:[],see:!!s.view3d.hidden};if(isPlay(it,s))return {frame:0};return {};}
 function addPick(k,si,view){var it=item(k),s=it.samples[si]||it.samples[0],i=-1;picks.forEach(function(p,j){if(p.key===k&&p.label===s.label)i=j;});
@@ -96,6 +99,7 @@ ctl.oninput=function(e){if(e.target.dataset.pl==='seek'){stopPlay();show(Number(
 function richDetail(){var it=cur,s=it.samples[curS],pv=$('#d-pv'),ctl=$('#d-ctl'),more=$('#d-more');stopPlay();ctl.innerHTML='';ctl.onclick=null;ctl.oninput=null;activeV=null;var keep=detailKey===it.key&&detailView&&((is3(it,s)&&detailView.zoom!=null)||(isPlay(it,s)&&detailView.frame!=null));detailView=keep?detailView:defView(it,s);detailKey=it.key;if(isPlay(it,s))detailView.frame=Math.min(detailView.frame||0,figs(s.html).length-1);
 if(is3(it,s)){pv.innerHTML='<canvas class="c3" width="640" height="440" aria-label="3D 모델. 끌어서 돌립니다"></canvas>';var cv=$('canvas',pv),m=D.meshes[s.view3d.size],v=detailView,red=function(){draw3d(cv,m,v,s.view3d);};red();bind3d(cv,v,red);ctl.innerHTML=ctl3(v);activeV={v:v,redraw:red};}
 else if(isPlay(it,s)){pv.innerHTML='';mountPlay(pv,ctl,s,detailView);}
+else if(no3(it,s)){ctl.innerHTML=NO3;}
 more.hidden=!s.more;more.innerHTML=s.more?'<h3>근거 확인</h3>'+s.more:'';
 var mk=$('#mk');mk.hidden=!it.makeable;var live=!!D.make_url;all('input,select,button',mk).forEach(function(x){x.disabled=!live;});
 $('#mk-msg').textContent=live?'규격과 조임 토크를 바꾸면 엔진이 다시 계산합니다. 토크를 비우면 추천 엔진이 고릅니다.':'공개 화면에서는 준비된 조건만 볼 수 있습니다. 서버로 실행하면 규격과 조임 토크를 바꿔 다시 계산합니다.';}
@@ -106,7 +110,7 @@ function tileHtml(p){var f=found(p),it=f.it,opts=it.samples.map(function(x){retu
 var ctrl='<div class="tc" role="group" aria-label="배치">'+['S','M','L'].map(function(z){return '<button type="button" data-sz="'+z+'" aria-pressed="'+(p.size===z)+'">'+z+'</button>';}).join('')+'<button type="button" data-mv="-1" aria-label="앞으로">◀</button><button type="button" data-mv="1" aria-label="뒤로">▶</button><select data-cond aria-label="조건">'+opts+'</select><button type="button" data-rm aria-label="빼기">×</button></div>'+(isPlay(it,f.s)?'<div class="tc"><input type="range" min="0" max="'+(figs(f.s.html).length-1)+'" value="'+(p.view.frame||0)+'" data-frame aria-label="단계"></div>':'');
 return '<article class="tile s-'+p.size+(sel===p.id?' sel':'')+'" data-id="'+esc(p.id)+'"><div class="pv'+pad(it)+'"></div><div class="tb"><h3>'+esc(it.name)+'</h3><div class="cd">'+esc(p.label)+'</div>'+(f.missing?'<div class="warn">저장한 조건이 이 목록에 없어 첫 조건 그림을 보입니다.</div>':'')+'<div class="stt" data-st>'+statusOf(p)+'</div>'+ctrl+'</div></article>';}
 function paintTile(el,p){var f=found(p),box=$('.pv',el);stopPlay();if(is3(f.it,f.s)){box.innerHTML='<canvas class="c3" width="640" height="420"></canvas>';var cv=$('canvas',box),m=D.meshes[f.s.view3d.size],red=function(){draw3d(cv,m,p.view,f.s.view3d);};red();bind3d(cv,p.view,red);}
-else if(isPlay(f.it,f.s)){var fr=figs(f.s.html);box.innerHTML=frameHtml(fr,Math.min(p.view.frame||0,fr.length-1));}else box.innerHTML=f.s.html;}
+else if(isPlay(f.it,f.s)){var fr=figs(f.s.html);box.innerHTML=frameHtml(fr,Math.min(p.view.frame||0,fr.length-1));}else box.innerHTML=f.s.html+(no3(f.it,f.s)?NO3:'');}
 function renderBuild(){var cv=$('#b-canvas');cv.innerHTML=picks.length?picks.map(tileHtml).join(''):'<p class="empty">아직 담은 것이 없습니다. 진열대에서 카드를 골라 "담기"를 누르면 여기에 놓입니다.</p>';picks.forEach(function(p){paintTile($('.tile[data-id="'+p.id+'"]',cv),p);});cv.insertAdjacentHTML('beforeend',reqHtml());side();}
 function side(){var s=$('#b-side'),p=picks.filter(function(x){return x.id===sel;})[0];activeV=null;if(!p){s.innerHTML='<h3>고른 것 설정</h3><p class="note">구성 화면의 칸을 누르면 데이터 연결과 보존된 설정을 여기서 고칩니다. 크기(S·M·L)와 순서는 칸 아래 단추로 바꿉니다.</p>';return;}
 var f=found(p),it=f.it,keep=[];keep.push('조건 · '+p.label);if(is3(it,f.s))keep.push('3D 시점과 보이는 부품');if(isPlay(it,f.s))keep.push('재생 단계 '+((p.view.frame||0)+1)+' / '+figs(f.s.html).length);
