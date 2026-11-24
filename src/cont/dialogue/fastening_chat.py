@@ -61,7 +61,7 @@ SYSTEM_PROMPT = (
 class Turn:
     text: str                           # 사용자의 말
     reply: str                          # 자세한 답 (글)
-    source: str                         # "rule" | "llm"
+    source: str                         # "rule" | "llm" | "plan"
     changes: dict[str, Any]             # 실제로 적용한 변경
     before: PhysicsAnswer
     after: PhysicsAnswer
@@ -284,6 +284,13 @@ class Session:
 
     def say(self, text: str) -> Turn:
         changes, source, note = self._read(text)
+        return self._decide(text, changes, source, note)
+
+    def apply_changes(self, changes: dict[str, Any], text: str = "") -> Turn:
+        """말을 읽는 단계 없이, 이미 정해진 변경(JSON)을 같은 검사를 거쳐 적용한다. 계획 실행기가 쓴다."""
+        return self._decide(text or json.dumps(changes, ensure_ascii=False), _validate(changes), "plan", "")
+
+    def _decide(self, text: str, changes: dict[str, Any], source: str, note: str) -> Turn:
         before = self.answer
         if "targets" in changes:
             reply = self._recommend(changes["targets"])
