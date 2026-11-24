@@ -17,7 +17,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Mapping, Sequence
 
 from cont.view.switcher import with_switcher
-from cont.fab.catalog import catalog, load, make, meshes, types_data
+from cont.fab.catalog import catalog, load, make, meshes, own_sample, types_data
 from cont.view.diagnosis_html import CSS
 from cont.view.fastening_html import EXTRA_CSS
 from cont.fab.build_ui import BUILD_CSS, BUILD_HTML, BUILD_JS
@@ -25,6 +25,7 @@ from cont.fab.sketches import SKETCH_CSS
 from cont.view.field_image import FIELD_CSS
 
 MAX_BODY = 2000
+MAX_UPLOAD = 8_000_000            # 올리는 CSV의 최대 크기 (바이트)
 COMPARE_MAX = 3
 CARD_VARIANTS = 5        # 카드에 바로 보이는 조건 단추의 수. 나머지는 자세히 보기에서 고른다
 
@@ -140,10 +141,10 @@ function shut(){var d=$('#detail'),c=cur&&document.querySelector('.item[data-k="
 function detail(k,si,src){cur=item(k);curS=si||0;var it=cur;$('#d-name').textContent=it.name;$('#d-sum').textContent=it.summary;$('#d-tags').innerHTML='<span>'+esc(it.form_label)+'</span><span>'+esc(it.quantity)+'</span><span>'+esc(it.area)+'</span>';
 $('#d-meta').innerHTML='<dt>넣는 것</dt><dd>'+esc(it.needs)+'</dd><dt>내는 것</dt><dd>'+esc(it.gives)+'</dd><dt>이럴 때</dt><dd>'+esc(it.uses.join(', '))+'</dd><dt>알아둘 점</dt><dd>'+esc(it.limits)+'</dd>'+(it.preview_note?'<dt>미리보기</dt><dd>'+esc(it.preview_note)+'</dd>':'');
 $('#d-with').innerHTML=it.together.map(function(t){return '<button type="button" data-open-k="'+esc(t)+'">'+esc(item(t).name)+'</button>';}).join('')||'<span class="sm">없음</span>';
-sample();if(!$('#detail').open){$('#detail').showModal();flip(src,$('#detail'),false);}}
+ownForm();sample();if(!$('#detail').open){$('#detail').showModal();flip(src,$('#detail'),false);}}
 function sample(){var it=cur,s=it.samples[curS];$('#d-pv').className='pv'+pad(it);$('#d-pv').innerHTML=s.html;$('#d-facts').innerHTML='<div class="lb">'+esc(s.label)+'</div><ul>'+s.facts.map(function(f){return '<li><span>'+esc(f[0])+'</span><b>'+esc(f[1])+'</b></li>';}).join('')+'</ul>';
 $('#d-picks').innerHTML=it.samples.map(function(x,i){return '<button type="button" data-pick="'+i+'" aria-pressed="'+(i===curS)+'">'+esc(x.label)+'</button>';}).join('');
-var inb=isIn(it.key,curS),a=$('#d-add');a.textContent=inb?'담김 (빼기)':'이 조건으로 내 FAB에 담기';a.classList.toggle('in',inb);if(s.params&&s.params.size){$('#mk-size').value=s.params.size;$('#mk-torque').value=s.params.torque;}richDetail();}
+var inb=isIn(it.key,curS),a=$('#d-add');a.textContent=inb?'담김 (빼기)':'이 조건으로 내 FAB에 담기';a.classList.toggle('in',inb);a.disabled=!!s.own;if(s.own)a.textContent='내 신호는 아직 담을 수 없습니다';if(s.params&&s.params.size){$('#mk-size').value=s.params.size;$('#mk-torque').value=s.params.torque;}richDetail();}
 function compare(){$('#c-cols').innerHTML=cmp.map(function(id){var p=id.split('#'),it=item(p[0]),s=it.samples[Number(p[1])];return '<div class="col"><div class="pv'+pad(it)+'">'+s.html+'</div><div class="bd"><h3>'+esc(it.name)+'</h3><div>'+esc(s.label)+'</div><div class="facts">'+s.facts.map(function(f){return esc(f[0])+' <b>'+esc(f[1])+'</b>';}).join('<br>')+'</div></div></div>';}).join('');$('#cmp').showModal();}
 function tdetail(k){var t=typ(k);if(!t)return;$('#t-pv').innerHTML=t.sketch_svg;$('#t-tags').innerHTML='<span>'+esc(t.form_label)+'</span><span class="soon">준비 중 · 엔진 없음</span><span>'+esc(t.quantity)+'</span>';$('#t-name').textContent=t.name;$('#t-sum').textContent=t.shows;
 $('#t-meta').innerHTML='<dt>바꿀 수 있는 것</dt><dd>'+esc(t.controls.join(', '))+'</dd><dt>필요한 엔진</dt><dd>'+esc(t.engine_name)+' — '+esc(D.engines[t.engine].summary)+'</dd><dt>넣는 것</dt><dd>'+esc(t.needs)+'</dd><dt>엔진이 생기면 보이는 것</dt><dd>'+esc(t.ready)+'</dd><dt>이럴 때</dt><dd>'+esc(t.uses.join(', '))+'</dd>'+(t.note?'<dt>알아둘 점</dt><dd>'+esc(t.note)+'</dd>':'');
@@ -159,11 +160,26 @@ if(b.dataset.form!=null){form=b.dataset.form;all('[data-form]').forEach(function
 if(b.dataset.use!=null){use=b.dataset.use;all('[data-use]').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});apply();return;}
 if(b.dataset.go!=null){var r=$('.rail',b.closest('.shelf'));r.scrollBy({left:Number(b.dataset.go)*r.clientWidth*0.85,behavior:'smooth'});return;}
 if(b.dataset.drop!=null){dropPick(b.dataset.drop);apply();return;}if(b.dataset.pick!=null){curS=Number(b.dataset.pick);sample();var c0=document.querySelector('.item[data-k="'+cur.key+'"]');if(c0&&curS<D.card_variants)swap(c0,curS);return;}
-if(b.id==='d-add'){addPick(cur.key,curS,detailView&&JSON.parse(JSON.stringify(detailView)));apply();sample();return;}if(b.id==='d-close'){shut();return;}if(b.id==='c-close'){$('#cmp').close();return;}if(b.id==='cmpb'){compare();return;}
+if(b.id==='d-add'){if(cur.samples[curS].own)return;addPick(cur.key,curS,detailView&&JSON.parse(JSON.stringify(detailView)));apply();sample();return;}if(b.id==='d-close'){shut();return;}if(b.id==='c-close'){$('#cmp').close();return;}if(b.id==='cmpb'){compare();return;}
 });
 document.addEventListener('change',function(e){var c=e.target;if(c.dataset&&c.dataset.cmp!=null){var i=cmp.indexOf(c.dataset.cmp);if(c.checked&&i<0){if(cmp.length>=D.compare_max){c.checked=false;return;}cmp.push(c.dataset.cmp);}if(!c.checked&&i>=0)cmp.splice(i,1);bar();}
 if(c.dataset&&c.dataset.area!=null)apply();});
 $('#q').addEventListener('input',function(){q=this.value.trim().toLowerCase();apply();});
+var ownText='',ownN=[];
+function ownForm(){var w=$('#own');w.hidden=!cur.own;if(!cur.own)return;$('#own-static').hidden=!!D.analyze_url;$('#own-form').hidden=!D.analyze_url;all('#own [data-wave]').forEach(function(l){l.hidden=cur.own==='values';});ownFs();}
+function ownFs(){$('#own-fs-l').hidden=cur.own==='values'||$('#own-time').value!=='-1';}
+function ownNames(t){var l=t.replace(/^\uFEFF/,'').split(/\r?\n/).filter(function(x){return x.trim();})[0]||'',d=[',','\t',';'].map(function(c){return [c,l.split(c).length];}).sort(function(a,b){return b[1]-a[1];})[0][0],c=l.split(d).map(function(x){return x.trim();});
+return c.every(function(x){return x!==''&&!isNaN(Number(x));})?c.map(function(_,i){return '열 '+(i+1);}):c.map(function(x,i){return x||'열 '+(i+1);});}
+$('#own-file').addEventListener('change',function(){var f=this.files[0],m=$('#own-msg');ownText='';$('#own-go').disabled=true;if(!f)return;if(f.size>8000000){m.textContent='파일이 너무 큽니다 (8 MB 이하만 됩니다).';return;}
+var r=new FileReader();r.onload=function(){ownText=String(r.result);ownN=ownNames(ownText);var ti=ownN.findIndex(function(x){return /^(t|time|시간|시각|sec|s)([\s_\-(\[].*)?$/i.test(x);}),vi=ownN.findIndex(function(_,i){return i!==ti;});if(vi<0)vi=0;
+$('#own-col').innerHTML=ownN.map(function(x,i){return '<option value="'+i+'">'+esc(x)+'</option>';}).join('');$('#own-col').value=String(vi);
+$('#own-time').innerHTML='<option value="-1">없음 (샘플링 주파수를 적습니다)</option>'+ownN.map(function(x,i){return '<option value="'+i+'">'+esc(x)+'</option>';}).join('');$('#own-time').value=String(ti);
+$('#own-col').disabled=$('#own-time').disabled=false;$('#own-go').disabled=false;m.textContent=ownN.length+'개 열을 읽었습니다. 값 열을 확인하세요.';ownFs();};r.onerror=function(){m.textContent='파일을 읽지 못했습니다.';};r.readAsText(f);});
+$('#own-time').addEventListener('change',ownFs);
+$('#own-form').addEventListener('submit',function(e){e.preventDefault();if(!ownText||!cur||!cur.own)return;var m=$('#own-msg'),f=$('#own-file').files[0];m.textContent='엔진이 계산하는 중입니다.';
+var body={key:cur.key,csv:ownText,column:Number($('#own-col').value),time_column:Number($('#own-time').value),fs:$('#own-fs').value,fmax:$('#own-fmax').value,unit:$('#own-unit').value,filename:f?f.name:''};
+fetch(D.analyze_url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.json();}).then(function(s){if(s.error){m.textContent=s.error;return;}
+var i=cur.samples.map(function(x){return x.label;}).indexOf(s.label);if(i<0){cur.samples.push(s);i=cur.samples.length-1;}else cur.samples[i]=s;curS=i;sample();m.textContent='계산했습니다: '+s.label;}).catch(function(){m.textContent='서버에 닿지 못했습니다.';});});
 $('#mk').addEventListener('submit',function(e){e.preventDefault();var body={key:cur.key,size:$('#mk-size').value,torque:$('#mk-torque').value};$('#mk-msg').textContent='엔진이 계산하는 중입니다.';
 fetch(D.make_url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.json();}).then(function(s){if(s.error){$('#mk-msg').textContent=s.error;return;}
 var i=cur.samples.map(function(x){return x.label;}).indexOf(s.label);if(i<0){cur.samples.push(s);i=cur.samples.length-1;}curS=i;sample();$('#mk-msg').textContent='다시 만들었습니다: '+s.label;}).catch(function(){$('#mk-msg').textContent='답을 받지 못했습니다. 서버가 켜져 있는지 확인해 주세요.';});});
@@ -182,7 +198,7 @@ build();apply();document.body.dataset.ready='1';
 """
 
 
-def render_store(items: Sequence[Mapping[str, Any]], data: Mapping[str, Any] | None = None, make_url: str | None = None, title: str = "ConT FAB · 고르기") -> str:
+def render_store(items: Sequence[Mapping[str, Any]], data: Mapping[str, Any] | None = None, make_url: str | None = None, analyze_url: str | None = None, title: str = "ConT FAB · 고르기") -> str:
     if not items:
         raise ValueError("the catalog is empty")
     data = data or load()
@@ -207,7 +223,7 @@ def render_store(items: Sequence[Mapping[str, Any]], data: Mapping[str, Any] | N
             caps.append(f'조이는 과정 · {e(f["joint"].size)} · <b>{x["torque"]:.1f} N·m → {x["preload"]:,.0f} N</b>')
     from cont.packs.fastening.standards import thread_sizes
     T = types_data()
-    blob = json.dumps({"types": T["types"], "engines": T["engines"], "items": list(items), "forms": [[k, v] for k, v in forms.items()], "sets": list(sets), "make_url": make_url, "compare_max": COMPARE_MAX, "card_variants": CARD_VARIANTS, "quantities": list(data["quantities"]), "meshes": meshes(items),
+    blob = json.dumps({"types": T["types"], "engines": T["engines"], "items": list(items), "forms": [[k, v] for k, v in forms.items()], "sets": list(sets), "make_url": make_url, "analyze_url": analyze_url, "compare_max": COMPARE_MAX, "card_variants": CARD_VARIANTS, "quantities": list(data["quantities"]), "meshes": meshes(items),
                        "hero": {"caps": caps}}, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     body = f"""<header class="top"><span class="name">ConT FAB<small>고르기</small></span>
 <label class="find"><svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12.2 12.2L16 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -228,6 +244,16 @@ def render_store(items: Sequence[Mapping[str, Any]], data: Mapping[str, Any] | N
 <dl class="meta" id="d-meta"></dl><div id="d-more" hidden></div><div><div class="sm" style="margin-bottom:6px">함께 담으면 좋은 것</div><div class="with" id="d-with"></div></div>
 <form class="mk" id="mk" hidden><label>규격<select id="mk-size">{"".join(f"<option>{e(z)}</option>" for z in thread_sizes())}</select></label>
 <label>조임 토크 (N·m)<input type="number" id="mk-torque" min="0" step="0.5" inputmode="decimal"></label><button type="submit">이 조건으로 다시 만들기</button><div class="msg" id="mk-msg" aria-live="polite"></div></form>
+<div id="own" hidden><div class="sm" style="margin-bottom:6px">내 신호로 보기</div>
+<p class="sm" id="own-static" hidden>내 신호를 올려 보는 것은 서버로 띄운 화면(python -m cont.fab.store)에서만 됩니다. 이 화면은 미리 계산한 샘플만 보입니다.</p>
+<form class="mk" id="own-form"><label>CSV 파일<input type="file" id="own-file" accept=".csv,.tsv,.txt,text/csv,text/plain"></label>
+<label>값 열<select id="own-col" disabled></select></label>
+<label data-wave>시간 열 (초 단위)<select id="own-time" disabled></select></label>
+<label data-wave id="own-fs-l">샘플링 주파수 (Hz)<input type="number" id="own-fs" min="0" step="any" inputmode="decimal"></label>
+<label data-wave>표시 주파수 상한 (Hz, 선택)<input type="number" id="own-fmax" min="0" step="any" inputmode="decimal"></label>
+<label>단위 (선택)<input type="text" id="own-unit" maxlength="16" autocomplete="off"></label>
+<button type="submit" id="own-go" disabled>내 신호로 보기</button><div class="msg" id="own-msg" aria-live="polite"></div>
+<p class="sm">파일은 이 컴퓨터의 서버로만 보내 계산하고 저장하지 않습니다. 소수점은 점(.)으로 적은 CSV만 읽습니다. 내 신호 결과는 아직 내 FAB에 담을 수 없습니다.</p></form></div>
 <div class="acts"><button type="button" class="add" id="d-add">내 Fab에 담기</button><button type="button" class="x" id="d-close">닫기</button></div></div></div></dialog>
 <dialog id="tdetail" aria-labelledby="t-name"><div class="dl"><div class="big"><div class="pv" id="t-pv"></div></div>
 <div class="info"><div class="tags" id="t-tags"></div><h2 id="t-name"></h2><p class="sm" id="t-sum"></p><span class="st">준비 중 · 결과가 아직 없습니다</span><dl class="meta" id="t-meta"></dl>
@@ -247,7 +273,7 @@ def render_store(items: Sequence[Mapping[str, Any]], data: Mapping[str, Any] | N
 
 
 def make_server(port: int = 8768) -> ThreadingHTTPServer:
-    page = render_store(catalog(), make_url="/make").encode("utf-8")
+    page = render_store(catalog(), make_url="/make", analyze_url="/analyze").encode("utf-8")
 
     class Handler(BaseHTTPRequestHandler):
         def _send(self, code: int, body: bytes, ctype: str) -> None:
@@ -261,16 +287,17 @@ def make_server(port: int = 8768) -> ThreadingHTTPServer:
                 self._send(404, b"not found", "text/plain")
 
         def do_POST(self) -> None:  # noqa: N802
-            if self.path != "/make":
+            if self.path not in ("/make", "/analyze"):
                 return self._send(404, b"not found", "text/plain")
+            analyze = self.path == "/analyze"
             try:
                 n = int(self.headers.get("Content-Length", "0"))
-                if not 0 < n <= MAX_BODY:
-                    raise ValueError("요청을 읽지 못했습니다")
+                if not 0 < n <= (MAX_UPLOAD if analyze else MAX_BODY):
+                    raise ValueError("요청을 읽지 못했거나 파일이 너무 큽니다" if analyze else "요청을 읽지 못했습니다")
                 d = json.loads(self.rfile.read(n))
-                out = make(str(d.get("key", "")), {"size": d.get("size", ""), "torque": d.get("torque")})
+                out = own_sample(str(d.get("key", "")), d) if analyze else make(str(d.get("key", "")), {"size": d.get("size", ""), "torque": d.get("torque")})
             except Exception as exc:        # 계산할 수 없는 조건이면 이유를 돌려준다 (화면은 그대로 둔다)
-                return self._send(200, json.dumps({"error": f"이 조건으로는 만들지 못했습니다: {exc}"}, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
+                return self._send(200, json.dumps({"error": (f"이 파일로는 볼 수 없습니다: {exc}" if analyze else f"이 조건으로는 만들지 못했습니다: {exc}")}, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
             self._send(200, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
 
         def log_message(self, *_: Any) -> None:
