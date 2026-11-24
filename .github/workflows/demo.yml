@@ -23,9 +23,12 @@ jobs:
         with:
           python-version: "3.13"
       - run: pip install -e .
+      # 열 비교 화면의 PINN 행은 만들 때 학습해 넣는다 (학습 도구는 CPU판, 모델 파일은 저장하지 않는다)
+      - run: pip install torch --index-url https://download.pytorch.org/whl/cpu
       - run: echo "CONT_STUDIO_URL=index.html" >> "$GITHUB_ENV" && echo "CONT_PHYSICS_URL=physics.html" >> "$GITHUB_ENV" && echo "CONT_FAB_URL=fab.html" >> "$GITHUB_ENV"
       - run: mkdir -p site && python -m cont.dialogue.serve_fastening --out site/index.html
       - run: python -m cont.view.physics_page --out site/physics.html
+      - run: grep -q "PINN" site/physics.html && grep -q "지문" site/physics.html
       - run: python -m cont.fab.store --out site/fab.html
       - run: python -m cont.dialogue.serve_diagnosis --out site/diagnosis.html
       - uses: actions/upload-pages-artifact@v3

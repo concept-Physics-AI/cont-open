@@ -43,5 +43,56 @@ def solve(name: str, inputs: Mapping[str, Any], question: str = "", action: str 
             raise NotFound(f"{name}/{action}")
     answer = fn(inputs, question).stamped(f"pack:{name}" + ("" if action == "solve" else f":{action}"), run_id=new_run_id())
     body = {"run_id": answer.provenance.run_id, "revision_id": answer.revision_id(), "content_hash": answer.content_hash(),
-            "answer": answer.to_dict(), "trust": answer.trust()}
+            "answer": answer.to_dict(), "trust": answer.trust(), "truth_line": answer.truth_line()}
     return json.loads(json.dumps(body, ensure_ascii=False, default=str))     # 숫자 배열 등을 JSON으로 안전하게
+
+
+def execute(name: str, inputs: Mapping[str, Any], question: str = "", action: str = "solve", *,
+            project_id: str = "", asset_id: str = "", parent_run_id: str = "") -> dict[str, Any]:
+    """solve를 부르고 저장소가 켜져 있으면 실행 한 건으로 남긴다. 계산하지 못해도 실패 실행으로 남기고 오류는 그대로 올린다."""
+    from cont.service import runs
+    st = runs.store()
+    base = {"created_at": runs.now(), "pack": name, "action": action, "question": question, "inputs": json.loads(json.dumps(inputs, default=str)),
+            "model_version": runs.model_version(name), "project_id": project_id, "asset_id": asset_id, "parent_run_id": parent_run_id}
+    try:
+        body = solve(name, inputs, question, action)
+    except NotFound:
+        raise
+    except Exception as exc:
+        if st is not None:
+            st.save({**base, "run_id": new_run_id(), "status": "failed", "error": str(exc), "response": None, "content_hash": "", "revision_id": ""})
+        raise
+    if st is not None:
+        st.save({**base, "run_id": body["run_id"], "status": "complete", "error": "", "response": body,
+                 "content_hash": body["content_hash"], "revision_id": body["revision_id"]})
+    return {**body, "stored": st is not None}
+
+
+def get_run(run_id: str) -> dict[str, Any]:
+    from cont.service import runs
+    st = runs.store()
+    if st is None:
+        raise NotFound("실행 저장소가 켜져 있지 않습니다 (CONT_RUN_DIR)")
+    try:
+        return st.get(run_id)
+    except runs.RunNotFound:
+        raise NotFound(run_id) from None
+
+
+def list_runs(pack: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
+    from cont.service import runs
+    st = runs.store()
+    if st is None:
+        raise NotFound("실행 저장소가 켜져 있지 않습니다 (CONT_RUN_DIR)")
+    return st.list(pack, limit)
+
+
+def recompute(run_id: str) -> dict[str, Any]:
+    """같은 입력으로 새 실행을 만든다. 이전 실행은 그대로 남는다. 결과가 같은지와 모델 버전이 바뀌었는지를 알린다."""
+    from cont.service import runs
+    old = get_run(run_id)
+    new = execute(old["pack"], old["inputs"], old.get("question", ""), old.get("action", "solve"),
+                  project_id=old.get("project_id", ""), asset_id=old.get("asset_id", ""), parent_run_id=old["run_id"])
+    return {"run": new, "parent_run_id": old["run_id"],
+            "same_content": bool(old.get("content_hash")) and old["content_hash"] == new["content_hash"],
+            "model_version_changed": old.get("model_version") != runs.model_version(old["pack"])}

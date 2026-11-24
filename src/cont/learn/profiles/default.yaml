@@ -1,0 +1,11 @@
+# 기본 학습 설정. 값은 시험용 출발점이며 제품 기준이 아니다. 판정 기준을 담지 않는다.
+seed: 0
+hidden: [32, 32, 32]
+activation: tanh
+epochs: 2000
+learning_rate: 0.001
+n_interior: 2000
+n_boundary: 200
+n_initial: 200
+weights: {pde: 1.0, boundary: 1.0, initial: 1.0}
+dtype: float64

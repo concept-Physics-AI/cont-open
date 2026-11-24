@@ -158,3 +158,14 @@ def test_tightening_process_recomputes_each_torque_step_and_can_be_played_and_re
     assert all(x in page for x in ('data-v="time"', 'id="tlplay"', 'id="tlr"', 'id="tlrec"', "영상 저장", "MediaRecorder", "조이는 동안의 마찰 변화나 풀림은 담지 않습니다"))
     data = json.loads(re.search(r'id="app-data">(.*?)</script>', page, re.S).group(1))
     assert len(data["states"]["s0"]["timeline"]) == len(frames) and data["states"]["s0"]["play_seconds"] == process_settings()["play_seconds"]
+
+
+def test_truth_line_is_drawn_at_the_bottom_of_the_studio_screen_from_the_answer():
+    from cont.view.fastening_live import state
+    s = Session(*example())
+    page = app_page(s)
+    assert 'id="truth"' in page and "s.truth_line" in page
+    st = json.loads(json.dumps(__import__("cont.dialogue.serve_fastening", fromlist=["live_state"]).live_state(s)))
+    line = st["truth_line"]
+    assert line == s.answer.truth_line() if hasattr(s, "answer") else line.startswith("해석")
+    assert "증거 수준 E1" in line and "검증 전" in line and "렌더러 버전·사람 승인: 보고하지 않음" in line   # 화면이 따로 계산하지 않고 묶음이 낸 줄을 그대로 보인다

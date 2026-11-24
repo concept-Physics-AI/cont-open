@@ -84,6 +84,9 @@ def app_state(session: Session, before: Any = None) -> dict[str, Any]:
 def message(session: Session, text: str) -> dict[str, Any]:
     """대화 화면에 보내는 한 번의 답: 지금 상태, 풀어 쓴 답, 바뀐 값, 화면에서 열 곳, 다음에 할 만한 말."""
     area = detect(text)
+    if area is not None and area.handler == "heat":          # 열: 입력 조건만 읽고 열 팩이 계산한다. 체결 조인트는 그대로
+        from cont.dialogue import heat_talk
+        return heat_talk.reply(text, session.provider)
     if area is not None and not area.chat:                  # 다른 물리 영역: 아직 대화가 없다고 알리고 계산하지 않는다
         return {"state": None, "talk": {"text": not_ready_reply(area), "alert": None, "alert_low": False}, "brief": None,
                 "ui": None, "detail": "", "suggest": suggest(session, text)}

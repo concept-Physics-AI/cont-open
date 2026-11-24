@@ -48,6 +48,7 @@ def test_solve_returns_the_pack_answer_unchanged_with_run_id_and_identity():
     assert r["answer"]["provenance"]["producer"] == "pack:fastening" and r["answer"]["provenance"]["run_id"] == r["run_id"]
     assert r["answer"]["quantities"][0]["value"] == ref.quantities[0].value          # 값은 팩이 낸 그대로
     assert dict(r["trust"])["검증 상태"].startswith("검증 전")
+    assert r["revision_id"] in r["truth_line"] and r["run_id"] in r["truth_line"]
 
 
 def test_same_input_gives_new_run_but_same_revision():

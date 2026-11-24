@@ -201,5 +201,96 @@ def test_store_type_cards_and_requests():
     page = render_store(catalog())
     assert "준비 중 · 엔진 없음" in page and "필요해요" in page and "예시 그림 · 실제 결과 아님" in page
     assert "kind:'engine_request'" in page and "requests:reqs" in page
-    assert 'id="tdetail"' in page and "지금 되는 것 (체결 사례)" in page
+    assert 'id="tdetail"' in page and "확장 예정 (엔진이 없는 것)" in page
     assert "data-req" in page and "tcard" in page
+
+
+def test_usable_results_come_before_coming_soon_and_soon_cards_have_no_run_button():
+    """첫 화면: 지금 쓸 수 있는 세트와 결과가 앞, 엔진 없는 카드는 '확장 예정' 안에 있고 담기·실행 단추가 없다."""
+    from cont.fab.catalog import catalog
+    from cont.fab.store import render_store
+    page = render_store(catalog())
+    build = page[page.index("function build(){"):page.index("$('#shelves').innerHTML=h;}")]
+    assert build.index("data-set=") < build.index("card(it,0)") < build.index('id="soon"') < build.index("tcard")
+    tcard = page[page.index("function tcard("):page.index("function build(")]
+    assert "data-add" not in tcard and "data-set" not in tcard and "필요해요" in tcard
+
+def test_set_condition_uses_a_common_size_that_really_exists_and_flags_mixed_sets():
+    from cont.fab.catalog import catalog, load, set_condition
+    items, sets = catalog(), {s["key"]: s for s in load()["sets"]}
+    by = {i["key"]: i for i in items}
+    c = set_condition(items, sets["set_fastening"])
+    assert c["mode"] == "common" and "M10" in c["note"]
+    for k, idx in c["pick"].items():                                   # 고른 조건은 그 상품에서 실제로 계산해 둔 샘플이다
+        assert by[k]["samples"][idx]["params"]["size"] == "M10"
+    assert set_condition(items, sets["set_monitor"])["mode"] == "none"
+    fake = [{"key": "a", "name": "가", "samples": [{"label": "M6 · 1", "params": {"size": "M6"}}]},
+            {"key": "b", "name": "나", "samples": [{"label": "M16 · 2", "params": {"size": "M16"}}]}]
+    m = set_condition(fake, {"items": ["a", "b"]})
+    assert m["mode"] == "mixed" and "비교용" in m["note"] and "M6 · 1" in m["note"] and "M16 · 2" in m["note"]
+
+
+def test_set_button_adds_picks_at_the_common_condition_and_says_so():
+    from cont.fab.catalog import catalog
+    from cont.fab.store import render_store
+    page = render_store(catalog())
+    assert 'id=\\"setnote\\"' in page or 'id="setnote"' in page
+    assert "st.condition" in page and "pk[k]||0" in page and "setcond" in page
+
+
+def test_3d_samples_keep_a_static_view_so_the_screen_is_never_blank_without_3d():
+    """3D를 못 쓰면(그리는 곳이 없거나 자료가 비면) 대표 단면(정적 그림)과 안내가 남는다 (X3)."""
+    html = render_store(catalog(), load(), "")
+    assert "3D를 쓸 수 없어 대표 단면으로 보여 드립니다" in html
+    assert "function no3(" in html and "can2()" in html
+    data = json.loads(re.search(r'id="store-data"[^>]*>(.*?)</script>', html, re.S).group(1))
+    shown = [(it, s) for it in data["items"] for s in it["samples"] if s.get("view3d")]
+    assert shown
+    for it, s in shown:
+        assert s["html"].strip() and it["name"] and s["label"]
+
+
+def test_mode_banner_tells_static_demo_from_live_and_late_results_stay_on_the_asked_item():
+    """공개 시연과 실시간 작업이 구분되고, 늦게 온 결과는 요청한 상품에만 더해진다 (X4)."""
+    static = render_store(catalog(), load(), "")
+    live = render_store(catalog(), load(), "/make", "/analyze")
+    assert "공개 시연: 미리 계산한 샘플만" in static and "실시간 작업 가능" not in static.split('id="mode"')[1].split("</p>")[0]
+    assert "실시간 작업 가능: 규격" in live and "공개 시연:" not in live.split('id="mode"')[1].split("</p>")[0]
+    assert "asked=cur" in live and "지금 보는 상품에는 반영하지 않았습니다" in live
+
+
+def test_made_samples_are_stored_as_runs_and_can_be_read_back_by_id(tmp_path, monkeypatch):
+    """저장소가 켜져 있으면 만든 결과에 run_id가 붙고, 다시 열 때 그 ID로 같은 결과를 읽는다. 꺼져 있으면 ID가 없다 (S-2)."""
+    def serve():
+        srv = make_server(port=0)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        return srv, f"http://127.0.0.1:{srv.server_address[1]}"
+
+    def post(base, body):
+        req = urllib.request.Request(base + "/make", data=json.dumps(body).encode(), headers={"Content-Type": "application/json"}, method="POST")
+        return json.loads(urllib.request.urlopen(req, timeout=10).read())
+    body = {"key": "fastening_torque", "size": "M12", "torque": "70"}
+    monkeypatch.delenv("CONT_RUN_DIR", raising=False)
+    srv, base = serve()
+    try:
+        assert post(base, body)["run_id"] == ""
+    finally:
+        srv.shutdown(); srv.server_close()
+    monkeypatch.setenv("CONT_RUN_DIR", str(tmp_path))
+    srv, base = serve()
+    try:
+        made = post(base, body)
+        assert made["run_id"].startswith("run-")
+        got = json.loads(urllib.request.urlopen(base + "/run/" + made["run_id"], timeout=10).read())["sample"]
+        assert got["label"] == made["label"] and got["html"] == made["html"]
+        with pytest.raises(urllib.error.HTTPError) as e:
+            urllib.request.urlopen(base + "/run/run-nonexistent", timeout=10)
+        assert e.value.code == 404 and "찾지 못했습니다" in json.loads(e.value.read())["error"]
+    finally:
+        srv.shutdown(); srv.server_close()
+
+
+def test_picks_keep_the_run_id_and_reopening_says_when_the_stored_result_is_missing():
+    html = render_store(catalog(), load(), "/make", "/analyze")
+    assert "run_id:p.run_id||''" in html and "function restoreRuns()" in html
+    assert "저장된 결과를 찾지 못했습니다" in html and "실행 ID " in html

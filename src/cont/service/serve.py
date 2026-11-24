@@ -46,10 +46,30 @@ def make_server(port: int | None = None, host: str = HOST) -> ThreadingHTTPServe
                 self.send_response(200); self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.send_header("Content-Length", str(len(b))); self.end_headers()
                 return self.wfile.write(b)
+            parts = self.path.split("?")[0].strip("/").split("/")
+            if parts[:2] == ["v1", "runs"] and len(parts) in (2, 3):
+                from urllib.parse import parse_qs, urlparse
+                from cont.service import runs
+                try:
+                    if len(parts) == 3:
+                        return self._send(200, api.get_run(parts[2]))
+                    q = parse_qs(urlparse(self.path).query)
+                    return self._send(200, {"runs": api.list_runs(q.get("pack", [None])[0], int(q.get("limit", ["50"])[0]))})
+                except api.NotFound as exc:
+                    return self._send(404, {"error": f"없는 실행이거나 저장소가 꺼져 있습니다: {exc}"})
+                except runs.RunCorrupt as exc:
+                    return self._send(500, {"error": str(exc)})
             self._send(404, {"error": "없는 주소입니다"})
 
         def do_POST(self) -> None:  # noqa: N802
             parts = self.path.strip("/").split("/")
+            if len(parts) == 4 and parts[:2] == ["v1", "runs"] and parts[3] == "recompute":
+                try:
+                    return self._send(200, api.recompute(parts[2]))
+                except api.NotFound as exc:
+                    return self._send(404, {"error": f"없는 실행이거나 저장소가 꺼져 있습니다: {exc}"})
+                except Exception as exc:
+                    return self._send(400, {"error": f"계산하지 못했습니다: {exc}"})
             if not (len(parts) == 4 and parts[0] == "v1" and parts[1] == "packs"):
                 return self._send(404, {"error": "없는 주소입니다"})
             try:
@@ -57,7 +77,8 @@ def make_server(port: int | None = None, host: str = HOST) -> ThreadingHTTPServe
                 if not 0 < n <= limit:
                     return self._send(413, {"error": "요청 본문이 비었거나 너무 큽니다"})
                 d = json.loads(self.rfile.read(n))
-                self._send(200, api.solve(parts[2], d.get("inputs", {}), str(d.get("question", "")), parts[3]))
+                self._send(200, api.execute(parts[2], d.get("inputs", {}), str(d.get("question", "")), parts[3],
+                                                project_id=str(d.get("project_id", "")), asset_id=str(d.get("asset_id", ""))))
             except api.NotFound:
                 self._send(404, {"error": f"'{parts[2]}/{parts[3]}'는 없는 팩이거나 없는 동작입니다", "available": [p['key'] for p in api.list_packs()]})
             except Exception as exc:            # 계산할 수 없는 입력이면 이유를 돌려준다
