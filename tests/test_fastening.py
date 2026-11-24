@@ -167,7 +167,7 @@ def test_pack_returns_common_answer_format_without_judgement():
     assert ans.value("thread_shear_margin") is None
     d = ans.to_dict()
     assert set(d) == {"question", "quantities", "method", "basis", "confidence", "presentation", "retention", "inputs",
-                      "status", "source", "uncertainty", "residuals", "validation", "scope", "failure_conditions", "fields"}
+                      "status", "source", "uncertainty", "residuals", "validation", "scope", "failure_conditions", "fields", "provenance"}
     assert all({"key", "label", "value", "unit", "expected_range", "note", "status", "evidence", "identifiability", "identifiability_basis"} == set(x) for x in d["quantities"])
     assert not any(k in x for x in d["quantities"] for k in ("passed", "verdict"))  # 판정 항목이 없다
     again = pack.solve(d["inputs"])  # 보관된 입력으로 같은 답을 다시 만든다

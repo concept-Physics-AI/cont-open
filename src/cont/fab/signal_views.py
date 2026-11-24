@@ -7,6 +7,7 @@ from typing import Any, Sequence
 import numpy as np
 
 from cont.signal import Distribution, Spectrogram, Spectrum, peaks
+from cont.signal.answers import distribution_answer, spectrogram_answer, spectrum_answer
 from cont.signal.analysis import Spectrum as _Spectrum
 
 W, H = 320, 190
@@ -25,7 +26,13 @@ def _g(v: float) -> str:
     return f"{v:.4g}"
 
 
-def spectrum_sample(sp: Spectrum, label: str, fmax: float, count: int, min_ratio: float, unit: str, source: str, extra: Sequence[tuple[str, str]] = ()) -> dict[str, Any]:
+def _more(a: Any) -> str:
+    """결과 묶음의 "이 결과를 믿어도 되는가" 항목을 자세히 보기에 붙일 글로 만든다. 못 채운 항목은 "보고하지 않음"으로 나온다."""
+    rows = "".join(f"<p><b>{html.escape(k)}</b> {html.escape(v)}</p>" for k, v in a.trust())
+    return f"<h4>이 결과를 믿어도 되는가</h4>{rows}"
+
+
+def spectrum_sample(sp: Spectrum, label: str, fmax: float, count: int, min_ratio: float, unit: str, source: str, extra: Sequence[tuple[str, str]] = (), observed: bool = False) -> dict[str, Any]:
     from cont.fab.previews import _line
     keep = sp.freq <= fmax
     cut = _Spectrum(sp.freq[keep], sp.amp[keep], sp.fs, sp.resolution)
@@ -39,10 +46,11 @@ def spectrum_sample(sp: Spectrum, label: str, fmax: float, count: int, min_ratio
     facts = [("봉우리", " · ".join(f"{x:.4g} Hz" for x, _ in sorted(top)) or "뚜렷한 봉우리 없음")] + [(f"{x:.4g} Hz 성분", f"{amp_:.3g}{u}") for x, amp_ in sorted(top)]
     facts += [("주파수 간격", f"{sp.resolution:.3g} Hz"), ("보인 범위", f"0 ~ {cut.freq[-1]:.4g} Hz"), *extra, ("신호", source)]
     svg = _line([(float(x), float(y)) for x, y in zip(f, a)], "Hz", f"진폭{(' ' + unit) if unit else ''}", tuple((x, f"{x:.4g} Hz") for x, _ in top), ".3g")
-    return {"label": label, "html": svg, "facts": facts, "params": {}}
+    ans = spectrum_answer(cut, top, unit, source, observed, {"fs": sp.fs, "fmax": fmax, "peaks": count, "min_ratio": min_ratio, "unit": unit})
+    return {"label": label, "html": svg, "facts": facts, "params": {}, "more": _more(ans)}
 
 
-def spectrogram_sample(sg: Spectrogram, label: str, fmax: float, window: int, source: str, extra: Sequence[tuple[str, str]] = ()) -> dict[str, Any]:
+def spectrogram_sample(sg: Spectrogram, label: str, fmax: float, window: int, source: str, extra: Sequence[tuple[str, str]] = (), observed: bool = False) -> dict[str, Any]:
     keep = sg.freq <= fmax
     amp, fr = sg.amp[keep], sg.freq[keep]
     track = fr[amp.argmax(axis=0)]
@@ -58,10 +66,11 @@ def spectrogram_sample(sg: Spectrogram, label: str, fmax: float, window: int, so
            f'<text class="tick" x="40" y="{H - 30}" text-anchor="end">0</text><text class="tick" x="40" y="30" text-anchor="end">{_g(fr[-1])}</text><text class="tick" x="44" y="14">주파수 Hz · 진할수록 큼</text></svg>')
     facts = [("가장 큰 성분", f"{track[0]:.3g} Hz → {track[-1]:.3g} Hz"), ("구간", f"{sg.time.size}개 · 조각 길이 {window / sg.fs * 1000:.3g} ms"),
              ("주파수 간격", f"{sg.fs / window:.3g} Hz"), *extra, ("신호", source)]
-    return {"label": label, "html": svg, "facts": facts, "params": {}}
+    ans = spectrogram_answer(sg, track, window, source, observed, {"fs": sg.fs, "fmax": fmax, "window": window})
+    return {"label": label, "html": svg, "facts": facts, "params": {}, "more": _more(ans)}
 
 
-def distribution_sample(d: Distribution, label: str, unit: str, source: str, extra: Sequence[tuple[str, str]] = ()) -> dict[str, Any]:
+def distribution_sample(d: Distribution, label: str, unit: str, source: str, extra: Sequence[tuple[str, str]] = (), observed: bool = False) -> dict[str, Any]:
     x0, x1 = float(d.edges[0]), float(d.edges[-1])
     for o in d.outliers:
         x0, x1 = min(x0, o), max(x1, o)
@@ -77,4 +86,5 @@ def distribution_sample(d: Distribution, label: str, unit: str, source: str, ext
     u = f" {unit}" if unit else ""
     facts = [("개수", f"{d.n}개"), ("평균", f"{d.mean:.4g}{u}"), ("표준편차", f"{d.std:.3g}{u}"), ("중앙값", f"{d.median:.4g}{u}"),
              ("벗어난 값", f"{len(d.outliers)}개 (상자 수염 밖)"), *extra, ("값", source)]
-    return {"label": label, "html": svg, "facts": facts, "params": {}}
+    ans = distribution_answer(d, unit, source, observed, {"unit": unit, "bins": int(len(d.counts))})
+    return {"label": label, "html": svg, "facts": facts, "params": {}, "more": _more(ans)}

@@ -41,7 +41,7 @@ def analyze(mode: str, p: Mapping[str, Any]) -> dict[str, Any]:
     if mode == "values":
         if x.size < MIN_VALUES:
             raise ValueError(f"값이 {MIN_VALUES}개 이상 있어야 분포를 볼 수 있습니다 (지금 {x.size}개)")
-        s = distribution_sample(distribution(x, 12), label, unit, SOURCE, head[:2])
+        s = distribution_sample(distribution(x, 12), label, unit, SOURCE, head[:2], observed=True)
     elif mode in ("spectrum", "spectrogram"):
         if x.size < MIN_WAVE:
             raise ValueError(f"값이 {MIN_WAVE}개 이상 있어야 주파수를 볼 수 있습니다 (지금 {x.size}개)")
@@ -75,10 +75,10 @@ def analyze(mode: str, p: Mapping[str, Any]) -> dict[str, Any]:
             if top:
                 fmax = min(fs / 2, 1.6 * max(f for f, _ in top))
         if mode == "spectrum":
-            s = spectrum_sample(spectrum(x, fs), label, fmax, 5, 0.1, unit, SOURCE, head)
+            s = spectrum_sample(spectrum(x, fs), label, fmax, 5, 0.1, unit, SOURCE, head, observed=True)
         else:
             w = _window(x.size)
-            s = spectrogram_sample(spectrogram(x, fs, window=w, overlap=0.5), label, fmax, w, SOURCE, head)
+            s = spectrogram_sample(spectrogram(x, fs, window=w, overlap=0.5), label, fmax, w, SOURCE, head, observed=True)
     else:
         raise ValueError("이 카드는 내 신호를 받지 않습니다")
     s["own"] = True
