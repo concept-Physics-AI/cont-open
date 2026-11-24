@@ -20,3 +20,16 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: pip install -e .[dev]
       - run: pytest -q
+  # 학습 전용 작업: PyTorch(CPU)가 필요한 시험만 따로 돈다. 위 작업은 torch 없이 돌아 학습 시험을 건너뛴다.
+  learn:
+    runs-on: ubuntu-latest
+    env:
+      CONT_REQUIRE_TORCH: "1"      # torch가 없어서 건너뛰는 것을 실패로 만든다
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install -e .[dev,learn]
+      - run: pytest -q tests/learn

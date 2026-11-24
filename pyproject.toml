@@ -15,6 +15,7 @@ cad = ["cadquery-ocp>=7.8"]   # STEP 내보내기 (OpenCascade). 화면용 3D와
 openai = ["openai>=1.40"]
 anthropic = ["anthropic>=0.40"]
 gemini = ["google-genai>=1.0"]
+learn = ["torch>=2.2"]    # PINN 학습. 없어도 나머지 기능은 돈다 (cont.learn만 쓸 수 없다)
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -22,6 +23,7 @@ where = ["src"]
 [tool.setuptools.package-data]
 "cont.packs.fastening" = ["tables/*.yaml"]
 "cont.packs.machining" = ["tables/*.yaml"]
+"cont.learn" = ["profiles/*.yaml"]
 "cont.packs.diagnosis" = ["tables/*.yaml", "tables/special/*.yaml"]
 
 [tool.pytest.ini_options]
