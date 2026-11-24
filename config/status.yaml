@@ -1,0 +1,19 @@
+# 지금 무엇이 있고 무엇이 없는가 (상태 한 곳). 상태는 있음 · 뼈대 · 없음 가운데 하나.
+# "있음"은 동작하고 시험했다는 뜻이며 물리적으로 검증됐다는 뜻이 아니다. 범위는 scope에 적는다.
+# 없는 것을 있는 것처럼 적지 않는다: 있음·뼈대는 evidence(실제 파일)가 있어야 하고, 없음은 evidence가 없어야 한다.
+# 점검: tests/test_control_tower.py
+updated: 2026-11-24
+items:
+- {key: product_studio, name: ConT Studio, status: 뼈대, scope: 체결 대화 화면 하나 (물리 영역을 가리지 않는 Studio는 아직 없음), evidence: [src/cont/dialogue, src/cont/view/fastening_app.py]}
+- {key: product_physics, name: ConT Physics (전문가용 제품 화면), status: 없음, scope: 코어 엔진 목록 화면만 있고 전문가용 작업 화면은 없음, evidence: []}
+- {key: product_fab, name: ConT Fab, status: 뼈대, scope: 고르는 곳만 있음 (꾸리는 곳, 시나리오, 공장 화면은 없음), evidence: [src/cont/fab]}
+- {key: c1_dialogue, name: C1 대화·조율, status: 있음, scope: 체결과 설비 진단 영역만, evidence: [src/cont/dialogue, src/cont/llm]}
+- {key: c2_knowledge, name: C2 물리 지식, status: 있음, scope: 체결, 절삭가공(뼈대), 설비 진단, evidence: [src/cont/packs]}
+- {key: c3_compute, name: C3 물리 계산, status: 있음, scope: VDI 2230 해석식, 축대칭 유한요소, 키엔츨레 절삭력, 신호 분석, evidence: [src/cont/fem, src/cont/packs, src/cont/signal]}
+- {key: c4_view, name: C4 표현, status: 있음, scope: 체결 중심의 3D, 물리 이미지, 그래프, 4D, evidence: [src/cont/view, src/cont/fab]}
+- {key: c5_shape, name: C5 형상, status: 있음, scope: 볼트 조인트 하나, evidence: [src/cont/shape]}
+- {key: c6_validation, name: C6 검증, status: 뼈대, scope: 편차를 보고하는 틀만 있고 기준 사례는 비어 있음, evidence: [src/cont/tolerance.py, config/reference]}
+- {key: c7_learning, name: C7 제작·학습, status: 없음, scope: 시작하지 않음, evidence: []}
+- {key: service_api, name: 서비스 층 (API), status: 없음, scope: 파이썬 모듈로만 부른다, evidence: []}
+- {key: learned_model, name: 학습된 모형 (PINN, 신경 연산자, 대리모형), status: 없음, scope: 해석식과 수치해석만 쓴다, evidence: []}
+- {key: field_comparison, name: 실측 대조, status: 없음, scope: 가상 신호와 합성 관측으로만 확인했다, evidence: []}
