@@ -10,11 +10,11 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
 from typing import Any
 
 from cont.answer import PhysicsAnswer
-from cont.llm import Message
+from cont.dialogue.context import ContextLimits, build_messages, configured_limits
 from cont.packs.fastening import standards
 from cont.packs.fastening.joint import BoltedJoint, LoadCase
 from cont.packs.fastening.pack import answer as solve
@@ -210,11 +210,35 @@ def _report(before: PhysicsAnswer, after: PhysicsAnswer) -> list[str]:
 class Session:
     """조인트 하나를 두고 이어 가는 대화. 바꾼 결과가 다음 말의 출발점이 된다."""
 
-    def __init__(self, joint: BoltedJoint, load: LoadCase, provider: Any | None = None):
+    def __init__(self, joint: BoltedJoint, load: LoadCase, provider: Any | None = None,
+                 *, context_limits: ContextLimits | None = None):
         self.joint, self.load, self.provider = joint, load, provider
+        self.context_limits = context_limits if context_limits is not None else configured_limits()
         self.answer = solve(joint, load)
         self.turns: list[Turn] = []
         self.offers: tuple[Candidate, ...] = ()         # 마지막 추천. "2번으로"라고 하면 여기서 고른다
+
+    def _messages(self, text: str):
+        """이력의 요청과 실제 적용 결과를 구분하고 현재 조인트를 따로 고정한다."""
+        state = {
+            "domain": "fastening",
+            "joint": asdict(self.joint),
+            "load": asdict(self.load),
+            "units": {"length": "mm", "force": "N", "stress": "MPa", "torque": "N·m"},
+            "offers": [{"choose": i + 1, "changes": c.changes} for i, c in enumerate(self.offers)],
+        }
+        current = (
+            "현재 상태(JSON)는 실제 적용된 설계 입력이다. 과거 사용자 요청이 실패했으면 적용된 값으로 취급하지 않는다. "
+            "과거 assistant의 outcome과 applied_changes는 처리 기록이며 이번 답의 출력 키가 아니다. "
+            "이번 사용자 요청에 필요한 변경만 답하고 과거 변경을 다시 적용하지 않는다. "
+            "지시 대상이나 값이 문맥으로도 정해지지 않으면 {}를 답한다.\n"
+            + json.dumps(state, ensure_ascii=False, allow_nan=False)
+        )
+        # 공급자의 원문은 보관/재사용하지 않는다. 검사를 거쳐 실제 적용된 변경만 이력에 담는다.
+        recent = self.turns[-self.context_limits.history_turns:] if self.context_limits.history_turns else []
+        history = [(t.text, json.dumps({"outcome": t.kind, "applied_changes": t.changes},
+                                      ensure_ascii=False, allow_nan=False)) for t in recent]
+        return build_messages(SYSTEM_PROMPT, current, history, text, self.context_limits)
 
     def _read(self, text: str) -> tuple[dict[str, Any], str, str]:
         def by_rule() -> dict[str, Any]:
@@ -228,7 +252,7 @@ class Session:
         if self.provider is None:
             return by_rule(), "rule", ""
         try:
-            r = self.provider.complete([Message("system", SYSTEM_PROMPT), Message("user", text)])
+            r = self.provider.complete(self._messages(text))
             m = re.search(r"\{.*\}", r.text or "", re.S)
             return _validate(json.loads(m.group(0) if m else "")), "llm", ""
         except Exception as exc:
