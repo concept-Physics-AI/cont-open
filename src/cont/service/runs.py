@@ -35,7 +35,8 @@ def configured_dir() -> Path | None:
 
 
 def model_version(pack: str) -> dict[str, str]:
-    return {"code": cont.__version__, "pack": pack}
+    from cont.buildinfo import git_sha
+    return {"code": cont.__version__, "git_sha": git_sha(), "pack": pack}
 
 
 def _digest(rec: Mapping[str, Any]) -> str:

@@ -2,7 +2,7 @@
 # "있음"은 동작하고 시험했다는 뜻이며 물리적으로 검증됐다는 뜻이 아니다. 범위는 scope에 적는다.
 # 없는 것을 있는 것처럼 적지 않는다: 있음·뼈대는 evidence(실제 파일)가 있어야 하고, 없음은 evidence가 없어야 한다.
 # 점검: tests/test_control_tower.py
-updated: 2026-11-24
+updated: 2026-11-25
 items:
 - key: product_studio
   name: ConT Studio
@@ -21,7 +21,7 @@ items:
 - key: product_fab
   name: ConT Fab
   status: 뼈대
-  scope: 고르기와 기본 구성기 있음 (조건·크기·순서 설정, 브라우저 저장과 파일 재열기). 현장 신호 연결은 기록만, 계산 결과의 실행 단위 복원, 시나리오, 공장 화면은 없음
+  scope: 고르기와 기본 구성기 있음 (조건·크기·순서 설정, 브라우저 저장과 파일 재열기). 현장 신호 연결은 기록만. 서버로 띄우고 실행 저장소(CONT_RUN_DIR)를 켜면 만든 결과가 실행 ID로 남고 다시 열 때 읽힘 (실제 브라우저 시험은 아직 없음). 시나리오, 공장 화면은 없음
   evidence:
   - src/cont/fab
 - key: c1_dialogue
@@ -67,20 +67,22 @@ items:
   - config/reference
 - key: c7_learning
   name: C7 제작·학습
-  status: 없음
-  scope: 시작하지 않음
-  evidence: []
+  status: 뼈대
+  scope: 열 영역 PINN 학습·평가 틀 하나(선택 설치, 모델 파일은 커밋하지 않음)와 문지기. 산업별 학습 모형과 학습 기록의 데이터·가중치 추적은 없음
+  evidence:
+  - src/cont/learn
 - key: service_api
   name: 서비스 층 (API)
   status: 뼈대
-  scope: 이 컴퓨터(127.0.0.1)에서만 열리고 인증이 없음. 엔진 목록과 계산 호출만. 저장, 사용자 구분, 외부 공개는 없음
+  scope: 이 컴퓨터(127.0.0.1)에서만 열리고 인증이 없음. 엔진 목록, 계산 호출, 실행 저장(켜야 함)과 다시 계산. 사용자 구분과 외부 공개는 없음
   evidence:
   - src/cont/service
 - key: learned_model
   name: 학습된 모형 (PINN, 신경 연산자, 대리모형)
-  status: 없음
-  scope: 해석식과 수치해석만 쓴다
-  evidence: []
+  status: 뼈대
+  scope: 열전도 PINN 하나(1D, 2D, 역문제)가 연구용으로 있고 문지기를 거쳐서만 서비스에 나감. 제품 모형은 아니며 본딩 모형이 아님. 신경 연산자와 대리모형은 없음
+  evidence:
+  - src/cont/learn
 - key: field_comparison
   name: 실측 대조
   status: 없음
