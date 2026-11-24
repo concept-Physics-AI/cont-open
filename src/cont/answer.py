@@ -23,9 +23,10 @@ STATUS_ESTIMATED = "estimated"     # 관측에서 복원한 숨은 물리 상태
 STATUS_SIMULATED = "simulated"     # 모델과 조건으로 계산한 상태
 STATUS_PREDICTED = "predicted"     # 아직 오지 않은 시점이나 재지 않은 대상의 상태
 STATUS_GENERATED = "generated"     # 생성한 대안·가설 (검증 전 후보)
+STATUS_PRESENTATION = "presentation"  # 계산 결과를 이해하기 쉽게 다시 꾸민 표현. 새 물리 값을 만들지 않고 같은 묶음의 근거 값에서만 나온다
 STATUS_UNSPECIFIED = "unspecified"
 STATUS_LABELS = {STATUS_INPUT: "입력", STATUS_OBSERVED: "관측", STATUS_ESTIMATED: "추정", STATUS_SIMULATED: "해석",
-                 STATUS_PREDICTED: "예측", STATUS_GENERATED: "생성 후보", STATUS_UNSPECIFIED: "지위 미정"}
+                 STATUS_PREDICTED: "예측", STATUS_GENERATED: "생성 후보", STATUS_PRESENTATION: "설명용", STATUS_UNSPECIFIED: "지위 미정"}
 
 VALIDATION_NONE = "unvalidated"    # 기준값·실측과 대조하지 않음 (기본)
 VALIDATION_COMPARED = "compared"   # 기준값·실측과 대조해 편차를 보고함 (판정은 허용 오차 프로파일이 있을 때만)
@@ -156,6 +157,8 @@ class PhysicsAnswer:
             missing = [e for e in q.evidence if e not in keys]
             if missing:
                 raise ValueError(f"quantity '{q.key}': evidence {missing} is not in this answer")
+            if (q.status or self.status) == STATUS_PRESENTATION and q.value is not None and not q.evidence:
+                raise ValueError(f"quantity '{q.key}': a presentation value must name the quantities it was derived from (evidence)")
             if q.identifiability is not None and q.identifiability not in IDENT_LABELS:
                 raise ValueError(f"quantity '{q.key}': identifiability must be one of {sorted(IDENT_LABELS)}")
 
@@ -215,8 +218,9 @@ class PhysicsAnswer:
         assumed = "; ".join(b.replace("가정: ", "") for b in self.basis if b.startswith("가정"))
         residual = "; ".join(f"{r.label} = {r.value:.3g} {r.unit}" + (f". {r.note}" if r.note else "") if r.value is not None
                              else f"{r.label}: {r.note or NOT_REPORTED}" for r in self.residuals)
+        note = ". 설명용 값은 근거 값을 다시 꾸민 것이며 물리의 근거가 아님" if STATUS_PRESENTATION in kinds else ""
         return [
-            ["값의 지위", ", ".join(STATUS_LABELS[k] for k in kinds) + (f". {'·'.join(missing)}한 값은 없음" if missing else "")],
+            ["값의 지위", ", ".join(STATUS_LABELS[k] for k in kinds) + (f". {'·'.join(missing)}한 값은 없음" if missing else "") + note],
             ["근거 데이터", self.source or NOT_REPORTED],
             ["사용 모델", self.method],
             ["가정", assumed or "적어 둔 가정 없음"],

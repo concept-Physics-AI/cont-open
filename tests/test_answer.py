@@ -1,6 +1,5 @@
 """공통 결과 형식: 값의 지위와 믿을 근거 (docs/hidden_physics.md)."""
-from cont.answer import (EVIDENCE_ANALYTIC, EVIDENCE_LABELS, EVIDENCE_NONE, EVIDENCE_REFERENCE, IDENT_NONE, IDENT_OK, IDENT_WEAK, STATUS_ESTIMATED, STATUS_OBSERVED as OBSERVED, NOT_REPORTED, STATUS_GENERATED, STATUS_INPUT, STATUS_LABELS, STATUS_OBSERVED, STATUS_PREDICTED,
-                         STATUS_SIMULATED, STATUS_UNSPECIFIED, Confidence, Field, PhysicsAnswer, Quantity, Residual)
+from cont.answer import (EVIDENCE_ANALYTIC, EVIDENCE_LABELS, EVIDENCE_NONE, EVIDENCE_REFERENCE, IDENT_NONE, IDENT_OK, IDENT_WEAK, STATUS_ESTIMATED, STATUS_OBSERVED as OBSERVED, NOT_REPORTED, STATUS_GENERATED, STATUS_INPUT, STATUS_LABELS, STATUS_OBSERVED, STATUS_PREDICTED, STATUS_SIMULATED, STATUS_UNSPECIFIED, Confidence, Field, PhysicsAnswer, Quantity, Residual, STATUS_PRESENTATION)
 from cont.packs.fastening import answer as fastening_answer
 from cont.packs.fastening.joint import BoltedJoint, LoadCase, Plate
 
@@ -118,6 +117,21 @@ def test_parent_revision_and_trust_row_for_identity():
     assert child.revision_id() in row and a.revision_id() in row and "pack:test" in row
     assert a.revision_id() in dict(a.trust())["개정"] and "보고하지 않음" in dict(a.trust())["개정"]
     assert child.to_dict()["provenance"]["parent_revision"] == a.revision_id()
+
+
+def test_a_presentation_value_must_come_from_a_value_of_the_same_answer_and_says_it_is_not_evidence():
+    import pytest
+    base = Quantity("force", "체결력", 20000.0, "N", status=STATUS_SIMULATED)
+    summary = Quantity("force_kn", "체결력 (요약)", 20.0, "kN", status=STATUS_PRESENTATION, evidence=("force",))
+    conf = Confidence("medium", "r")
+    ok = PhysicsAnswer("q", (base, summary), "요약", (), conf, status=STATUS_SIMULATED)
+    assert STATUS_LABELS[STATUS_PRESENTATION] == "설명용" and ok.status_of("force_kn") == STATUS_PRESENTATION
+    row = dict(ok.trust())["값의 지위"]
+    assert "설명용" in row and "물리의 근거가 아님" in row
+    with pytest.raises(ValueError, match="presentation value must name"):
+        PhysicsAnswer("q", (base, Quantity("force_kn", "체결력 (요약)", 20.0, "kN", status=STATUS_PRESENTATION)), "요약", (), conf, status=STATUS_SIMULATED)
+    # 값이 없는 설명용 항목(그림 설명 등)은 근거 연결 없이도 둘 수 있다
+    PhysicsAnswer("q", (Quantity("caption", "그림 설명", None, "", note="단면 그림"),), "설명", (), conf, status=STATUS_PRESENTATION)
 
 
 def test_truth_line_gathers_what_the_answer_has_and_reports_the_rest_as_not_reported():
