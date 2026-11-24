@@ -214,3 +214,25 @@ def test_usable_results_come_before_coming_soon_and_soon_cards_have_no_run_butto
     assert build.index("data-set=") < build.index("card(it,0)") < build.index('id="soon"') < build.index("tcard")
     tcard = page[page.index("function tcard("):page.index("function build(")]
     assert "data-add" not in tcard and "data-set" not in tcard and "필요해요" in tcard
+
+def test_set_condition_uses_a_common_size_that_really_exists_and_flags_mixed_sets():
+    from cont.fab.catalog import catalog, load, set_condition
+    items, sets = catalog(), {s["key"]: s for s in load()["sets"]}
+    by = {i["key"]: i for i in items}
+    c = set_condition(items, sets["set_fastening"])
+    assert c["mode"] == "common" and "M10" in c["note"]
+    for k, idx in c["pick"].items():                                   # 고른 조건은 그 상품에서 실제로 계산해 둔 샘플이다
+        assert by[k]["samples"][idx]["params"]["size"] == "M10"
+    assert set_condition(items, sets["set_monitor"])["mode"] == "none"
+    fake = [{"key": "a", "name": "가", "samples": [{"label": "M6 · 1", "params": {"size": "M6"}}]},
+            {"key": "b", "name": "나", "samples": [{"label": "M16 · 2", "params": {"size": "M16"}}]}]
+    m = set_condition(fake, {"items": ["a", "b"]})
+    assert m["mode"] == "mixed" and "비교용" in m["note"] and "M6 · 1" in m["note"] and "M16 · 2" in m["note"]
+
+
+def test_set_button_adds_picks_at_the_common_condition_and_says_so():
+    from cont.fab.catalog import catalog
+    from cont.fab.store import render_store
+    page = render_store(catalog())
+    assert 'id=\\"setnote\\"' in page or 'id="setnote"' in page
+    assert "st.condition" in page and "pk[k]||0" in page and "setcond" in page
