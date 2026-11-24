@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Mapping
@@ -121,14 +122,22 @@ class Executor:
         self.tools = dict(tools)
         self._runs: dict[str, Run] = {}              # 같은 계획은 한 번만 실행한다 (요청 ID 기준)
         self.cancelled: set[str] = set()
+        self._guard = threading.Lock()
+        self._locks: dict[str, threading.Lock] = {}  # 요청 ID마다 하나: 같은 계획을 동시에 두 번 내도 한 번만 돈다
 
     def cancel(self, request_id: str) -> None:
         self.cancelled.add(request_id)
 
     def execute(self, plan: Plan, deadline_s: float | None = None) -> Run:
-        """처음이면 실행하고, 같은 계획이 이미 있으면 실패·건너뛴 단계만 다시 돌린다 (끝난 단계는 다시 실행하지 않는다)."""
         order = validate(plan, self.tools)
         rid = plan.request_id()
+        with self._guard:
+            lock = self._locks.setdefault(rid, threading.Lock())
+        with lock:                                    # 같은 계획의 동시 요청은 앞 요청이 끝난 뒤 이어서 본다 (끝난 단계는 다시 하지 않는다)
+            return self._execute(plan, order, rid, deadline_s)
+
+    def _execute(self, plan: Plan, order: list[str], rid: str, deadline_s: float | None) -> Run:
+        """처음이면 실행하고, 같은 계획이 이미 있으면 실패·건너뛴 단계만 다시 돌린다 (끝난 단계는 다시 실행하지 않는다)."""
         run = self._runs.get(rid) or Run(plan, {s.id: StepState() for s in plan.steps})
         self._runs[rid] = run
         by_id = {s.id: s for s in plan.steps}
@@ -146,7 +155,10 @@ class Executor:
                 out = self.tools[step.tool].run(**step.args)
                 if not isinstance(out, Mapping) or not out:
                     raise RuntimeError("도구가 빈 결과를 돌려주었습니다 (산출물이 없으면 끝난 것으로 보지 않습니다)")
-                st.result, st.state = dict(out), "done"
+                if rid in self.cancelled:             # 실행 중에 취소됐다: 늦게 온 결과는 버린다
+                    st.state, st.result, st.error = "cancelled", None, "취소되어 늦게 도착한 결과를 버림"
+                else:
+                    st.result, st.state = dict(out), "done"
             except Exception as exc:                  # 도구 오류는 그 단계의 실패로 남기고 뒤 단계를 막는다
                 st.state, st.error, st.result = "failed", f"{type(exc).__name__}: {str(exc)[:200]}", None
             self._event(run, sid, st.state)

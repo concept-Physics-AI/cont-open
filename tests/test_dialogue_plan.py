@@ -80,3 +80,36 @@ def test_default_tools_only_register_real_tools_and_run_a_pack(tmp_path, monkeyp
     assert set(t) == {"solve_physics"}
     run = Executor(t).execute(plan(Step("s", "solve_physics", {"pack": "heat", "inputs": {"case": "sine_1d"}})))
     assert run.done and run.states["s"].result["run_id"].startswith("run-")
+
+
+def test_cancel_during_a_step_discards_its_late_result_and_stops_followers():
+    import threading
+    started, release = threading.Event(), threading.Event()
+    log = []
+
+    def slow(x: int):
+        started.set(); release.wait(5); log.append(x); return {"value": x}
+
+    ex = Executor({"slow": Tool("slow", slow, {"x": int}), **tools(log)})
+    p = plan(Step("a", "slow", {"x": 1}), Step("b", "ok", {"x": 2}, ("a",)))
+    out = {}
+    th = threading.Thread(target=lambda: out.setdefault("run", ex.execute(p))); th.start()
+    assert started.wait(5)
+    ex.cancel(p.request_id()); release.set(); th.join(5)
+    run = out["run"]
+    assert run.states["a"].state == "cancelled" and run.states["a"].result is None
+    assert run.states["b"].state in ("skipped", "cancelled") and ("ok", 2) not in log
+
+
+def test_two_simultaneous_identical_requests_run_each_step_once():
+    import threading
+    log = []; gate = threading.Event()
+
+    def slow(x: int):
+        gate.wait(5); log.append(x); return {"value": x}
+
+    ex = Executor({"slow": Tool("slow", slow, {"x": int})}); p = plan(Step("a", "slow", {"x": 1}))
+    results = []
+    ts = [threading.Thread(target=lambda: results.append(ex.execute(p))) for _ in range(2)]
+    [t.start() for t in ts]; gate.set(); [t.join(5) for t in ts]
+    assert log == [1] and len(results) == 2 and all(r.done for r in results)
