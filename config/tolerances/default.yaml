@@ -4,6 +4,8 @@ name: default
 quantities:
   dimension:            {mode: absolute,    unit: mm, limit: null}
   torque_to_preload:    {mode: relative,    limit: null}
+  elongation_to_preload: {mode: relative,   limit: null}
+  bolt_compliance:      {mode: relative,    limit: null}
   friction_scatter:     {mode: range_match, limit: null}
   bolt_equivalent_stress: {mode: relative,  limit: null}
   stiffness_vs_formula: {mode: relative,    limit: null}
