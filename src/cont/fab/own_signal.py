@@ -1,6 +1,7 @@
 """올린 CSV(내 신호)를 신호 분석 엔진에 넣어 FAB 카드 하나(샘플)로 돌려준다. 파일은 저장하지 않는다."""
 from __future__ import annotations
 
+import math
 from typing import Any, Mapping
 
 from cont.signal import distribution, peaks, spectrogram, spectrum
@@ -51,24 +52,27 @@ def analyze(mode: str, p: Mapping[str, Any]) -> dict[str, Any]:
             tcol = _pick(len(t.names), tcol, "시간 열")
             if tcol == col:
                 raise ValueError("값 열과 시간 열이 같습니다")
-            fs, jit = sampling(t.columns[tcol])
+            time_unit = str(p.get("time_unit", "s"))
+            fs, jit = sampling(t.columns[tcol], time_unit)
             if jit > MAX_JITTER:
                 raise ValueError(f"샘플 간격이 일정하지 않습니다 (중앙 간격보다 최대 {jit * 100:.0f}% 벗어남). 일정한 간격으로 맞춘 파일을 올려 주세요")
             if jit > WARN_JITTER:
                 warn.append(("간격 흔들림", f"최대 {jit * 100:.1f}% (결과가 조금 흐려질 수 있음)"))
-            head.append(("시간 열", f"{t.names[tcol]} (초 단위로 읽음)"))
+            head.append(("시간 열", f"{t.names[tcol]} ({time_unit} → s)"))
         else:
             try:
                 fs = float(p.get("fs"))
             except (TypeError, ValueError):
                 raise ValueError("시간 열을 고르거나 샘플링 주파수(Hz)를 적어 주세요") from None
-            if not fs > 0:
-                raise ValueError("샘플링 주파수는 0보다 커야 합니다")
+            if not math.isfinite(fs) or fs <= 0:
+                raise ValueError("샘플링 주파수는 유한하고 0보다 커야 합니다")
         head += [("샘플링 주파수", f"{fs:.6g} Hz"), ("신호 길이", f"{x.size / fs:.4g} 초")] + warn
         try:
             given = float(p.get("fmax")) if p.get("fmax") not in (None, "") else 0.0
         except (TypeError, ValueError):
             raise ValueError("표시 주파수 상한은 숫자로 적어 주세요") from None
+        if not math.isfinite(given):
+            raise ValueError("표시 주파수 상한은 유한한 숫자로 적어 주세요")
         fmax = min(given, fs / 2) if given > 0 else fs / 2
         if given <= 0:                                       # 상한을 안 적으면 가장 높은 뚜렷한 봉우리의 1.6배까지만 보인다 (봉우리가 보이게)
             top = peaks(spectrum(x, fs), 5, 0.1)

@@ -167,7 +167,7 @@ if(c.dataset&&c.dataset.area!=null)apply();});
 $('#q').addEventListener('input',function(){q=this.value.trim().toLowerCase();apply();});
 var ownText='',ownN=[];
 function ownForm(){var w=$('#own');w.hidden=!cur.own;if(!cur.own)return;$('#own-static').hidden=!!D.analyze_url;$('#own-form').hidden=!D.analyze_url;all('#own [data-wave]').forEach(function(l){l.hidden=cur.own==='values';});ownFs();}
-function ownFs(){$('#own-fs-l').hidden=cur.own==='values'||$('#own-time').value!=='-1';}
+function ownFs(){$('#own-fs-l').hidden=cur.own==='values'||$('#own-time').value!=='-1';$('#own-time-unit-l').hidden=cur.own==='values'||$('#own-time').value==='-1';}
 function ownNames(t){var l=t.replace(/^\uFEFF/,'').split(/\r?\n/).filter(function(x){return x.trim();})[0]||'',d=[',','\t',';'].map(function(c){return [c,l.split(c).length];}).sort(function(a,b){return b[1]-a[1];})[0][0],c=l.split(d).map(function(x){return x.trim();});
 return c.every(function(x){return x!==''&&!isNaN(Number(x));})?c.map(function(_,i){return '열 '+(i+1);}):c.map(function(x,i){return x||'열 '+(i+1);});}
 $('#own-file').addEventListener('change',function(){var f=this.files[0],m=$('#own-msg');ownText='';$('#own-go').disabled=true;if(!f)return;if(f.size>8000000){m.textContent='파일이 너무 큽니다 (8 MB 이하만 됩니다).';return;}
@@ -177,7 +177,7 @@ $('#own-time').innerHTML='<option value="-1">없음 (샘플링 주파수를 적�
 $('#own-col').disabled=$('#own-time').disabled=false;$('#own-go').disabled=false;m.textContent=ownN.length+'개 열을 읽었습니다. 값 열을 확인하세요.';ownFs();};r.onerror=function(){m.textContent='파일을 읽지 못했습니다.';};r.readAsText(f);});
 $('#own-time').addEventListener('change',ownFs);
 $('#own-form').addEventListener('submit',function(e){e.preventDefault();if(!ownText||!cur||!cur.own)return;var m=$('#own-msg'),f=$('#own-file').files[0],asked=cur;m.textContent='엔진이 계산하는 중입니다.';
-var body={key:cur.key,csv:ownText,column:Number($('#own-col').value),time_column:Number($('#own-time').value),fs:$('#own-fs').value,fmax:$('#own-fmax').value,unit:$('#own-unit').value,filename:f?f.name:''};
+var body={key:cur.key,csv:ownText,column:Number($('#own-col').value),time_column:Number($('#own-time').value),time_unit:$('#own-time-unit').value,fs:$('#own-fs').value,fmax:$('#own-fmax').value,unit:$('#own-unit').value,filename:f?f.name:''};
 fetch(D.analyze_url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.json();}).then(function(s){if(s.error){m.textContent=s.error;return;}
 var tg=asked,i=tg.samples.map(function(x){return x.label;}).indexOf(s.label);if(i<0){tg.samples.push(s);i=tg.samples.length-1;}else tg.samples[i]=s;if(cur===tg){curS=i;sample();m.textContent='계산했습니다: '+tg.name+' · '+s.label;}else m.textContent='「'+tg.name+'」에 계산 결과를 더했습니다. 지금 보는 상품에는 반영하지 않았습니다.';}).catch(function(){m.textContent='서버에 닿지 못했습니다.';});});
 $('#mk').addEventListener('submit',function(e){e.preventDefault();var body={key:cur.key,size:$('#mk-size').value,torque:$('#mk-torque').value},asked=cur;$('#mk-msg').textContent='엔진이 계산하는 중입니다.';
@@ -249,7 +249,8 @@ def render_store(items: Sequence[Mapping[str, Any]], data: Mapping[str, Any] | N
 <p class="sm" id="own-static" hidden>내 신호를 올려 보는 것은 서버로 띄운 화면(python -m cont.fab.store)에서만 됩니다. 이 화면은 미리 계산한 샘플만 보입니다.</p>
 <form class="mk" id="own-form"><label>CSV 파일<input type="file" id="own-file" accept=".csv,.tsv,.txt,text/csv,text/plain"></label>
 <label>값 열<select id="own-col" disabled></select></label>
-<label data-wave>시간 열 (초 단위)<select id="own-time" disabled></select></label>
+<label data-wave>시간 열<select id="own-time" disabled></select></label>
+<label data-wave id="own-time-unit-l">시간 단위<select id="own-time-unit"><option value="s">초 (s)</option><option value="ms">밀리초 (ms)</option><option value="us">마이크로초 (us)</option></select></label>
 <label data-wave id="own-fs-l">샘플링 주파수 (Hz)<input type="number" id="own-fs" min="0" step="any" inputmode="decimal"></label>
 <label data-wave>표시 주파수 상한 (Hz, 선택)<input type="number" id="own-fmax" min="0" step="any" inputmode="decimal"></label>
 <label>단위 (선택)<input type="text" id="own-unit" maxlength="16" autocomplete="off"></label>

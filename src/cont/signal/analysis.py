@@ -38,8 +38,8 @@ class Distribution:
 
 def _clean(x: np.ndarray, fs: float) -> np.ndarray:
     a = np.asarray(x, dtype=float).ravel()
-    if fs <= 0:
-        raise ValueError("샘플링 주파수는 0보다 커야 합니다")
+    if not np.isfinite(fs) or fs <= 0:
+        raise ValueError("샘플링 주파수는 유한하고 0보다 커야 합니다")
     if a.size < 8 or not np.all(np.isfinite(a)):
         raise ValueError("신호가 너무 짧거나 숫자가 아닌 값이 있습니다")
     return a
@@ -76,6 +76,8 @@ def peaks(sp: Spectrum, count: int = 5, min_ratio: float = 0.1) -> list[tuple[fl
 def spectrogram(x: np.ndarray, fs: float, window: int = 256, overlap: float = 0.5) -> Spectrogram:
     """짧은 구간마다 스펙트럼을 구해 시간에 따른 주파수 변화를 낸다."""
     a = _clean(x, fs)
+    if isinstance(window, (bool, np.bool_)) or not isinstance(window, (int, np.integer)) or window < 3:
+        raise ValueError("창 길이는 3 이상의 정수여야 합니다")
     window = int(min(window, a.size))
     if not 0 <= overlap < 1:
         raise ValueError("겹침은 0 이상 1 미만이어야 합니다")

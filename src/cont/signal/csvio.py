@@ -13,6 +13,7 @@ import numpy as np
 
 MAX_ROWS = 1_000_000
 DELIMITERS = (",", "\t", ";")
+_TIME_TO_SECONDS = {"s": 1.0, "ms": 1e-3, "us": 1e-6}
 
 
 @dataclass(frozen=True)
@@ -62,10 +63,22 @@ def parse_table(text: str) -> Table:
     return Table(names, [data[:, j].copy() for j in range(width)])
 
 
-def sampling(time: np.ndarray) -> tuple[float, float]:
-    """시간 열(초)에서 샘플링 주파수(Hz)와 간격 흔들림(중앙 간격 대비 최대 편차 비율)을 구한다. 시간이 늘어나지 않으면 오류."""
-    dt = np.diff(np.asarray(time, dtype=float))
-    if dt.size < 1 or np.any(dt <= 0):
+def sampling(time: np.ndarray, unit: str = "s") -> tuple[float, float]:
+    """명시한 시간 단위(s, ms, us)에서 Hz와 중앙 간격 대비 최대 편차 비율을 구한다."""
+    if unit not in _TIME_TO_SECONDS:
+        raise ValueError("시간 단위는 s, ms, us 중에서 골라 주세요")
+    values = np.asarray(time, dtype=float)
+    if values.ndim != 1 or values.size < 2 or not np.all(np.isfinite(values)):
+        raise ValueError("시간 열은 유한한 숫자 두 개 이상의 1차원 배열이어야 합니다")
+    with np.errstate(over="ignore", invalid="ignore"):
+        dt = np.diff(values) * _TIME_TO_SECONDS[unit]
+    if not np.all(np.isfinite(dt)) or np.any(dt <= 0):
         raise ValueError("시간 열이 계속 늘어나지 않습니다. 시간 열을 다시 골라 주세요")
-    med = float(np.median(dt))
-    return 1.0 / med, float(np.max(np.abs(dt - med)) / med)
+    with np.errstate(over="ignore", divide="ignore", invalid="ignore"):
+        ordered = np.sort(dt)
+        med = float(ordered[(dt.size - 1) // 2] / 2 + ordered[dt.size // 2] / 2)
+        fs = float(np.divide(1.0, med))
+        jitter = float(np.max(np.abs(dt - med)) / med)
+    if not np.isfinite(fs) or fs <= 0 or not np.isfinite(jitter):
+        raise ValueError("시간 간격으로 유한한 샘플링 주파수를 계산할 수 없습니다")
+    return fs, jitter
