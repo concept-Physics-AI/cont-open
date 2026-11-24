@@ -174,7 +174,7 @@ ConT가 다루는 물리는 두 층이다. **보이는 물리**는 직접 측정
 
 | 개념 | 책임 모듈 | 규칙 |
 |---|---|---|
-| 공통 결과 형식 (Quantity, Residual, Field, Confidence, PhysicsAnswer) | `src/cont/answer.py` | 같은 이름을 다른 곳에서 다시 정의하지 않는다 |
+| 공통 결과 형식 (Quantity, Residual, Field, Confidence, Provenance, PhysicsAnswer) | `src/cont/answer.py` | 같은 이름을 다른 곳에서 다시 정의하지 않는다 |
 | 허용 오차와 편차 계산 (Tolerance, Check) | `src/cont/tolerance.py` | 기본은 판정 없이 편차만 보고한다 |
 | LLM 공급자 SDK와 네트워크 호출 | `src/cont/llm/` | 다른 모듈은 어댑터 인터페이스만 쓴다 |
 
