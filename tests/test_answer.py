@@ -1,10 +1,10 @@
 """공통 결과 형식: 값의 지위와 믿을 근거 (docs/hidden_physics.md)."""
-from cont.answer import (IDENT_NONE, IDENT_OK, IDENT_WEAK, STATUS_ESTIMATED, STATUS_OBSERVED as OBSERVED, NOT_REPORTED, STATUS_GENERATED, STATUS_INPUT, STATUS_LABELS, STATUS_OBSERVED, STATUS_PREDICTED,
+from cont.answer import (EVIDENCE_ANALYTIC, EVIDENCE_LABELS, EVIDENCE_NONE, EVIDENCE_REFERENCE, IDENT_NONE, IDENT_OK, IDENT_WEAK, STATUS_ESTIMATED, STATUS_OBSERVED as OBSERVED, NOT_REPORTED, STATUS_GENERATED, STATUS_INPUT, STATUS_LABELS, STATUS_OBSERVED, STATUS_PREDICTED,
                          STATUS_SIMULATED, STATUS_UNSPECIFIED, Confidence, Field, PhysicsAnswer, Quantity, Residual)
 from cont.packs.fastening import answer as fastening_answer
 from cont.packs.fastening.joint import BoltedJoint, LoadCase, Plate
 
-ROWS = ["값의 지위", "근거 데이터", "사용 모델", "가정", "증거와 식별가능성", "불확실성", "물리잔차", "검증 상태", "적용 범위", "실패 조건", "개정"]
+ROWS = ["값의 지위", "근거 데이터", "사용 모델", "가정", "증거와 식별가능성", "불확실성", "물리잔차", "검증 상태", "증거 수준", "적용 범위", "실패 조건", "개정"]
 
 
 def joint_and_load():
@@ -125,6 +125,24 @@ def test_truth_line_gathers_what_the_answer_has_and_reports_the_rest_as_not_repo
                             Quantity("e", "추정", 2.0, "N", status=STATUS_ESTIMATED, evidence=("f",))), "해석식", (), Confidence("medium", "r"), status=STATUS_SIMULATED)
     line = a.stamped("pack:test", run_id="run-1").truth_line()
     assert line.startswith("해석·추정 · 개정 " + a.revision_id()) and "실행 run-1" in line and "증거 1개" in line and "검증 전" in line
-    assert f"충실도·렌더러 버전·사람 승인: {NOT_REPORTED}" in line
+    assert f"증거 수준 E0 · 렌더러 버전·사람 승인: {NOT_REPORTED}" in line
     assert f"실행 {NOT_REPORTED}" in a.truth_line()
     assert a.truth_line() == a.truth_line()           # 새 값을 만들지 않는다: 같은 묶음이면 같은 줄
+
+
+def test_evidence_level_defaults_to_none_only_opens_e0_to_e2_and_shows_in_trust_and_truth_line():
+    import pytest
+    conf = Confidence("medium", "r")
+    base = PhysicsAnswer("q", (Quantity("f", "체결력", 1.0, "N"),), "해석식", (), conf, status=STATUS_SIMULATED)
+    assert base.evidence_level == EVIDENCE_NONE and dict(base.trust())["증거 수준"] == "E0 물리 증거 없음"
+    e1 = PhysicsAnswer("q", base.quantities, "해석식", (), conf, status=STATUS_SIMULATED, evidence_level=EVIDENCE_REFERENCE)
+    assert "증거 수준 E1" in e1.truth_line() and e1.revision_id() != base.revision_id()   # 증거 수준은 내용이다
+    assert set(EVIDENCE_LABELS) == {"E0", "E1", "E2"} and EVIDENCE_ANALYTIC == "E2"
+    with pytest.raises(ValueError, match="evidence_level"):
+        PhysicsAnswer("q", base.quantities, "해석식", (), conf, status=STATUS_SIMULATED, evidence_level="E4")   # 아직 열지 않은 단계
+
+
+def test_fastening_closed_form_is_e1_not_e2_because_no_standard_example_was_compared():
+    joint, load = joint_and_load()
+    a = fastening_answer(joint, load)
+    assert a.evidence_level == EVIDENCE_REFERENCE and "E1" in a.truth_line()
