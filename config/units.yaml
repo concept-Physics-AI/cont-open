@@ -1,0 +1,45 @@
+# 단위 표: 기준 단위(SI)로 바꾸는 값. value_si = value * scale + offset
+# 차원은 [길이, 질량, 시간, 온도, 전류] 지수 5개. 압력 = kg m^-1 s^-2.
+dimensions:
+  length: [1, 0, 0, 0, 0]
+  time: [0, 0, 1, 0, 0]
+  mass: [0, 1, 0, 0, 0]
+  temperature: [0, 0, 0, 1, 0]
+  pressure: [-1, 1, -2, 0, 0]
+  force: [1, 1, -2, 0, 0]
+  torque: [2, 1, -2, 0, 0]
+  angle: [0, 0, 0, 0, 0]
+units:
+  m: {dim: length, scale: 1.0}
+  mm: {dim: length, scale: 0.001}
+  um: {dim: length, scale: 0.000001}
+  nm: {dim: length, scale: 0.000000001}
+  s: {dim: time, scale: 1.0}
+  ms: {dim: time, scale: 0.001}
+  us: {dim: time, scale: 0.000001}
+  min: {dim: time, scale: 60.0}
+  h: {dim: time, scale: 3600.0}
+  kg: {dim: mass, scale: 1.0}
+  g: {dim: mass, scale: 0.001}
+  K: {dim: temperature, scale: 1.0, offset: 0.0}
+  degC: {dim: temperature, scale: 1.0, offset: 273.15}
+  degF: {dim: temperature, scale: 0.5555555555555556, offset: 255.3722222222222}
+  Pa: {dim: pressure, scale: 1.0}
+  kPa: {dim: pressure, scale: 1000.0}
+  MPa: {dim: pressure, scale: 1000000.0}
+  GPa: {dim: pressure, scale: 1000000000.0}
+  bar: {dim: pressure, scale: 100000.0}
+  N: {dim: force, scale: 1.0}
+  kN: {dim: force, scale: 1000.0}
+  Nm: {dim: torque, scale: 1.0}
+  rad: {dim: angle, scale: 1.0}
+  deg: {dim: angle, scale: 0.017453292519943295}
+aliases:
+  "°C": degC
+  "℃": degC
+  "°F": degF
+  "N·m": Nm
+  "N*m": Nm
+  "μm": um
+  "µm": um
+  "°": deg
