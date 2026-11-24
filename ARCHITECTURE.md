@@ -311,6 +311,7 @@ Studio 대화는 질문의 물리 영역을 먼저 알아본다 (`cont.dialogue.
 | `src/cont/packs/heat/` | 열 팩(C2·C3): 1차원·2차원 비정상 열전도 유한차분 풀이기(물리 선생), 해석해 기준 문제, 결과를 PhysicsAnswer로 | 다른 팩과 같은 팩 형식. 학습 도구를 부르지 않는다 |
 | `src/cont/learn/` | 학습(C7): PyTorch 호출, PINN, 학습 설정·시드·기록 | `torch`는 이 패키지 안에서만 가져온다. 없으면 이 패키지의 기능만 쓸 수 없고 나머지는 그대로 돈다 |
 | `src/cont/learn/pack.py` | 학습한 모형을 서비스에 내는 팩(`heat_pinn`): 문지기를 거쳐 PINN 또는 물리 선생 값을 낸다 | 팩 목록 로더가 등록한다. torch가 없으면 물리 선생 값만 낸다. 학습은 처음 부를 때 한 번 하고 메모리에 둔다 (모델 파일 없음) |
+| `src/cont/learn/split.py`, `config/learn/split.yaml` | 평가 분할 도구(Y3): 묶음 단위 분할, 분할 뒤 시간 창, 누출 검사 | torch가 필요 없다. 같은 묶음이 훈련과 시험에 함께 들어가면 `assert_no_leakage`가 실패한다. 키 값이 없거나 모든 행이 한 묶음으로 이어지면 나누지 않고 이유를 알린다. 합격 여부는 판정하지 않는다 |
 | `src/cont/dialogue/heat_talk.py` | Studio가 열 질문에 답한다: 입력 조건은 규칙 또는 LLM이 제안하고 계산은 열 팩이 한다 | LLM은 입력 조건만 제안한다 ("LLM과 숫자"). 결과는 PhysicsAnswer 그대로 |
 
 - 풀이기와 PINN의 결과는 둘 다 PhysicsAnswer이고, 방법 이름(유한차분 또는 PINN)과 기준 문제를 적는다.
