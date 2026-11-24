@@ -236,3 +236,15 @@ def test_set_button_adds_picks_at_the_common_condition_and_says_so():
     page = render_store(catalog())
     assert 'id=\\"setnote\\"' in page or 'id="setnote"' in page
     assert "st.condition" in page and "pk[k]||0" in page and "setcond" in page
+
+
+def test_3d_samples_keep_a_static_view_so_the_screen_is_never_blank_without_3d():
+    """3D를 못 쓰면(그리는 곳이 없거나 자료가 비면) 대표 단면(정적 그림)과 안내가 남는다 (X3)."""
+    html = render_store(catalog(), load(), "")
+    assert "3D를 쓸 수 없어 대표 단면으로 보여 드립니다" in html
+    assert "function no3(" in html and "can2()" in html
+    data = json.loads(re.search(r'id="store-data"[^>]*>(.*?)</script>', html, re.S).group(1))
+    shown = [(it, s) for it in data["items"] for s in it["samples"] if s.get("view3d")]
+    assert shown
+    for it, s in shown:
+        assert s["html"].strip() and it["name"] and s["label"]
