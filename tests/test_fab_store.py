@@ -248,3 +248,12 @@ def test_3d_samples_keep_a_static_view_so_the_screen_is_never_blank_without_3d()
     assert shown
     for it, s in shown:
         assert s["html"].strip() and it["name"] and s["label"]
+
+
+def test_mode_banner_tells_static_demo_from_live_and_late_results_stay_on_the_asked_item():
+    """공개 시연과 실시간 작업이 구분되고, 늦게 온 결과는 요청한 상품에만 더해진다 (X4)."""
+    static = render_store(catalog(), load(), "")
+    live = render_store(catalog(), load(), "/make", "/analyze")
+    assert "공개 시연: 미리 계산한 샘플만" in static and "실시간 작업 가능" not in static.split('id="mode"')[1].split("</p>")[0]
+    assert "실시간 작업 가능: 규격" in live and "공개 시연:" not in live.split('id="mode"')[1].split("</p>")[0]
+    assert "asked=cur" in live and "지금 보는 상품에는 반영하지 않았습니다" in live
