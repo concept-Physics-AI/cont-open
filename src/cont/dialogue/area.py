@@ -16,6 +16,7 @@ class Area:
     name: str
     chat: bool
     note: str
+    handler: str | None = None      # 대화 모듈이 따로 답하는 영역 (예: heat). 체결 세션을 건드리지 않는다
 
 
 def _areas() -> list[dict[str, Any]]:
@@ -30,7 +31,7 @@ def detect(text: str) -> Area | None:
     if best == 0 or len(top) != 1:
         return None
     a = top[0]
-    return Area(a["key"], a["name"], bool(a.get("chat")), a.get("note", ""))
+    return Area(a["key"], a["name"], bool(a.get("chat")), a.get("note", ""), a.get("handler"))
 
 
 def not_ready_reply(area: Area) -> str:

@@ -49,16 +49,22 @@ def teacher_value(alpha: float, x: float, t: float, nx: int = 201) -> float:
     return float(np.interp(x, sol.x, sol.temperature[-1]))
 
 
-def query(trained: heat1d.Trained, points: list[tuple[float, float]], alpha: float | None = None, question: str = "") -> PhysicsAnswer:
-    """점 (x, t)마다 문지기를 거쳐 값을 낸다. 범위 안은 PINN과 물리 선생의 편차를 함께, 범위 밖은 물리 선생 값만 낸다."""
+def query(trained: heat1d.Trained | None, points: list[tuple[float, float]], alpha: float | None = None, question: str = "",
+          problem: heat1d.Heat1DProblem | None = None) -> PhysicsAnswer:
+    """점 (x, t)마다 문지기를 거쳐 값을 낸다. 범위 안은 PINN과 물리 선생의 편차를 함께, 범위 밖은 물리 선생 값만 낸다.
+
+    trained가 None이면(학습 도구가 없거나 학습하지 않음) 모든 점을 물리 선생이 답한다. 그때 문제 설정은 problem(기본 설정)이다.
+    """
     if not points:
         raise ValueError("points must not be empty")
-    p = trained.problem
+    p = trained.problem if trained is not None else (problem or heat1d.Heat1DProblem())
     a = p.alpha if alpha is None else alpha
     q: list[Quantity] = [Quantity("alpha", "열확산계수 α (무차원)", a, "-", None, None, STATUS_INPUT)]
     basis, used_pinn, any_value = [], 0, False
     for i, (x, t) in enumerate(points):
         d = decide_heat1d(p, a, x, t)
+        if trained is None and d.use_pinn:
+            d = GateDecision(False, d.in_domain, ("PINN 모형이 없다 (학습 도구가 설치되지 않았거나 학습하지 않았다)",))
         label = f"점 {i + 1}: x={x:g}, t={t:g}"
         if not d.in_domain:
             q.append(Quantity(f"u_{i}", f"{label}의 온도", None, "-", None, "물리 영역 밖이라 값을 내지 않는다"))
@@ -86,11 +92,11 @@ def query(trained: heat1d.Trained, points: list[tuple[float, float]], alpha: flo
         method=method,
         basis=tuple(basis),
         confidence=Confidence("low" if used_pinn else "medium", "PINN 값은 학습 범위 안의 합성 문제에서만 확인했다. 되돌린 값은 기준 계산이다"),
-        source="사람이 정한 질의 점. 학습 설정과 지문은 학습 기록에 있다: " + trained.record.fingerprint(), uncertainty="",
+        source="사람이 정한 질의 점. " + (f"학습 설정과 지문은 학습 기록에 있다: {trained.record.fingerprint()}" if trained is not None else "PINN 모형 없음"), uncertainty="",
         scope="무차원 1차원 열전도, 양 끝 0, 초기 sin(πx). PINN은 x∈[0,1], t∈[0,T], 학습한 α에서만 쓴다",
         failure_conditions=("PINN 학습이 수렴하지 않았을 때 (문지기는 이를 판단하지 않는다)", "경계·초기 조건이 학습한 것과 다를 때"),
         validation=VALIDATION_COMPARED if used_pinn else VALIDATION_NONE,
         evidence_level=EVIDENCE_NONE if used_pinn or not fell_back else EVIDENCE_REFERENCE,   # 가장 낮은 쪽을 따른다
         presentation=("table:quantities",),
-        inputs={"alpha": a, "points": [list(pt) for pt in points], "trained": trained.record.fingerprint()},
+        inputs={"alpha": a, "points": [list(pt) for pt in points], "trained": trained.record.fingerprint() if trained is not None else None},
     )
