@@ -1,0 +1,22 @@
+# M05 기준선 시험 (Y4). 합성 신호이며 실제 설비 자료가 아니다. 값은 코드에 박지 않는다.
+# alarm.* 는 경보 감도이지 허용 오차가 아니다. 이 시험은 합격/불합격을 판정하지 않고 지표만 보고한다.
+synthetic:
+  runs_per_lot: 3
+  lots: 12
+  sample_period_s: 1.0
+  stages:                  # 순서대로: 이름, 길이(샘플). 지령은 대기 0, 상승 0→수준, 유지 수준, 하강 수준→0
+    - {name: idle,    length: 60}
+    - {name: ramp,    length: 40}
+    - {name: hold,    length: 100}
+    - {name: release, length: 60}
+  level: 1.0               # 지령 수준
+  lot_gain_spread: 0.10    # 로트마다 응답 이득이 이만큼 달라진다 (±)
+  tau_nominal: 8.0         # 물리 모형이 아는 시정수 (샘플)
+  lot_tau_spread: 0.20     # 로트마다 실제 시정수가 이 비율만큼 다르다 (±)
+  noise: 0.02
+  event: {delta: 0.30, length: 12}   # 각 로트의 0번 실행에 유지 구간 안에서 응답을 이만큼 올린다
+  seed: 0
+split: {test_fraction: 0.25, seed: 0}
+tree: {max_depth: 4, min_leaf: 20, thresholds: 24}
+alarm: {k_sigma: 4.0, min_samples: 3}
+boundary_match_samples: 20   # 이 안에서 찾은 경계만 짝지은 것으로 센다
