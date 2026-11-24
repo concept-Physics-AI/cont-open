@@ -257,3 +257,40 @@ def test_mode_banner_tells_static_demo_from_live_and_late_results_stay_on_the_as
     assert "공개 시연: 미리 계산한 샘플만" in static and "실시간 작업 가능" not in static.split('id="mode"')[1].split("</p>")[0]
     assert "실시간 작업 가능: 규격" in live and "공개 시연:" not in live.split('id="mode"')[1].split("</p>")[0]
     assert "asked=cur" in live and "지금 보는 상품에는 반영하지 않았습니다" in live
+
+
+def test_made_samples_are_stored_as_runs_and_can_be_read_back_by_id(tmp_path, monkeypatch):
+    """저장소가 켜져 있으면 만든 결과에 run_id가 붙고, 다시 열 때 그 ID로 같은 결과를 읽는다. 꺼져 있으면 ID가 없다 (S-2)."""
+    def serve():
+        srv = make_server(port=0)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        return srv, f"http://127.0.0.1:{srv.server_address[1]}"
+
+    def post(base, body):
+        req = urllib.request.Request(base + "/make", data=json.dumps(body).encode(), headers={"Content-Type": "application/json"}, method="POST")
+        return json.loads(urllib.request.urlopen(req, timeout=10).read())
+    body = {"key": "fastening_torque", "size": "M12", "torque": "70"}
+    monkeypatch.delenv("CONT_RUN_DIR", raising=False)
+    srv, base = serve()
+    try:
+        assert post(base, body)["run_id"] == ""
+    finally:
+        srv.shutdown(); srv.server_close()
+    monkeypatch.setenv("CONT_RUN_DIR", str(tmp_path))
+    srv, base = serve()
+    try:
+        made = post(base, body)
+        assert made["run_id"].startswith("run-")
+        got = json.loads(urllib.request.urlopen(base + "/run/" + made["run_id"], timeout=10).read())["sample"]
+        assert got["label"] == made["label"] and got["html"] == made["html"]
+        with pytest.raises(urllib.error.HTTPError) as e:
+            urllib.request.urlopen(base + "/run/run-nonexistent", timeout=10)
+        assert e.value.code == 404 and "찾지 못했습니다" in json.loads(e.value.read())["error"]
+    finally:
+        srv.shutdown(); srv.server_close()
+
+
+def test_picks_keep_the_run_id_and_reopening_says_when_the_stored_result_is_missing():
+    html = render_store(catalog(), load(), "/make", "/analyze")
+    assert "run_id:p.run_id||''" in html and "function restoreRuns()" in html
+    assert "저장된 결과를 찾지 못했습니다" in html and "실행 ID " in html
