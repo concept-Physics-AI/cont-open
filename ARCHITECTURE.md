@@ -318,6 +318,7 @@ Studio 대화는 질문의 물리 영역을 먼저 알아본다 (`cont.dialogue.
 | `src/cont/learn/m06.py`, `config/learn/m06.yaml` | M06 체결력 = 물리 기준(체결 팩의 VDI 2230 식) + 선형 보정을 합성 자료로 올린다(Y5) | 보정의 입력은 측정한 토크·각도뿐이고 정답 축력은 훈련 목표값으로만 쓴다(시험으로 확인). 합성이고 판정하지 않는다. 실측 행은 같은 열(torque_nm, angle_deg, force_n, lot)로 `evaluate`에 넣는다 |
 | `src/cont/packs/heat/stack.py`, `config/physics/heat_stack.yaml` | 적층 1D 열응답 기준(M07-A, Y6): 층별 물성·계면 열저항·대류 경계의 유한체적 풀이와 실측과의 편차 보고 | 지원 범위는 `docs/heat_stack.md`. 범위 밖(섭씨 값, 1D 가정이 깨지는 입력, 격자 한계 초과)은 계산하지 않고 거절한다. 실측 비교는 편차만 보고하며 판정하지 않는다. 팩 목록(`packs.names()`)에는 등록하지 않았다 |
 | `src/cont/signal/units.py`, `config/units.yaml`, `src/cont/signal/align.py` | 단위 정규화(R07)와 센서 시간 정렬(R08) | 모르는 단위·차원 불일치·단위 표기 없음은 추측하지 않고 거절한다. 정렬은 긴 결측 구간을 보간하지 않고 NaN으로 비우며, 역순·중복 시각은 기본 거절이다. 판정하지 않는다 |
+| `src/cont/learn/lineage.py` | 모델 계보(A05): 데이터·분할·학습·모델 파일 해시·평가 버전·코드 SHA를 묶어 실행 기록에 붙이고, 현재 모델 파일과 대조 | 조각이 비면 만들지 않고, 모델 파일이나 데이터가 달라졌으면 거절한다. 아직 서비스 실행 경로(`service.api`)에는 연결하지 않았다 |
 | `src/cont/dialogue/heat_talk.py` | Studio가 열 질문에 답한다: 입력 조건은 규칙 또는 LLM이 제안하고 계산은 열 팩이 한다 | LLM은 입력 조건만 제안한다 ("LLM과 숫자"). 결과는 PhysicsAnswer 그대로 |
 
 - 풀이기와 PINN의 결과는 둘 다 PhysicsAnswer이고, 방법 이름(유한차분 또는 PINN)과 기준 문제를 적는다.
