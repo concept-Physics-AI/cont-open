@@ -50,7 +50,7 @@ class RunStore:
         self.root.mkdir(parents=True, exist_ok=True)
 
     def _path(self, run_id: str) -> Path:
-        if not _ID.match(run_id):
+        if not isinstance(run_id, str) or not _ID.fullmatch(run_id):
             raise RunNotFound(run_id)
         return self.root / f"{run_id}.json"
 
@@ -60,17 +60,34 @@ class RunStore:
         path = self._path(rec["run_id"])
         if path.exists():
             raise FileExistsError(f"{rec['run_id']}는 이미 있습니다 (기록은 고치지 않습니다)")
-        fd, tmp = tempfile.mkstemp(dir=self.root, suffix=".tmp")
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(rec, f, ensure_ascii=False, sort_keys=True)
-        os.replace(tmp, path)
+        lock = path.with_suffix(".lock")
+        lock.mkdir()  # 실행 ID별 배타 잠금. 다른 프로세스도 같은 ID를 동시에 게시할 수 없다.
+        tmp = None
+        try:
+            if path.exists():
+                raise FileExistsError(f"{rec['run_id']}는 이미 있습니다 (기록은 고치지 않습니다)")
+            fd, tmp = tempfile.mkstemp(dir=self.root, suffix=".tmp")
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(rec, f, ensure_ascii=False, sort_keys=True)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp, path)
+        finally:
+            if tmp is not None and os.path.exists(tmp):
+                os.unlink(tmp)
+            lock.rmdir()
         return rec
 
     def get(self, run_id: str) -> dict[str, Any]:
         path = self._path(run_id)
         if not path.exists():
             raise RunNotFound(run_id)
-        rec = json.loads(path.read_text(encoding="utf-8"))
+        try:
+            rec = json.loads(path.read_text(encoding="utf-8"))
+        except (ValueError, UnicodeError) as exc:
+            raise RunCorrupt(f"{run_id}: 기록을 JSON으로 읽을 수 없습니다") from exc
+        if not isinstance(rec, dict) or rec.get("run_id") != run_id:
+            raise RunCorrupt(f"{run_id}: 요청한 실행과 기록의 식별자가 다릅니다")
         if rec.get("record_sha256") != _digest(rec):
             raise RunCorrupt(f"{run_id}: 기록의 해시가 맞지 않습니다. 읽지 않습니다")
         return rec
