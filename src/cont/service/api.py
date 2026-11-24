@@ -48,12 +48,15 @@ def solve(name: str, inputs: Mapping[str, Any], question: str = "", action: str 
 
 
 def execute(name: str, inputs: Mapping[str, Any], question: str = "", action: str = "solve", *,
-            project_id: str = "", asset_id: str = "", parent_run_id: str = "") -> dict[str, Any]:
+            project_id: str = "", asset_id: str = "", parent_run_id: str = "", lineage: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """solve를 부르고 저장소가 켜져 있으면 실행 한 건으로 남긴다. 계산하지 못해도 실패 실행으로 남기고 오류는 그대로 올린다."""
     from cont.service import runs
     st = runs.store()
     base = {"created_at": runs.now(), "pack": name, "action": action, "question": question, "inputs": json.loads(json.dumps(inputs, default=str)),
             "model_version": runs.model_version(name), "project_id": project_id, "asset_id": asset_id, "parent_run_id": parent_run_id}
+    if lineage is not None:                      # 학습한 모델이 낸 결과일 때만. 형식이 틀리거나 조각이 비면 계산 전에 거절한다
+        from cont.learn.lineage import from_dict
+        base["lineage"] = from_dict(lineage).to_dict()
     try:
         body = solve(name, inputs, question, action)
     except NotFound:
@@ -92,7 +95,7 @@ def recompute(run_id: str) -> dict[str, Any]:
     from cont.service import runs
     old = get_run(run_id)
     new = execute(old["pack"], old["inputs"], old.get("question", ""), old.get("action", "solve"),
-                  project_id=old.get("project_id", ""), asset_id=old.get("asset_id", ""), parent_run_id=old["run_id"])
+                  project_id=old.get("project_id", ""), asset_id=old.get("asset_id", ""), parent_run_id=old["run_id"], lineage=old.get("lineage"))
     return {"run": new, "parent_run_id": old["run_id"],
             "same_content": bool(old.get("content_hash")) and old["content_hash"] == new["content_hash"],
             "model_version_changed": old.get("model_version") != runs.model_version(old["pack"])}

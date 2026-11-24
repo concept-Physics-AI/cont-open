@@ -56,3 +56,19 @@ def test_dataset_hash_refuses_nan_and_depends_on_order():
     assert dataset_sha256([1, 2]) != dataset_sha256([2, 1])
     with pytest.raises(ValueError):
         dataset_sha256([float("nan")])
+
+
+def test_execute_stores_lineage_and_refuses_a_broken_one(tmp_path, monkeypatch):
+    from cont.service import api, runs
+    monkeypatch.setenv("CONT_RUN_DIR", str(tmp_path / "runs"))
+    m = tmp_path / "m.bin"; m.write_bytes(b"w")
+    lin = Lineage(dataset_sha256([1]), "split0123456789ab", "train0123456789", file_sha256(m), "eval-1", "abc1234").to_dict()
+    bad = dict(lin); bad.pop("model_sha256")
+    with pytest.raises(LineageError):
+        api.execute("heat", {"case": "sine_1d"}, lineage=bad)
+    assert runs.store().list() == []                      # 거절된 요청은 계산도 기록도 하지 않는다
+    out = api.execute("heat", {"case": "sine_1d"}, lineage=lin)
+    rec = runs.store().get(out["run_id"])
+    assert rec["lineage"]["lineage_id"] == lin["lineage_id"]
+    again = api.recompute(out["run_id"])                  # 다시 계산해도 같은 계보가 따라간다
+    assert runs.store().get(again["run"]["run_id"])["lineage"]["lineage_id"] == lin["lineage_id"]
