@@ -17,3 +17,8 @@ sdk_boundaries:
   allowed_in: src/cont/llm
   modules: [anthropic, openai, ollama, requests, httpx, urllib.request]
   rule: 공급자 호출은 cont.llm 어댑터에서만 한다. 다른 모듈은 어댑터 인터페이스만 쓴다.
+- key: learning_framework
+  name: 학습 도구(PyTorch) 호출
+  allowed_in: src/cont/learn
+  modules: [torch]
+  rule: torch는 cont.learn 안에서만 가져온다. 설치하지 않아도 나머지 기능은 그대로 돈다.

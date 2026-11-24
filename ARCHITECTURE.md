@@ -183,6 +183,7 @@ Studio 대화는 질문의 물리 영역을 먼저 알아본다 (`cont.dialogue.
 | 공통 결과 형식 (Quantity, Residual, Field, Confidence, Provenance, PhysicsAnswer) | `src/cont/answer.py` | 같은 이름을 다른 곳에서 다시 정의하지 않는다 |
 | 허용 오차와 편차 계산 (Tolerance, Check) | `src/cont/tolerance.py` | 기본은 판정 없이 편차만 보고한다 |
 | LLM 공급자 SDK와 네트워크 호출 | `src/cont/llm/` | 다른 모듈은 어댑터 인터페이스만 쓴다 |
+| 학습 도구(PyTorch) 호출 | `src/cont/learn/` | `torch`는 이 패키지 안에서만 가져온다. 다른 모듈은 `cont.learn`의 인터페이스만 쓴다 |
 
 위반하면 테스트가 실패한다. 표에 개념을 더하거나 책임 모듈을 옮기려면 이 절을 먼저 고친다. 표가 막는 것은 중복 정의와 SDK 직접 호출뿐이며, 물리 값이 엔진에서만 나오는지는 이 점검이 보지 못한다.
 
