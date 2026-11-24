@@ -57,6 +57,8 @@
 | 지금 있는 것 | 체결 대화 화면 (한 예) | 아직 제품 화면이 없다. Physics 탭에는 코어 엔진 목록만 보인다 | 고르기 화면 ([docs/fab_store.md](docs/fab_store.md)). 설비 이상진단 화면은 만들어진 한 예 |
 | 아직 없는 것 | 물리 영역을 가리지 않는 Studio (지금은 체결 하나) | 전문가용 작업 화면 전부. 외부 해석 도구와의 연결, 전문가 작업 흐름 | 꾸리는 곳, 시나리오, 공장 화면을 만들어 내는 일 |
 
+Physics의 첫 작업 흐름은 [docs/physics_product.md](docs/physics_product.md)에 제안으로 있다 (아직 정하지 않음).
+
 Studio와 Physics는 대상이 다르다. Studio는 물리를 몰라도 되게 하고, Physics는 물리를 아는 사람이 AI를 쉽게 쓰게 한다. 둘 다 코어의 같은 엔진을 쓴다.
 
 **지금 만든 것은 예다.**
