@@ -322,6 +322,7 @@ Studio 대화는 질문의 물리 영역을 먼저 알아본다 (`cont.dialogue.
 | `src/cont/dialogue/plan.py` | M01 계획 객체와 실행기(W3): LLM 출력은 검증된 계획으로만 받고 등록된 도구만 실행 | 없는 도구·인자 불일치·순환 의존은 실행 전에 거절. 앞 단계가 실패하면 뒤 단계를 건너뛰고, 다시 실행하면 실패·건너뛴 단계만 돌리며, 같은 계획은 한 번만 실행하며(동시에 두 번 내도 요청 ID별 잠금으로 한 번), 실행 중 취소되면 늦게 도착한 결과를 버리고, 빈 결과는 끝난 것으로 치지 않는다. 지금 등록된 도구는 `solve_physics`뿐이다(설명·이미지·그래프는 구현될 때 더한다) |
 | `src/cont/dialogue/plan_tools.py` | 체결 대화 세션을 계획 실행기의 도구(`fastening_change`, `fastening_recommend`, `fastening_choose`)로 내놓는다 | 말 읽기를 건너뛰어도 `_validate`와 체결 팩 재계산을 같은 경로로 거친다. 바꾸지 못했거나 바꾼 것이 없으면 그 단계는 실패로 남는다 |
 | `src/cont/dialogue/plan_store.py` | 계획 실행의 체크포인트와 재개(A15) | 계획 요청 ID·맥락(코드 SHA, 대상 개정 등)·해시가 맞아야 이어 간다. 저장 시점에 실행 중이던 단계는 끝난 것으로 보지 않고 실패로 돌린다. 끝난 단계는 다시 실행하지 않는다 |
+| `src/cont/service/ledger.py` | 자료 장부(A26): 원본·페이지·프레임·파생물을 SHA-256과 부모 관계로 기록하고 실행에 근거로 연결 | 같은 내용도 부모·프로젝트가 다르면 다른 항목. 다른 프로젝트의 자료나 없는 항목은 근거로 쓸 수 없고 실행은 계산 전에 거절된다. 등록 때와 다른 파일은 `check_content`가 거절한다. 위치는 `CONT_LEDGER_DIR`(기본 꺼짐) |
 | `src/cont/dialogue/heat_talk.py` | Studio가 열 질문에 답한다: 입력 조건은 규칙 또는 LLM이 제안하고 계산은 열 팩이 한다 | LLM은 입력 조건만 제안한다 ("LLM과 숫자"). 결과는 PhysicsAnswer 그대로 |
 
 - 풀이기와 PINN의 결과는 둘 다 PhysicsAnswer이고, 방법 이름(유한차분 또는 PINN)과 기준 문제를 적는다.
