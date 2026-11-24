@@ -29,5 +29,6 @@
 | [docs/roadmap.md](roadmap.md) | 정본 |
 | [docs/product_switcher.md](product_switcher.md) | 보조 |
 | [docs/shape.md](shape.md) | 보조 |
+| [docs/validation_intake.md](validation_intake.md) | 보조 |
 | [docs/signal_analysis.md](signal_analysis.md) | 보조 |
 | docs/INDEX.md (이 문서) | 보조 |
