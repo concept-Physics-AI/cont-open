@@ -4,7 +4,7 @@ concepts:
 - key: result_format
   name: 공통 결과 형식 (물리 답변 묶음)
   owner: src/cont/answer.py
-  defines: [Quantity, Residual, Field, Confidence, PhysicsAnswer]
+  defines: [Quantity, Residual, Field, Confidence, Provenance, PhysicsAnswer]
   rule: 물리 영역의 결과는 PhysicsAnswer로 낸다. 같은 이름의 클래스를 다른 곳에서 다시 정의하지 않는다.
 - key: tolerance
   name: 허용 오차 프로파일과 편차 계산
