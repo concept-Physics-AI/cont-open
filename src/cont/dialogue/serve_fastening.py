@@ -184,7 +184,8 @@ def make_server(session: Session, port: int = 8766, subtitle: str = "") -> Threa
 
         def do_POST(self) -> None:  # noqa: N802
             if self.path == "/reset":            # 새 설계: 예제 조인트로 돌아간다 (말 읽는 방법은 그대로)
-                box["s"] = Session(*example(), provider=box["s"].provider)
+                box["s"] = Session(*example(), provider=box["s"].provider,
+                                   context_limits=box["s"].context_limits)
                 return self._send(200, b"{}", "application/json")
             if self.path not in ("/say", "/ask"):
                 return self._send(404, b"not found", "text/plain")
