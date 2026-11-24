@@ -22,6 +22,27 @@ class FasteningPack:
         load = inputs["load"] if isinstance(inputs["load"], LoadCase) else LoadCase.from_dict(inputs["load"])
         return answer(joint, load, question)
 
+    @property
+    def actions(self) -> dict[str, Any]:
+        return {"estimate": self._estimate, "recommend": self._recommend}
+
+    def _estimate(self, inputs: Mapping[str, Any], question: str = "") -> PhysicsAnswer:
+        """inputs = {"joint", "load", "measured": {"values": [mm...], "instrument_uncertainty": mm, "source": "..."}}. 늘어남 관측에서 체결력과 마찰계수를 추정한다."""
+        from cont.packs.fastening.estimate import ElongationMeasurement, estimate
+        m = dict(inputs["measured"])
+        measured = ElongationMeasurement(tuple(float(v) for v in m["values"]), float(m["instrument_uncertainty"]), str(m.get("source", "")))
+        return estimate(*self._parse(inputs), measured, question).answer
+
+    def _recommend(self, inputs: Mapping[str, Any], question: str = "") -> PhysicsAnswer:
+        """inputs = {"joint", "load", "targets": {"safety_yield": 1.3, ...}}. 목표를 만족하는 설계 후보를 찾는다."""
+        from cont.packs.fastening.recommend import recommend
+        return recommend(*self._parse(inputs), inputs["targets"], question).answer
+
+    @staticmethod
+    def _parse(inputs: Mapping[str, Any]) -> tuple[BoltedJoint, LoadCase]:
+        j, l = inputs["joint"], inputs["load"]
+        return (j if isinstance(j, BoltedJoint) else BoltedJoint.from_dict(j)), (l if isinstance(l, LoadCase) else LoadCase.from_dict(l))
+
 
 def answer(joint: BoltedJoint, load: LoadCase, question: str = "") -> PhysicsAnswer:
     r = vdi2230.calculate(joint, load)

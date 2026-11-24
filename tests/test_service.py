@@ -85,3 +85,40 @@ def test_body_limit(server):
     c = http.client.HTTPConnection("127.0.0.1", server, timeout=10)
     c.request("POST", "/v1/packs/fastening/solve", "{}", {"Content-Length": str(10 ** 8)})
     assert c.getresponse().status == 413
+
+
+def test_fastening_actions_estimate_and_recommend_through_the_service(server):
+    from cont.packs.fastening.estimate import synthetic_elongations
+    from cont.dialogue.serve_fastening import example
+    j, l = example()
+    base = _inputs()
+    el = list(synthetic_elongations(j, l, 0.12, 0.0004, 5, seed=1))
+    s, est = _call(server, "POST", "/v1/packs/fastening/estimate", {"inputs": {**base, "measured": {"values": el, "instrument_uncertainty": 0.0005, "source": "합성"}}})
+    assert s == 200 and est["answer"]["provenance"]["producer"] == "pack:fastening:estimate"
+    mu = next(q for q in est["answer"]["quantities"] if q["key"] == "friction_estimated")
+    assert abs(mu["value"] - 0.12) < 0.02 and mu["expected_range"][0] < mu["value"] < mu["expected_range"][1]     # 합성 참값 0.12를 범위가 품는다
+    assert dict(est["trust"])["검증 상태"].startswith("검증 전")
+    s, rec = _call(server, "POST", "/v1/packs/fastening/recommend", {"inputs": {**base, "targets": {"safety_yield": 1.3}}})
+    assert s == 200 and rec["answer"]["status"] == "generated"
+
+
+def test_unknown_action_is_404_and_bad_input_is_400(server):
+    assert _call(server, "POST", "/v1/packs/fastening/nope", {"inputs": _inputs()})[0] == 404
+    assert _call(server, "POST", "/v1/packs/fastening/recommend", {"inputs": {**_inputs(), "targets": {"bogus": 1}}})[0] == 400
+
+
+def test_physics_page_is_served_live_and_static_example_is_disabled():
+    import re
+    from cont.view.physics_page import render_physics
+    for live in (True, False):
+        page = render_physics(live=live)
+        d = json.loads(re.search(r'id="wb-data" type="application/json">(.*?)</script>', page, re.S).group(1))
+        assert d["live"] is live and d["estimate"]["answer"]["provenance"]["run_id"].startswith("run-")
+        assert "실제 측정 아님" in d["measured_note"]
+        assert ("미리 계산한 예시" in page) is True      # 안내 문구는 항상 있고, 로컬에서는 스크립트가 숨긴다
+
+
+def test_physics_page_route_returns_html(server):
+    c = http.client.HTTPConnection("127.0.0.1", server, timeout=20)
+    c.request("GET", "/physics"); r = c.getresponse(); body = r.read().decode("utf-8")
+    assert r.status == 200 and "체결 작업대" in body and '"live": true' in body

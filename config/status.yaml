@@ -13,9 +13,11 @@ items:
   - src/cont/view/fastening_app.py
 - key: product_physics
   name: ConT Physics (전문가용 제품 화면)
-  status: 없음
-  scope: 코어 엔진 목록 화면만 있고 전문가용 작업 화면은 없음
-  evidence: []
+  status: 뼈대
+  scope: 체결 한 영역의 작업대 하나 (잰 늘어남에서 체결력과 마찰계수 추정, 목표를 주고 설계 후보 보기). 서비스 층을 부른다. 공개 화면은 합성 관측 예시이고, 값을 바꿔 계산하는 것은 로컬 서비스에서만 된다. 외부 해석 결과 가져오기와 체결 밖의 영역은 없음
+  evidence:
+  - src/cont/view/physics_work.py
+  - src/cont/view/physics_page.py
 - key: product_fab
   name: ConT Fab
   status: 뼈대

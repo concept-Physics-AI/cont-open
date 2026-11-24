@@ -28,13 +28,20 @@ def new_run_id() -> str:
     return "run-" + uuid.uuid4().hex[:12]
 
 
-def solve(name: str, inputs: Mapping[str, Any], question: str = "") -> dict[str, Any]:
-    """팩을 불러 답변 묶음을 받는다. 실행 ID와 출처를 붙이며 값은 바꾸지 않는다."""
+def solve(name: str, inputs: Mapping[str, Any], question: str = "", action: str = "solve") -> dict[str, Any]:
+    """팩을 불러 답변 묶음을 받는다. 실행 ID와 출처를 붙이며 값은 바꾸지 않는다. action은 팩이 내놓은 다른 동작 (기본 solve)."""
     if name not in packs.names():
         raise NotFound(name)
     if not isinstance(inputs, Mapping):
         raise ValueError("inputs는 항목 이름과 값을 가진 객체여야 합니다")
-    answer = packs.get(name).solve(inputs, question).stamped(f"pack:{name}", run_id=new_run_id())
+    pack = packs.get(name)
+    if action == "solve":
+        fn = pack.solve
+    else:
+        fn = getattr(pack, "actions", {}).get(action)
+        if fn is None:
+            raise NotFound(f"{name}/{action}")
+    answer = fn(inputs, question).stamped(f"pack:{name}" + ("" if action == "solve" else f":{action}"), run_id=new_run_id())
     body = {"run_id": answer.provenance.run_id, "revision_id": answer.revision_id(), "content_hash": answer.content_hash(),
             "answer": answer.to_dict(), "trust": answer.trust()}
     return json.loads(json.dumps(body, ensure_ascii=False, default=str))     # 숫자 배열 등을 JSON으로 안전하게
