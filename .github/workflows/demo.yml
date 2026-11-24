@@ -1,5 +1,6 @@
 # 시연 화면: main이 바뀔 때마다 화면들을 파일 하나씩으로 만들어 GitHub Pages에 올린다.
-#   index.html 체결 화면 · fab.html ConT Fab 고르기 · diagnosis.html 설비 이상진단 (Fab으로 만든 화면의 예)
+#   index.html Studio(체결 화면) · physics.html Physics(엔진 목록) · fab.html FAB 고르기 · diagnosis.html 설비 이상진단 (FAB으로 만든 화면의 예)
+#   화면 맨 위의 Studio · Physics · FAB 탭은 같은 폴더의 파일로 이동한다 (config/products.yaml의 주소를 환경 변수로 덮어쓴다).
 # 저장소 설정에서 Pages의 소스를 "GitHub Actions"로 켜야 동작한다.
 name: demo
 on:
@@ -22,7 +23,9 @@ jobs:
         with:
           python-version: "3.13"
       - run: pip install -e .
+      - run: echo "CONT_STUDIO_URL=index.html" >> "$GITHUB_ENV" && echo "CONT_PHYSICS_URL=physics.html" >> "$GITHUB_ENV" && echo "CONT_FAB_URL=fab.html" >> "$GITHUB_ENV"
       - run: mkdir -p site && python -m cont.dialogue.serve_fastening --out site/index.html
+      - run: python -m cont.view.physics_page --out site/physics.html
       - run: python -m cont.fab.store --out site/fab.html
       - run: python -m cont.dialogue.serve_diagnosis --out site/diagnosis.html
       - uses: actions/upload-pages-artifact@v3
