@@ -37,7 +37,8 @@ def make_server(port: int | None = None, host: str = HOST) -> ThreadingHTTPServe
 
         def do_GET(self) -> None:  # noqa: N802
             if self.path == "/v1/health":
-                return self._send(200, {"ok": True})
+                from cont.buildinfo import build_info
+                return self._send(200, {"ok": True, "build": build_info()})
             if self.path == "/v1/packs":
                 return self._send(200, {"packs": api.list_packs()})
             if self.path in ("/physics", "/"):
@@ -95,6 +96,8 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--port", type=int)
     a = ap.parse_args(argv)
     srv = make_server(a.port)
+    from cont.buildinfo import banner
+    print(banner())
     print(f"http://{HOST}:{srv.server_address[1]}/v1/health  (끝내기: Ctrl+C)")
     try:
         srv.serve_forever()

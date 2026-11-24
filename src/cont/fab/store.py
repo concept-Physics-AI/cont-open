@@ -362,6 +362,8 @@ def main(argv: list[str] | None = None) -> None:
         print(f"written {a.out}: {len(items)} item(s), {sum(len(i['samples']) for i in items)} sample(s)")
         return
     srv = make_server(a.port)
+    from cont.buildinfo import banner
+    print(banner())
     print(f"http://127.0.0.1:{a.port}  (끝내기: Ctrl+C)")
     try:
         srv.serve_forever()

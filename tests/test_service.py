@@ -64,7 +64,8 @@ def test_unknown_pack_and_bad_inputs_are_reported_not_hidden():
 
 
 def test_http_endpoints(server):
-    assert _call(server, "GET", "/v1/health") == (200, {"ok": True})
+    st, h = _call(server, "GET", "/v1/health")
+    assert st == 200 and h["ok"] is True and {"version", "git_sha", "code_path"} <= set(h["build"])
     st, d = _call(server, "GET", "/v1/packs")
     assert st == 200 and any(p["key"] == "fastening" for p in d["packs"])
     st, d = _call(server, "POST", "/v1/packs/fastening/solve", {"inputs": _inputs(), "question": "체결력은?"})
