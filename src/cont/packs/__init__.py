@@ -44,3 +44,4 @@ def names() -> list[str]:
 
 def _load_builtin() -> None:
     from cont.packs import diagnosis, fastening, heat, machining  # noqa: F401  (등록은 import 시점에 일어난다)
+    from cont.learn import pack as _learned  # noqa: F401  (학습한 모형 팩: torch는 부를 때만 가져온다)
