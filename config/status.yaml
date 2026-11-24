@@ -4,7 +4,7 @@
 # 점검: tests/test_control_tower.py
 updated: 2026-11-24
 items:
-- {key: product_studio, name: ConT Studio, status: 뼈대, scope: 체결 대화 화면 하나 (물리 영역을 가리지 않는 Studio는 아직 없음), evidence: [src/cont/dialogue, src/cont/view/fastening_app.py]}
+- {key: product_studio, name: ConT Studio, status: 뼈대, scope: 체결 대화 화면 하나. 다른 영역 질문은 알아보고 아직 대화가 없다고 알리지만 다루지는 못함 (물리 영역을 가리지 않는 Studio는 아직 없음), evidence: [src/cont/dialogue, src/cont/view/fastening_app.py]}
 - {key: product_physics, name: ConT Physics (전문가용 제품 화면), status: 없음, scope: 코어 엔진 목록 화면만 있고 전문가용 작업 화면은 없음, evidence: []}
 - {key: product_fab, name: ConT Fab, status: 뼈대, scope: 고르는 곳만 있음 (꾸리는 곳, 시나리오, 공장 화면은 없음), evidence: [src/cont/fab]}
 - {key: c1_dialogue, name: C1 대화·조율, status: 있음, scope: 체결과 설비 진단 영역만, evidence: [src/cont/dialogue, src/cont/llm]}
