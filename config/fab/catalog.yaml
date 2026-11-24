@@ -556,11 +556,12 @@ items:
   needs: 진동 파형, 샘플링 주파수
   gives: 봉우리의 주파수와 크기, 주파수 간격
   preview: signal_spectrum
+  own: spectrum
   doc: docs/signal_analysis.md
   uses:
   - 감시할 때
   - 점검할 때
-  limits: 지금 샘플은 성분을 알고 만든 가상 신호입니다. 어느 주파수가 어떤 결함인지는 판단하지 않고 성분만 보고합니다. 자기 신호를 넣는 화면은 아직 없습니다.
+  limits: 지금 샘플은 성분을 알고 만든 가상 신호입니다. 어느 주파수가 어떤 결함인지는 판단하지 않고 성분만 보고합니다. 서버로 띄운 화면에서는 자기 CSV 파일로도 볼 수 있습니다.
   together:
   - signal_spectrogram
   - signal_drive
@@ -585,6 +586,7 @@ items:
   needs: 진동 파형, 샘플링 주파수
   gives: 시간별 주파수 성분, 가장 큰 성분의 이동
   preview: signal_spectrogram
+  own: spectrogram
   doc: docs/signal_analysis.md
   uses:
   - 감시할 때
@@ -611,6 +613,7 @@ items:
   needs: 작업마다 잰 값
   gives: 평균, 표준편차, 중앙값, 벗어난 값
   preview: repeat_distribution
+  own: values
   doc: docs/signal_analysis.md
   uses:
   - 감시할 때

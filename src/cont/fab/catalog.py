@@ -30,6 +30,8 @@ def load() -> dict[str, Any]:
             raise ValueError(f"catalog item {it['key']!r} has unknown quantity {it['quantity']!r}")
         if [u for u in it["uses"] if u not in uses]:
             raise ValueError(f"catalog item {it['key']!r} has an unknown use")
+        if it.get("own", "") not in ("", "spectrum", "spectrogram", "values"):
+            raise ValueError(f"catalog item {it['key']!r} has an unknown 'own' mode")
         keys.add(it["key"])
     for it in items:
         if [k for k in it.get("together") or [] if k not in keys]:
@@ -41,10 +43,19 @@ def load() -> dict[str, Any]:
     return {"forms": forms, "uses": uses, "quantities": data.get("quantities") or [], "items": items, "sets": sets, "rule": data.get("sample_rule") or {}}
 
 
+def own_sample(key: str, payload: Mapping[str, Any]) -> dict[str, Any]:
+    """올린 CSV로 카드 샘플 하나를 만든다 (own이 있는 상품만)."""
+    from cont.fab.own_signal import analyze
+    it = next((i for i in load()["items"] if i["key"] == key), None)
+    if it is None or not it.get("own"):
+        raise ValueError("이 카드는 내 신호를 받지 않습니다")
+    return _sample(analyze(it["own"], payload))
+
+
 def _sample(s: Mapping[str, Any]) -> dict[str, Any]:
     """샘플 하나. view3d(3D를 돌려 볼 때 쓰는 값)와 more(근거 자세히)는 있을 때만 붙는다."""
     out = {"label": s["label"], "html": s["html"], "facts": [list(x) for x in s["facts"]], "params": s.get("params") or {}}
-    for k in ("view3d", "more"):
+    for k in ("view3d", "more", "own"):
         if s.get(k):
             out[k] = s[k]
     return out
@@ -73,7 +84,7 @@ def catalog() -> list[dict[str, Any]]:
         samples = PREVIEWS[it["preview"]](it)
         if not samples:
             raise ValueError(f"catalog item {it['key']!r} produced no sample")
-        out.append({**{k: it[k] for k in SHOWN}, "form_label": data["forms"][it["form"]], "doc": it.get("doc", ""), "preview_note": it.get("preview_note", ""),
+        out.append({**{k: it[k] for k in SHOWN}, "form_label": data["forms"][it["form"]], "doc": it.get("doc", ""), "own": it.get("own", ""), "preview_note": it.get("preview_note", ""),
                     "together": list(it.get("together") or []), "makeable": it["preview"] in MAKEABLE,
                     "samples": [_sample(s) for s in samples]})
     return out

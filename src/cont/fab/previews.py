@@ -345,70 +345,34 @@ def _sig_cases(item: Mapping[str, Any]) -> tuple[dict[str, Any], list[dict[str, 
 
 def signal_spectrum(item: Mapping[str, Any], params: Mapping[str, Any] | None = None) -> list[Sample]:
     """회전 진동(가상 신호)을 주파수 성분으로 나눈 것. 조건은 목록(samples.cases)에서 읽는다."""
-    from cont.signal import peaks, spectrum
+    from cont.fab.signal_views import spectrum_sample
+    from cont.signal import spectrum
     from cont.signal.synthetic import vibration
     spec, cases = _sig_cases(item)
-    fs, fmax = float(spec["fs"]), float(spec["fmax"])
-    out: list[Sample] = []
-    for c in cases:
-        kw = {k: v for k, v in c.items() if k != "label"}
-        sp = spectrum(vibration(fs=fs, seconds=float(spec["seconds"]), rpm=float(spec["rpm"]), **kw), fs)
-        top = peaks(sp, int(spec.get("peaks", 3)), float(spec.get("min_ratio", 0.1)))
-        pts = [(float(f), float(a)) for f, a in zip(sp.freq, sp.amp) if f <= fmax]
-        facts = [("봉우리", " · ".join(f"{f:.0f} Hz" for f, _ in sorted(top)))] + [(f"{f:.0f} Hz 성분", f"{a:.2f} mm/s") for f, a in sorted(top)[:2]] + [("주파수 간격", f"{sp.resolution:g} Hz"), ("신호", "가상 신호 (성분을 알고 만든 것)")]
-        out.append({"label": c["label"], "html": _line(pts, "Hz", "진폭 mm/s", tuple((f, f"{f:.0f} Hz") for f, _ in top), ".2f"), "facts": facts, "params": {}})
-    return out
+    fs = float(spec["fs"])
+    return [spectrum_sample(spectrum(vibration(fs=fs, seconds=float(spec["seconds"]), rpm=float(spec["rpm"]), **{k: v for k, v in c.items() if k != "label"}), fs),
+                            c["label"], float(spec["fmax"]), int(spec.get("peaks", 3)), float(spec.get("min_ratio", 0.1)), "mm/s", "가상 신호 (성분을 알고 만든 것)") for c in cases]
 
 
 def signal_spectrogram(item: Mapping[str, Any], params: Mapping[str, Any] | None = None) -> list[Sample]:
     """속도가 변하거나 일정한 진동(가상 신호)의 시간별 주파수 변화."""
-    import numpy as np
+    from cont.fab.signal_views import spectrogram_sample
     from cont.signal import spectrogram
     from cont.signal.synthetic import run_up
     spec, cases = _sig_cases(item)
-    fs, fmax, win = float(spec["fs"]), float(spec["fmax"]), int(spec["window"])
-    out: list[Sample] = []
-    for c in cases:
-        x = run_up(fs=fs, seconds=float(spec["seconds"]), rpm0=float(c["rpm0"]), rpm1=float(c["rpm1"]))
-        sg = spectrogram(x, fs, window=win, overlap=float(spec.get("overlap", 0.5)))
-        keep = sg.freq <= fmax
-        amp, fr = sg.amp[keep], sg.freq[keep]
-        top = amp.max() or 1.0
-        cw, ch = (W - 60) / amp.shape[1], (H - 52) / amp.shape[0]
-        cells = "".join(f'<rect class="dot" x="{44 + j * cw:.2f}" y="{H - 30 - (i + 1) * ch:.2f}" width="{cw + 0.4:.2f}" height="{ch + 0.4:.2f}" fill-opacity="{amp[i, j] / top:.2f}"/>'
-                        for i in range(amp.shape[0]) for j in range(amp.shape[1]) if amp[i, j] / top >= 0.05)
-        track = fr[amp.argmax(axis=0)]
-        svg = (f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="시간별 주파수 변화"><rect x="44" y="22" width="{W - 60}" height="{H - 52}" fill="none" class="ax"/>{cells}'
-               f'<text class="tick" x="44" y="{H - 10}">0 s</text><text class="tick" x="{W - 16}" y="{H - 10}" text-anchor="end">{sg.time[-1] + win / fs / 2:.3g} s</text>'
-               f'<text class="tick" x="40" y="{H - 30}" text-anchor="end">0</text><text class="tick" x="40" y="30" text-anchor="end">{fr[-1]:.0f}</text><text class="tick" x="44" y="14">주파수 Hz · 진할수록 큼</text></svg>')
-        out.append({"label": c["label"], "html": svg, "params": {},
-                    "facts": [("가장 큰 성분", f"{track[0]:.0f} Hz → {track[-1]:.0f} Hz"), ("구간", f"{sg.time.size}개 · 조각 길이 {win / fs * 1000:.0f} ms"), ("주파수 간격", f"{fs / win:.1f} Hz"), ("신호", "가상 신호 (회전수를 알고 만든 것)")]})
-    return out
+    fs, win = float(spec["fs"]), int(spec["window"])
+    return [spectrogram_sample(spectrogram(run_up(fs=fs, seconds=float(spec["seconds"]), rpm0=float(c["rpm0"]), rpm1=float(c["rpm1"])), fs, window=win, overlap=float(spec.get("overlap", 0.5))),
+                               c["label"], float(spec["fmax"]), win, "가상 신호 (회전수를 알고 만든 것)") for c in cases]
 
 
 def repeat_distribution(item: Mapping[str, Any], params: Mapping[str, Any] | None = None) -> list[Sample]:
     """반복 작업마다 잰 값(가상)의 분포: 막대 분포와 상자 그림."""
+    from cont.fab.signal_views import distribution_sample
     from cont.signal import distribution
     from cont.signal.synthetic import repeat_values
     spec, cases = _sig_cases(item)
-    unit = str(spec.get("unit", ""))
-    out: list[Sample] = []
-    for c in cases:
-        kw = {k: v for k, v in c.items() if k != "label"}
-        d = distribution(repeat_values(n=int(spec["n"]), **kw), int(spec["bins"]))
-        x0, x1 = float(d.edges[0]), float(d.edges[-1])
-        px = lambda v: 44 + (v - x0) / ((x1 - x0) or 1.0) * (W - 60)
-        top = int(d.counts.max()) or 1
-        bw = (W - 60) / len(d.counts)
-        bars = "".join(f'<rect class="bar" x="{44 + i * bw + 1:.1f}" y="{118 - n / top * 92:.1f}" width="{bw - 2:.1f}" height="{n / top * 92:.1f}"/>' for i, n in enumerate(d.counts))
-        y = 146
-        box = (f'<line class="ax" x1="{px(d.whisker_low):.1f}" y1="{y}" x2="{px(d.whisker_high):.1f}" y2="{y}"/><rect class="bar" x="{px(d.q1):.1f}" y="{y - 9}" width="{max(px(d.q3) - px(d.q1), 1):.1f}" height="18"/>'
-               f'<line class="ax" x1="{px(d.median):.1f}" y1="{y - 9}" x2="{px(d.median):.1f}" y2="{y + 9}"/>' + "".join(f'<circle class="dot" cx="{px(o):.1f}" cy="{y}" r="2.6"/>' for o in d.outliers))
-        svg = (f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="반복 작업 값의 분포"><line class="ax" x1="44" y1="118" x2="{W - 16}" y2="118"/>{bars}{box}'
-               f'<text class="tick" x="44" y="{H - 10}">{x0:.3g}</text><text class="tick" x="{W - 16}" y="{H - 10}" text-anchor="end">{unit} {x1:.3g}</text><text class="tick" x="44" y="14">횟수 · 최대 {top}</text></svg>')
-        out.append({"label": c["label"], "html": svg, "params": {},
-                    "facts": [("평균", f"{d.mean:.3f} {unit}"), ("표준편차", f"{d.std:.3f} {unit}"), ("중앙값", f"{d.median:.3f} {unit}"), ("벗어난 값", f"{len(d.outliers)}개 (상자 수염 밖)"), ("값", "가상 값 (평균과 산포를 알고 만든 것)")]})
-    return out
+    return [distribution_sample(distribution(repeat_values(n=int(spec["n"]), **{k: v for k, v in c.items() if k != "label"}), int(spec["bins"])),
+                                c["label"], str(spec.get("unit", "")), "가상 값 (평균과 산포를 알고 만든 것)") for c in cases]
 
 
 PREVIEWS: dict[str, Callable[..., list[Sample]]] = {f.__name__: f for f in (
