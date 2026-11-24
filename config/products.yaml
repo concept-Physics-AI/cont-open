@@ -3,16 +3,16 @@
 products:
 - key: studio
   name: Studio
-  role: 대화로 물리와 일반 AI를 다루는 통합 작업 공간
+  role: 물리를 모르는 사람이 대화로 정확한 물리 기반 AI를 쓰는 곳
   url_env: CONT_STUDIO_URL
   default_url: http://127.0.0.1:8766
 - key: physics
   name: Physics
-  role: Studio와 FAB이 함께 쓰는 물리·AI 엔진과 서비스
+  role: 물리·설계 전문가가 AI를 쉽게 쓰게 돕는 소프트웨어
   url_env: CONT_PHYSICS_URL
   default_url: http://127.0.0.1:8769
 - key: fab
   name: FAB
-  role: 물리 정보를 골라 내 현장 화면을 꾸리는 곳
+  role: 자기만의 Physical AI를 쉽게 만드는 곳
   url_env: CONT_FAB_URL
   default_url: http://127.0.0.1:8768
