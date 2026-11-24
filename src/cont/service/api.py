@@ -43,5 +43,5 @@ def solve(name: str, inputs: Mapping[str, Any], question: str = "", action: str 
             raise NotFound(f"{name}/{action}")
     answer = fn(inputs, question).stamped(f"pack:{name}" + ("" if action == "solve" else f":{action}"), run_id=new_run_id())
     body = {"run_id": answer.provenance.run_id, "revision_id": answer.revision_id(), "content_hash": answer.content_hash(),
-            "answer": answer.to_dict(), "trust": answer.trust()}
+            "answer": answer.to_dict(), "trust": answer.trust(), "truth_line": answer.truth_line()}
     return json.loads(json.dumps(body, ensure_ascii=False, default=str))     # 숫자 배열 등을 JSON으로 안전하게

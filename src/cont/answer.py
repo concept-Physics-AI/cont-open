@@ -220,5 +220,14 @@ class PhysicsAnswer:
             ["개정", f"{self.revision_id()}. 만든 곳: {self.provenance.producer or NOT_REPORTED}. 바탕 개정: {self.provenance.parent_revision or '없음'}"],
         ]
 
+    def truth_line(self) -> str:
+        """화면 맨 아래 한 줄 요약 (진실 표시줄). 이 묶음이 가진 값만 모으고 새 값을 만들지 않는다. 없는 항목은 "보고하지 않음"."""
+        kinds = self.statuses() or (self.status,)
+        n_evidence = len({e for q in self.quantities for e in q.evidence})
+        rev = self.revision_id()
+        run = self.provenance.run_id or NOT_REPORTED
+        return (f"{'·'.join(STATUS_LABELS[k] for k in kinds)} · 개정 {rev} · 실행 {run} · 증거 {n_evidence}개 · {VALIDATION_LABELS[self.validation]}"
+                f" · 충실도·렌더러 버전·사람 승인: {NOT_REPORTED}")
+
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

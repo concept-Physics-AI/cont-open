@@ -118,3 +118,13 @@ def test_parent_revision_and_trust_row_for_identity():
     assert child.revision_id() in row and a.revision_id() in row and "pack:test" in row
     assert a.revision_id() in dict(a.trust())["개정"] and "보고하지 않음" in dict(a.trust())["개정"]
     assert child.to_dict()["provenance"]["parent_revision"] == a.revision_id()
+
+
+def test_truth_line_gathers_what_the_answer_has_and_reports_the_rest_as_not_reported():
+    a = PhysicsAnswer("q", (Quantity("f", "체결력", 1.0, "N", status=STATUS_SIMULATED),
+                            Quantity("e", "추정", 2.0, "N", status=STATUS_ESTIMATED, evidence=("f",))), "해석식", (), Confidence("medium", "r"), status=STATUS_SIMULATED)
+    line = a.stamped("pack:test", run_id="run-1").truth_line()
+    assert line.startswith("해석·추정 · 개정 " + a.revision_id()) and "실행 run-1" in line and "증거 1개" in line and "검증 전" in line
+    assert f"충실도·렌더러 버전·사람 승인: {NOT_REPORTED}" in line
+    assert f"실행 {NOT_REPORTED}" in a.truth_line()
+    assert a.truth_line() == a.truth_line()           # 새 값을 만들지 않는다: 같은 묶음이면 같은 줄
