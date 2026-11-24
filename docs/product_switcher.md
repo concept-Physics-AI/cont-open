@@ -17,3 +17,8 @@
 - 세 제품이 한 서버·한 로그인으로 묶이지 않았다. 지금은 주소 이동이다.
 - Studio에서 FAB으로 구성을 넘기는 기능은 없다.
 - 공개 시연(정적 페이지)에서는 다른 제품의 주소를 모르면 탭이 눌리지 않는다.
+
+## 공개 데모(GitHub Pages)에서의 이동
+- 주소: https://concept-physics-ai.github.io/cont-open/ (Studio), `physics.html`, `fab.html`, `diagnosis.html`
+- `.github/workflows/demo.yml`이 main이 바뀔 때마다 네 화면을 만들며, 탭 주소를 같은 폴더의 파일(`index.html`, `physics.html`, `fab.html`)로 덮어쓴다. 이상진단 화면은 FAB 쪽 화면이라 FAB 탭이 켜진다.
+- 서버가 필요한 기능(체결 다시 계산, CSV 올리기)은 정적 페이지에서 되지 않는다.

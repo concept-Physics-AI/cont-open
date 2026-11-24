@@ -51,3 +51,17 @@ def test_physics_page_lists_real_engines_and_waiting_ones():
     assert wanted and wanted == sorted(wanted, key=lambda x: (-len(x["types"]), x["name"]))
     page = render_physics()
     assert "지금 있는 엔진" in page and "아직 없는 엔진" in page and "계산값" in page
+
+
+def test_pages_workflow_builds_all_four_screens_with_relative_tab_links():
+    from pathlib import Path
+    y = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "demo.yml").read_text(encoding="utf-8")
+    for f in ("site/index.html", "site/physics.html", "site/fab.html", "site/diagnosis.html"):
+        assert f in y
+    for e in ("CONT_STUDIO_URL=index.html", "CONT_PHYSICS_URL=physics.html", "CONT_FAB_URL=fab.html"):
+        assert e in y
+
+
+def test_env_urls_become_tab_links(monkeypatch):
+    monkeypatch.setenv("CONT_PHYSICS_URL", "physics.html")
+    assert 'href="physics.html"' in switcher_html("fab")
