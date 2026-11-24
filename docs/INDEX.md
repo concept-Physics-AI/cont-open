@@ -1,0 +1,30 @@
+# 문서 목록
+
+> 상태: 보조
+
+모든 문서의 상태. 순서와 상태의 뜻은 [ARCHITECTURE.md](../ARCHITECTURE.md)의 "문서의 순서와 상태".
+
+| 문서 | 상태 |
+|---|---|
+| [ARCHITECTURE.md](../ARCHITECTURE.md) | 정본 |
+| [CLAUDE.md](../CLAUDE.md) | 정본 |
+| [README.md](../README.md) | 참고 |
+| [docs/diagnosis.md](diagnosis.md) | 보조 |
+| [docs/diagnosis_screen.md](diagnosis_screen.md) | 보조 |
+| [docs/direction_generalization.md](direction_generalization.md) | 기록 |
+| [docs/fab_store.md](fab_store.md) | 보조 |
+| [docs/fastening_estimate.md](fastening_estimate.md) | 보조 |
+| [docs/fastening_field.md](fastening_field.md) | 보조 |
+| [docs/fastening_recommend.md](fastening_recommend.md) | 보조 |
+| [docs/fastening_screen.md](fastening_screen.md) | 보조 |
+| [docs/fastening_sensing.md](fastening_sensing.md) | 보조 |
+| [docs/fastening_slice1.md](fastening_slice1.md) | 보조 |
+| [docs/generation.md](generation.md) | 보조 |
+| [docs/hidden_physics.md](hidden_physics.md) | 보조 |
+| [docs/llm_check_20261123.md](llm_check_20261123.md) | 기록 |
+| [docs/machining_slice1.md](machining_slice1.md) | 보조 |
+| [docs/physics_models.md](physics_models.md) | 보조 |
+| [docs/product_switcher.md](product_switcher.md) | 보조 |
+| [docs/shape.md](shape.md) | 보조 |
+| [docs/signal_analysis.md](signal_analysis.md) | 보조 |
+| docs/INDEX.md (이 문서) | 보조 |
