@@ -1,5 +1,7 @@
 # ConT Fab: 고르기
 
+> 상태: 보조
+
 ConT Fab은 물리 정보(2D · 3D · 4D)를 쇼핑하듯 골라 담아 자기 현장의 Physical AI를 꾸리는 곳이다 ([ARCHITECTURE.md](../ARCHITECTURE.md)의 "3제품 1코어").
 그 첫 부분인 **고르는 곳**을 만들었다. 꾸리는 곳, 시나리오, 공장 화면은 아직 없다.
 
