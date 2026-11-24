@@ -81,3 +81,20 @@ def test_bad_inputs_and_before_after_report_do_not_judge():
     a = regularize(t, y, 0.5, 2.0)
     r = compare_before_after(t, y, a)
     assert r["judged"] is False and r["emptied_fraction"] == 0.0 and math.isclose(r["mean_after"], 2.5)
+
+
+def test_temperature_difference_is_not_absolute_temperature():
+    """A27: 0 °C ↔ 273.15 K, 그러나 Δ1 °C ↔ Δ1 K, Δ1 °F ↔ Δ5/9 K."""
+    assert math.isclose(convert(1.0, "ddegC", "dK"), 1.0)
+    assert math.isclose(convert(9.0, "Δ°F", "ΔK"), 5.0)
+    assert math.isclose(convert(10.0, "Δ°C", "Δ°F"), 18.0)
+    for a, b in (("degC", "ddegC"), ("dK", "K"), ("degF", "dK")):
+        with pytest.raises(UnitError, match="온도 차"):
+            convert(1.0, a, b)
+
+
+def test_conversion_overflow_is_refused():
+    with pytest.raises(UnitError, match="유한하지 않"):
+        convert(1e308, "GPa", "Pa")
+    with pytest.raises(UnitError, match="유한하지 않"):
+        convert(np.array([1.0, 1e308]), "GPa", "Pa")

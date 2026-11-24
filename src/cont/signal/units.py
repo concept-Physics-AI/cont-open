@@ -37,12 +37,17 @@ def convert(value, src: str, dst: str):
     a, b = canonical(src), canonical(dst)
     ua, ub = _table()["units"][a], _table()["units"][b]
     if ua["dim"] != ub["dim"]:
-        raise UnitError(f"차원이 다릅니다: {a}({ua['dim']}) → {b}({ub['dim']})")
+        hint = " (절대 온도와 온도 차는 다른 양입니다. 차이는 ddegC처럼 적어 주세요)" if {ua["dim"], ub["dim"]} == {"temperature", "temperature_difference"} else ""
+        raise UnitError(f"차원이 다릅니다: {a}({ua['dim']}) → {b}({ub['dim']}){hint}")
     x = np.asarray(value, dtype=float)
     if not np.all(np.isfinite(x)):
         raise UnitError("숫자가 아닌 값(NaN, 무한대)이 있어 변환하지 않습니다")
-    si = x * ua["scale"] + ua.get("offset", 0.0)
-    out = (si - ub.get("offset", 0.0)) / ub["scale"]
+    with np.errstate(over="ignore", invalid="ignore"):
+        si = x * ua["scale"] + ua.get("offset", 0.0)
+    with np.errstate(over="ignore", invalid="ignore"):
+        out = (si - ub.get("offset", 0.0)) / ub["scale"]
+    if not np.all(np.isfinite(out)):
+        raise UnitError("변환 결과가 유한하지 않습니다 (값이 너무 큽니다)")
     return float(out) if np.ndim(value) == 0 else out
 
 

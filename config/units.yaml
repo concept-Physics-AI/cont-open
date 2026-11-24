@@ -5,6 +5,7 @@ dimensions:
   time: [0, 0, 1, 0, 0]
   mass: [0, 1, 0, 0, 0]
   temperature: [0, 0, 0, 1, 0]
+  temperature_difference: [0, 0, 0, 1, 0]
   pressure: [-1, 1, -2, 0, 0]
   force: [1, 1, -2, 0, 0]
   torque: [2, 1, -2, 0, 0]
@@ -24,6 +25,9 @@ units:
   K: {dim: temperature, scale: 1.0, offset: 0.0}
   degC: {dim: temperature, scale: 1.0, offset: 273.15}
   degF: {dim: temperature, scale: 0.5555555555555556, offset: 255.3722222222222}
+  dK: {dim: temperature_difference, scale: 1.0}
+  ddegC: {dim: temperature_difference, scale: 1.0}
+  ddegF: {dim: temperature_difference, scale: 0.5555555555555556}
   Pa: {dim: pressure, scale: 1.0}
   kPa: {dim: pressure, scale: 1000.0}
   MPa: {dim: pressure, scale: 1000000.0}
@@ -35,6 +39,12 @@ units:
   rad: {dim: angle, scale: 1.0}
   deg: {dim: angle, scale: 0.017453292519943295}
 aliases:
+  "ΔK": dK
+  "Δ°C": ddegC
+  "Δ℃": ddegC
+  "Δ°F": ddegF
+  "deltaK": dK
+  "deltaC": ddegC
   "°C": degC
   "℃": degC
   "°F": degF
