@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any, Mapping
 
-from cont.answer import STATUS_INPUT, STATUS_SIMULATED, Confidence, PhysicsAnswer, Quantity, Residual
+from cont.answer import EVIDENCE_REFERENCE, STATUS_INPUT, STATUS_SIMULATED, Confidence, PhysicsAnswer, Quantity, Residual
 from cont.packs.fastening import vdi2230
 from cont.packs.fastening.joint import BoltedJoint, LoadCase
 
@@ -105,6 +105,7 @@ def answer(joint: BoltedJoint, load: LoadCase, question: str = "") -> PhysicsAns
         question=question,
         quantities=quantities,
         method="해석식 (VDI 2230 Part 1)",
+        evidence_level=EVIDENCE_REFERENCE,
         basis=basis,
         confidence=Confidence(
             "medium",
