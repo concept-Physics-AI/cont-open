@@ -6,7 +6,7 @@ import pytest
 
 from cont.packs.fastening import analytic_reference, intake, vdi2230
 from cont.packs.fastening.joint import BoltedJoint, LoadCase, Plate
-from tests.test_intake import write
+from test_intake import write
 
 HEAD = ["data_origin", "case_id", "bolt_size", "strength_class", "plate_1_thickness_mm", "plate_2_thickness_mm", "torque_Nm", "torque_coefficient_K",
         "elastic_modulus_MPa", "reference_force_N", "reference_elongation_mm"]
