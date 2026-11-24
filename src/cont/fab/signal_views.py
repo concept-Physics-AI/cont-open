@@ -36,7 +36,7 @@ def spectrum_sample(sp: Spectrum, label: str, fmax: float, count: int, min_ratio
         f = np.array([f[idx[i]:idx[i + 1]][a[idx[i]:idx[i + 1]].argmax()] for i in range(MAX_POINTS)])
         a = _pool(a, MAX_POINTS)
     u = f" {unit}" if unit else ""
-    facts = [("봉우리", " · ".join(f"{x:.4g} Hz" for x, _ in sorted(top)) or "뚜렷한 봉우리 없음")] + [(f"{x:.4g} Hz 성분", f"{amp_:.3g}{u}") for x, amp_ in sorted(top)[:2]]
+    facts = [("봉우리", " · ".join(f"{x:.4g} Hz" for x, _ in sorted(top)) or "뚜렷한 봉우리 없음")] + [(f"{x:.4g} Hz 성분", f"{amp_:.3g}{u}") for x, amp_ in sorted(top)]
     facts += [("주파수 간격", f"{sp.resolution:.3g} Hz"), ("보인 범위", f"0 ~ {cut.freq[-1]:.4g} Hz"), *extra, ("신호", source)]
     svg = _line([(float(x), float(y)) for x, y in zip(f, a)], "Hz", f"진폭{(' ' + unit) if unit else ''}", tuple((x, f"{x:.4g} Hz") for x, _ in top), ".3g")
     return {"label": label, "html": svg, "facts": facts, "params": {}}

@@ -73,3 +73,18 @@ def test_fab_cards_are_made_by_the_engine_and_say_they_are_synthetic():
 def test_physics_page_moves_signal_analysis_from_wanted_to_ready():
     from cont.view.physics_page import engines_ready, engines_wanted
     assert "signal_analysis" in {x["key"] for x in engines_ready()} and "signal" not in {x["key"] for x in engines_wanted()}
+
+
+def test_close_peak_labels_do_not_overlap_and_all_peak_sizes_listed():
+    import re
+    from cont.fab.signal_views import spectrum_sample
+    from cont.signal import spectrum
+    from cont.signal.synthetic import vibration
+    sp = spectrum(vibration(fs=1000, seconds=2, rpm=3000, unbalance=1.0, harmonic2=0.3, fault_hz=87.0, fault_amp=0.25), 1000)
+    r = spectrum_sample(sp, "t", 150, 3, 0.1, "mm/s", "가상")
+    ys = [(float(x), float(y)) for x, y in re.findall(r'<text class="tick" x="([\d.]+)" y="(\d+)"[^>]*>\d+ Hz</text>', r["html"])]
+    for i, a in enumerate(ys):
+        for b in ys[i + 1:]:
+            assert abs(a[0] - b[0]) >= 70 or a[1] != b[1]
+    n_peaks = len(r["facts"][0][1].split(" · "))
+    assert sum(1 for k, _ in r["facts"] if k.endswith(" Hz 성분")) == n_peaks

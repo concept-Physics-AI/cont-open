@@ -77,11 +77,17 @@ def _line(points: list[tuple[float, float]], xlabel: str, ylabel: str, marks: tu
     px = lambda x: 44 + (x - x0) / ((x1 - x0) or 1.0) * (W - 60)
     py = lambda y: H - 30 - (y - y0) / ((y1 - y0) or 1.0) * (H - 52)
     pts = " ".join(f"{px(x):.1f},{py(y):.1f}" for x, y in points)
+    placed: list[tuple[float, int]] = []                       # (이미 쓴 이름표의 가로 위치, 줄)
+
     def mark(m: float, name: str) -> str:
         right = px(m) > W * 0.6                                # 오른쪽 가까이면 글자가 잘리지 않게 왼쪽으로 쓴다
         anchor = ' text-anchor="end"' if right else ""
+        row = 0                                                # 가까운 이름표와 겹치지 않는 가장 윗줄을 쓴다
+        while any(abs(px(m) - x) < 70 and r == row for x, r in placed):
+            row += 1
+        placed.append((px(m), row))
         return (f'<line class="ax" stroke-dasharray="4 3" x1="{px(m):.1f}" y1="22" x2="{px(m):.1f}" y2="{H - 30}"/>'
-                f'<text class="tick" x="{px(m) + (-4 if right else 4):.1f}" y="32"{anchor}>{html.escape(name)}</text>')
+                f'<text class="tick" x="{px(m) + (-4 if right else 4):.1f}" y="{32 + 12 * row}"{anchor}>{html.escape(name)}</text>')
     extra = "".join(mark(m, n) for m, n in marks)
     return (f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="{html.escape(ylabel)} 대 {html.escape(xlabel)}">'
             f'<line class="ax" x1="44" y1="{py(0):.1f}" x2="{W - 16}" y2="{py(0):.1f}"/><line class="ax" x1="44" y1="22" x2="44" y2="{H - 30}"/>{extra}'
