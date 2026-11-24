@@ -201,5 +201,16 @@ def test_store_type_cards_and_requests():
     page = render_store(catalog())
     assert "준비 중 · 엔진 없음" in page and "필요해요" in page and "예시 그림 · 실제 결과 아님" in page
     assert "kind:'engine_request'" in page and "requests:reqs" in page
-    assert 'id="tdetail"' in page and "지금 되는 것 (체결 사례)" in page
+    assert 'id="tdetail"' in page and "확장 예정 (엔진이 없는 것)" in page
     assert "data-req" in page and "tcard" in page
+
+
+def test_usable_results_come_before_coming_soon_and_soon_cards_have_no_run_button():
+    """첫 화면: 지금 쓸 수 있는 세트와 결과가 앞, 엔진 없는 카드는 '확장 예정' 안에 있고 담기·실행 단추가 없다."""
+    from cont.fab.catalog import catalog
+    from cont.fab.store import render_store
+    page = render_store(catalog())
+    build = page[page.index("function build(){"):page.index("$('#shelves').innerHTML=h;}")]
+    assert build.index("data-set=") < build.index("card(it,0)") < build.index('id="soon"') < build.index("tcard")
+    tcard = page[page.index("function tcard("):page.index("function build(")]
+    assert "data-add" not in tcard and "data-set" not in tcard and "필요해요" in tcard
