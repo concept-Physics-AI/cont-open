@@ -182,7 +182,7 @@ fetch(D.analyze_url,{method:'POST',headers:{'Content-Type':'application/json'},b
 var tg=asked,i=tg.samples.map(function(x){return x.label;}).indexOf(s.label);if(i<0){tg.samples.push(s);i=tg.samples.length-1;}else tg.samples[i]=s;if(cur===tg){curS=i;sample();m.textContent='계산했습니다: '+tg.name+' · '+s.label;}else m.textContent='「'+tg.name+'」에 계산 결과를 더했습니다. 지금 보는 상품에는 반영하지 않았습니다.';}).catch(function(){m.textContent='서버에 닿지 못했습니다.';});});
 $('#mk').addEventListener('submit',function(e){e.preventDefault();var body={key:cur.key,size:$('#mk-size').value,torque:$('#mk-torque').value},asked=cur;$('#mk-msg').textContent='엔진이 계산하는 중입니다.';
 fetch(D.make_url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.json();}).then(function(s){if(s.error){$('#mk-msg').textContent=s.error;return;}
-var tg=asked,i=tg.samples.map(function(x){return x.label;}).indexOf(s.label);if(i<0){tg.samples.push(s);i=tg.samples.length-1;}if(cur===tg){curS=i;sample();$('#mk-msg').textContent='다시 만들었습니다: '+tg.name+' · '+s.label;}else $('#mk-msg').textContent='「'+tg.name+'」에 결과를 더했습니다. 지금 보는 상품에는 반영하지 않았습니다.';}).catch(function(){$('#mk-msg').textContent='답을 받지 못했습니다. 서버가 켜져 있는지 확인해 주세요.';});});
+var tg=asked,i=tg.samples.map(function(x){return x.label;}).indexOf(s.label);if(i<0){tg.samples.push(s);i=tg.samples.length-1;}else tg.samples[i]=s;if(cur===tg){curS=i;sample();$('#mk-msg').textContent='다시 만들었습니다: '+tg.name+' · '+s.label;}else $('#mk-msg').textContent='「'+tg.name+'」에 결과를 더했습니다. 지금 보는 상품에는 반영하지 않았습니다.';}).catch(function(){$('#mk-msg').textContent='답을 받지 못했습니다. 서버가 켜져 있는지 확인해 주세요.';});});
 /* 맨 위의 살아 있는 한 장: 조이는 과정의 장면을 차례로 */
 (function(){var fr=all('#live svg'),cap=$('#livecap'),i=0;if(!fr.length)return;function show(){fr.forEach(function(x,k){x.classList.toggle('on',k===i);});cap.innerHTML=D.hero.caps[i];}
 show();if(!(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches))setInterval(function(){i=(i+1)%fr.length;show();},1100);})();
@@ -273,6 +273,39 @@ def render_store(items: Sequence[Mapping[str, Any]], data: Mapping[str, Any] | N
     return with_switcher(page, "fab")
 
 
+def record_run(action: str, inputs: Mapping[str, Any], sample: Mapping[str, Any]) -> str:
+    """저장소가 켜져 있으면(CONT_RUN_DIR) 결과를 실행 한 건으로 남기고 run_id를 돌려준다. 꺼져 있으면 빈 문자열. 올린 파일 본문은 해시만 남긴다."""
+    import hashlib
+    from cont.service import api, runs
+    st = runs.store()
+    if st is None:
+        return ""
+    ins = {k: v for k, v in inputs.items() if k != "csv"}
+    if "csv" in inputs:
+        ins["csv_sha256"] = hashlib.sha256(str(inputs["csv"]).encode("utf-8")).hexdigest()
+    body = json.loads(json.dumps(sample, ensure_ascii=False, default=str))
+    rid = api.new_run_id()
+    st.save({"run_id": rid, "created_at": runs.now(), "pack": "fab", "action": action, "question": "", "inputs": ins,
+             "model_version": runs.model_version("fab"), "project_id": "", "asset_id": "", "parent_run_id": "", "status": "complete",
+             "error": "", "response": body, "content_hash": hashlib.sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest(), "revision_id": ""})
+    return rid
+
+
+def stored_sample(run_id: str) -> dict[str, Any]:
+    """저장된 실행에서 샘플을 읽는다. 저장소가 꺼져 있거나 없는 실행이면 KeyError, 기록이 깨졌으면 ValueError."""
+    from cont.service import runs
+    st = runs.store()
+    if st is None:
+        raise KeyError("실행 저장소가 켜져 있지 않습니다")
+    try:
+        rec = st.get(run_id)
+    except runs.RunNotFound:
+        raise KeyError(run_id) from None
+    if rec.get("pack") != "fab" or not isinstance(rec.get("response"), dict):
+        raise KeyError(run_id)
+    return rec["response"]
+
+
 def make_server(port: int = 8768) -> ThreadingHTTPServer:
     page = render_store(catalog(), make_url="/make", analyze_url="/analyze").encode("utf-8")
 
@@ -284,6 +317,14 @@ def make_server(port: int = 8768) -> ThreadingHTTPServer:
         def do_GET(self) -> None:  # noqa: N802
             if self.path in ("/", "/index.html"):
                 self._send(200, page, "text/html; charset=utf-8")
+            elif self.path.startswith("/run/"):
+                try:
+                    out = {"sample": stored_sample(self.path[5:])}
+                except KeyError:
+                    return self._send(404, json.dumps({"error": "저장된 결과를 찾지 못했습니다"}, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
+                except ValueError as exc:
+                    return self._send(500, json.dumps({"error": f"저장된 기록이 깨졌습니다: {exc}"}, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
+                self._send(200, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
             else:
                 self._send(404, b"not found", "text/plain")
 
@@ -296,7 +337,9 @@ def make_server(port: int = 8768) -> ThreadingHTTPServer:
                 if not 0 < n <= (MAX_UPLOAD if analyze else MAX_BODY):
                     raise ValueError("요청을 읽지 못했거나 파일이 너무 큽니다" if analyze else "요청을 읽지 못했습니다")
                 d = json.loads(self.rfile.read(n))
+                ins = d if analyze else {"key": str(d.get("key", "")), "size": d.get("size", ""), "torque": d.get("torque")}
                 out = own_sample(str(d.get("key", "")), d) if analyze else make(str(d.get("key", "")), {"size": d.get("size", ""), "torque": d.get("torque")})
+                out = {**out, "run_id": record_run("analyze" if analyze else "make", ins, out)}
             except Exception as exc:        # 계산할 수 없는 조건이면 이유를 돌려준다 (화면은 그대로 둔다)
                 return self._send(200, json.dumps({"error": (f"이 파일로는 볼 수 없습니다: {exc}" if analyze else f"이 조건으로는 만들지 못했습니다: {exc}")}, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
             self._send(200, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
