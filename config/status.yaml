@@ -7,7 +7,7 @@ items:
 - key: product_studio
   name: ConT Studio
   status: 뼈대
-  scope: 체결 대화 화면 하나 (물리 영역을 가리지 않는 Studio는 아직 없음)
+  scope: 체결 대화 화면 하나. 다른 영역 질문은 알아보고 아직 대화가 없다고 알리지만 다루지는 못함 (물리 영역을 가리지 않는 Studio는 아직 없음)
   evidence:
   - src/cont/dialogue
   - src/cont/view/fastening_app.py
