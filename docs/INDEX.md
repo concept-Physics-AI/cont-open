@@ -35,4 +35,5 @@
 | [docs/shape.md](shape.md) | 보조 |
 | [docs/validation_intake.md](validation_intake.md) | 보조 |
 | [docs/signal_analysis.md](signal_analysis.md) | 보조 |
+| [docs/archive_adoption.md](archive_adoption.md) | 참고 |
 | docs/INDEX.md (이 문서) | 보조 |
