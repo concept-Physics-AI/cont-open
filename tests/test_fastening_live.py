@@ -166,7 +166,7 @@ def test_screen_follows_the_canonical_rules_for_hidden_physics():
     no_range = core_numbers(j, answer(j, l.__class__(**{**l.__dict__, "friction_range": None})))
     assert no_range[0]["range"] == "마찰 범위를 주지 않아 한 값만 있음"
     t = dict(trust(j, l, a))
-    assert list(t) == ["값의 지위", "근거 데이터", "사용 모델", "가정", "증거와 식별가능성", "불확실성", "물리잔차", "검증 상태", "적용 범위", "실패 조건"]
+    assert list(t) == ["값의 지위", "근거 데이터", "사용 모델", "가정", "증거와 식별가능성", "불확실성", "물리잔차", "검증 상태", "적용 범위", "실패 조건", "개정"]
     assert t["값의 지위"] == "입력, 해석. 관측·추정한 값은 없음" and t["검증 상태"].startswith("검증 전.")
     assert t["증거와 식별가능성"] == "추정한 값 없음"
     assert "= 0 N" in t["물리잔차"] and "마찰계수 0.1 ~ 0.14" in t["불확실성"] and "편심 하중" in t["실패 조건"]

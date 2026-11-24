@@ -4,7 +4,7 @@ from cont.answer import (IDENT_NONE, IDENT_OK, IDENT_WEAK, STATUS_ESTIMATED, STA
 from cont.packs.fastening import answer as fastening_answer
 from cont.packs.fastening.joint import BoltedJoint, LoadCase, Plate
 
-ROWS = ["값의 지위", "근거 데이터", "사용 모델", "가정", "증거와 식별가능성", "불확실성", "물리잔차", "검증 상태", "적용 범위", "실패 조건"]
+ROWS = ["값의 지위", "근거 데이터", "사용 모델", "가정", "증거와 식별가능성", "불확실성", "물리잔차", "검증 상태", "적용 범위", "실패 조건", "개정"]
 
 
 def joint_and_load():
@@ -89,3 +89,32 @@ def test_an_estimate_points_at_its_evidence_and_says_how_well_it_can_be_told_apa
     with pytest.raises(ValueError, match="identifiability must be one of"):
         PhysicsAnswer("q", (Quantity("f", "체결력", 1.0, "N", identifiability="0.83"),), "m", (), Confidence("low", "r"))
     assert {IDENT_OK, IDENT_WEAK, IDENT_NONE} == {"identifiable", "weak", "not_identifiable"}
+
+
+def test_same_content_same_hash_and_any_change_makes_a_new_revision():
+    import dataclasses
+    a = PhysicsAnswer("q", (Quantity("f", "힘", 1.5, "N"),), "m", ("b",), Confidence("low", "r"), inputs={"x": 1})
+    b = PhysicsAnswer("q", (Quantity("f", "힘", 1.5, "N"),), "m", ("b",), Confidence("low", "r"), inputs={"x": 1})
+    assert a.content_hash() == b.content_hash() and len(a.content_hash()) == 64 and a.revision_id() == "rev-" + a.content_hash()[:12]
+    c = dataclasses.replace(a, quantities=(Quantity("f", "힘", 1.6, "N"),))
+    assert c.revision_id() != a.revision_id()
+    assert dataclasses.replace(a, inputs={"x": 2}).revision_id() != a.revision_id()
+
+
+def test_presentation_retention_and_provenance_do_not_change_the_hash():
+    import dataclasses
+    a = PhysicsAnswer("q", (Quantity("f", "힘", 1.5, "N"),), "m", (), Confidence("low", "r"))
+    s = a.stamped("pack:test", run_id="run-1")
+    assert s.revision_id() == a.revision_id()
+    assert dataclasses.replace(a, presentation=("section",), retention="saved").revision_id() == a.revision_id()
+
+
+def test_parent_revision_and_trust_row_for_identity():
+    a = PhysicsAnswer("q", (Quantity("f", "힘", 1.5, "N"),), "m", (), Confidence("low", "r"))
+    import dataclasses
+    child = dataclasses.replace(a, quantities=(Quantity("f", "힘", 2.0, "N"),)).stamped("pack:test", parent=a)
+    assert child.provenance.parent_revision == a.revision_id() and child.provenance.producer == "pack:test"
+    row = dict(child.trust())["개정"]
+    assert child.revision_id() in row and a.revision_id() in row and "pack:test" in row
+    assert a.revision_id() in dict(a.trust())["개정"] and "보고하지 않음" in dict(a.trust())["개정"]
+    assert child.to_dict()["provenance"]["parent_revision"] == a.revision_id()
