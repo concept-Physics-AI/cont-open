@@ -66,6 +66,7 @@ def test_status_file_matches_real_files():
     keys = [i["key"] for i in d["items"]]
     assert len(keys) == len(set(keys))
     for i in d["items"]:
+        assert set(i) == {"key", "name", "status", "scope", "evidence"}, f"{i['key']}: 항목 이름이 틀렸습니다 (쉼표가 든 글은 따옴표로 묶어야 합니다): {sorted(i)}"
         assert i["status"] in STATES and i["scope"], i["key"]
         if i["status"] == "없음":
             assert not i["evidence"], f"{i['key']}: 없다고 적었는데 증거 파일이 있습니다"
