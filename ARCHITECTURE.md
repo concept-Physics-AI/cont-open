@@ -55,7 +55,7 @@
 | 풀려는 문제 | 일반 생성형 AI(GPT, Gemini 같은 것)는 현실의 물리를 몰라 부정확하다 | 전문가가 AI를 쓰고 싶어도 어디서 어떻게 시작할지 모른다 | 자기 Physical AI를 만들려면 물리, AI, 화면을 모두 직접 짜야 한다 |
 | 하는 일 | 대화로 묻고, 계산하고, 만들어 낸다 (대화, 코드, 이미지, 물리 이미지, 영상, 3D CAD). 숨은 물리와 다양한 물리 세계를 근거로 정확도를 높이고 현실 세계와 잇는다. 물리 영역을 가리지 않는다 | 전문가가 이미 아는 물리·설계·소재 작업에 AI를 쉽게 붙여 쓰게 돕는다 (예: 해석 결과에서 숨은 상태 추정, 설계 후보 탐색, 적은 데이터로 학습) | 쇼핑하듯 2D · 3D · 4D 물리 정보를 고르고, 현장의 설비·신호에 이어, 자기 화면을 만든다. 각자의 Fab을 쉽게 구현하도록 돕는다 |
 | 결과물 | 답과 만들어 낸 것 | 해석·설계·소재 작업의 결과와 AI 활용 환경 | 현장에 맞춘 화면과 그 설정 (예: 설비 이상진단 화면) |
-| 지금 있는 것 | 체결 대화 화면 (한 예) | 아직 제품 화면이 없다. Physics 탭에는 코어 엔진 목록만 보인다 | 고르기 화면 ([docs/fab_store.md](docs/fab_store.md)). 설비 이상진단 화면은 만들어진 한 예 |
+| 지금 있는 것 | 체결 대화 화면 (한 예) | 체결 작업대(추정, 설계 후보, 내보내기)가 있고 합성 관측 예시를 쓴다. 외부 해석 결과 가져오기와 실행 여러 개 비교·보관은 아직 없다 | 고르기 화면 ([docs/fab_store.md](docs/fab_store.md)). 설비 이상진단 화면은 만들어진 한 예 |
 | 아직 없는 것 | 물리 영역을 가리지 않는 Studio (지금은 체결 하나) | 전문가용 작업 화면 전부. 외부 해석 도구와의 연결, 전문가 작업 흐름 | 꾸리는 곳, 시나리오, 공장 화면을 만들어 내는 일 |
 
 Physics의 첫 작업 흐름은 체결 한 영역에서 숨은 상태 추정과 설계 후보 탐색을 잇는 것이고, 첫 사용자는 해석 설계자다. 외부 해석 결과 가져오기는 그 뒤에 넣는다. 자세한 내용은 [docs/physics_product.md](docs/physics_product.md).
@@ -87,7 +87,7 @@ Studio와 Physics는 대상이 다르다. Studio는 물리를 몰라도 되게 �
 | 코드 | 자리 |
 |---|---|
 | `dialogue/fastening_*`, `view/fastening_app.py` (체결 대화 화면) | Studio의 한 예 |
-| `packs/fastening`, `packs/machining`, `packs/diagnosis`, `fem/`, `shape/`, `view/field_image.py`, 3D 보기 | 코어 (엔진). Physics 제품 화면은 아직 없다 |
+| `packs/fastening`, `packs/machining`, `packs/diagnosis`, `fem/`, `shape/`, `view/field_image.py`, 3D 보기 | 코어 (엔진). Physics 제품 화면은 체결 작업대까지 만들어졌다 (외부 해석 연계는 없음) |
 | `view/diagnosis_app.py`, `dialogue/serve_diagnosis.py`, `dialogue/diagnosis_qa.py` (설비 이상진단 화면) | Fab으로 만든 화면의 한 예 |
 | `fab/` (목록, 미리보기, 고르기 화면) | Fab |
 | 센서 추천 ("현장에서 재려면") | Studio에서 Fab으로 넘어가는 다리 |
