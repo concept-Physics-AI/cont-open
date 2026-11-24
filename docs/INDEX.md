@@ -10,6 +10,7 @@
 | [CLAUDE.md](../CLAUDE.md) | 정본 |
 | [README.md](../README.md) | 참고 |
 | [docs/diagnosis.md](diagnosis.md) | 보조 |
+| [docs/heat_stack.md](heat_stack.md) | 보조 |
 | [docs/diagnosis_screen.md](diagnosis_screen.md) | 보조 |
 | [docs/direction_generalization.md](direction_generalization.md) | 기록 |
 | [docs/fab_store.md](fab_store.md) | 보조 |
