@@ -61,6 +61,7 @@ main.conv{max-width:none;margin:0}
 .side .new{display:flex;align-items:center;gap:10px;height:46px;margin-top:22px;padding:0 16px;border-radius:23px;border:1px solid var(--line);background:#fff;font-size:14px;font-weight:500}
 .side .new:hover{border-color:var(--ink)}.side .cur{margin-top:22px;font-size:12px;color:var(--sub);padding:0 14px}
 .side .now{margin-top:8px;height:44px;display:flex;align-items:center;padding:0 14px;border-radius:12px;background:#fff;box-shadow:0 1px 2px rgba(16,19,23,.05),0 0 0 1px var(--line);font-size:14px;font-weight:500}
+.truth{margin-top:14px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;line-height:1.5;color:var(--sub);overflow-wrap:anywhere}.truth:empty{display:none}
 .side .now:empty{display:none}.side nav{margin-top:auto;display:flex;flex-direction:column;padding:0 14px;font-size:14px}.side nav a{height:36px;display:flex;align-items:center;color:var(--sub);text-decoration:none}.side nav a:hover{color:var(--ink)}
 /* 대화 */
 .conv{display:flex;flex-direction:column;min-height:0;min-width:0;padding:0 0 22px 32px}
@@ -232,7 +233,7 @@ s.core.forEach(function(t,i){var el=$('#core'+i),v=$('.num',el),old=prev?prev.co
 $('.k',el).textContent=t.label;$('.rg',el).textContent=t.range;$('.v',el).classList.toggle('low',!!t.low);
 $('.dl',el).textContent=ch?((t.value>from?'+':'−')+fmt(Math.abs(t.value-from),t.digits)):'';
 if(t.value==null)v.textContent='-';else if(ch)tween(750,function(e){v.textContent=fmt(from+(t.value-from)*e,t.digits);});else v.textContent=fmt(t.value,t.digits);});
-$('#sensing').innerHTML=s.sensing;$('#trust').innerHTML=s.trust.map(function(x){return '<dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd>';}).join('');
+$('#sensing').innerHTML=s.sensing;$('#trust').innerHTML=s.trust.map(function(x){return '<dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd>';}).join('');$('#truth').textContent=s.truth_line||'';
 s.tiles.forEach(function(t,i){var el=$('#tile'+i),v=$('.num',el),dl=$('.dl',el),from=prev?prev.tiles[i].value:t.value,ch=animate&&prev&&fmt(from,t.digits)!==fmt(t.value,t.digits);
 $('.rg',el).textContent=t.range||'';el.classList.toggle('moved',!!ch);dl.textContent=ch?('이전 '+fmt(from,t.digits)):'';v.textContent=fmt(t.value,t.digits);});
 var top=Math.max.apply(null,s.safety.map(function(x){return x.value||0;}).concat(prev?prev.safety.map(function(x){return x.value||0;}):[]).concat([2]))*1.05;
@@ -352,6 +353,7 @@ def render_app(data: Mapping[str, Any], ask_url: str | None = None, title: str =
 <div id="d-trust" hidden><dl class="tr" id="trust"></dl></div>
 <div id="d-sensing" hidden><div id="sensing"></div></div>
 </div>
+<div class="truth" id="truth" role="status" aria-label="결과 한 줄 요약"></div>
 </div></section>
 </div>
 <template id="mark">{MARK}</template>

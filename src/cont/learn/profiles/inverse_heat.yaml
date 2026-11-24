@@ -1,0 +1,13 @@
+# 열전달 역문제(가상 센서) 설정. 값은 시험용 출발점이며 제품 기준이 아니다. 센서 값은 합성이다.
+alpha: 0.5            # 알려진 열확산계수 (무차원)
+horizon: 1.0
+bi_true: 2.0          # 가상 센서 값을 만들 때 쓴 비오 수 (합성 정답)
+sensors: [0.2, 0.4, 0.6, 0.8, 1.0]
+n_times: 11
+noise_sigma: 0.01
+noise_seed: 0
+data_weight: 100.0
+bi_initial: 1.0       # PINN이 시작하는 추정값
+identifiability:      # 비오 수의 상대 표준 불확도(민감도로 계산)가 이보다 크면 약함/없음
+  weak_relative: 0.2
+  none_relative: 1.0

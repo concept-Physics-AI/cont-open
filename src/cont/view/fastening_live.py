@@ -169,7 +169,7 @@ def state(joint: BoltedJoint, load: LoadCase, answer: PhysicsAnswer, before: Phy
     return {
         "title": f"{joint.size} · {joint.property_class}", "size": joint.size, "grade": joint.property_class,
         "sub": f"판 {joint.plate_head.thickness:g} + {joint.plate_nut.thickness:g} mm, 볼트 길이 {bolt_length(joint):.1f} mm",
-        "tiles": tiles, "safety": safety, "viewer": view, "core": core_numbers(joint, answer), "trust": trust(joint, load, answer), "sensing": sensing_html(joint, load),
+        "tiles": tiles, "safety": safety, "viewer": view, "core": core_numbers(joint, answer), "trust": trust(joint, load, answer), "truth_line": answer.truth_line(), "sensing": sensing_html(joint, load),
         "hidden": {"use": stress / joint.yield_strength, "stress": stress, "yield": joint.yield_strength},   # 볼트 색: 등가응력 ÷ 항복강도
         "views": {"section": _section(joint, old[0] if old else None), "diagram": _joint_diagram(joint, load, old),
                   "torque": _torque_chart(joint, load, old), "field": stress_image(joint, load)},
@@ -362,7 +362,7 @@ $('.k span',el).textContent=t.label;$('.rg',el).textContent=t.range;$('.v',el).c
 $('.dl',el).textContent=ch?((t.value>from?'▲ ':'▼ ')+fmt(Math.abs(t.value-from),t.digits)+' (이전 '+fmt(from,t.digits)+')'):'';
 if(t.value==null)v.textContent='-';else if(ch)tween(750,function(e){v.textContent=fmt(from+(t.value-from)*e,t.digits);});else v.textContent=fmt(t.value,t.digits);});
 $('#sensing').innerHTML=s.sensing;
-$('#trust').innerHTML=s.trust.map(function(x){return '<dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd>';}).join('');
+$('#trust').innerHTML=s.trust.map(function(x){return '<dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd>';}).join('');var tb=$('#truth');if(tb)tb.textContent=s.truth_line||'';
 s.tiles.forEach(function(t,i){var el=$('#tile'+i),v=$('.num',el),dl=$('.dl',el),from=prev?prev.tiles[i].value:t.value,ch=animate&&prev&&fmt(from,t.digits)!==fmt(t.value,t.digits);
 $('.rg',el).textContent=t.range||'';el.classList.toggle('moved',!!ch);dl.textContent=ch?((t.value>from?'▲ ':'▼ ')+fmt(Math.abs(t.value-from),t.digits)+' (이전 '+fmt(from,t.digits)+')'):'';
 if(ch)tween(750,function(e){v.textContent=fmt(from+(t.value-from)*e,t.digits);});else v.textContent=fmt(t.value,t.digits);});

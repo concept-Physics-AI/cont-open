@@ -17,7 +17,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Mapping, Sequence
 
 from cont.view.switcher import with_switcher
-from cont.fab.catalog import catalog, load, make, meshes, own_sample, types_data
+from cont.fab.catalog import catalog, load, make, meshes, own_sample, set_condition, types_data
 from cont.view.diagnosis_html import CSS
 from cont.view.fastening_html import EXTRA_CSS
 from cont.fab.build_ui import BUILD_CSS, BUILD_HTML, BUILD_JS
@@ -41,7 +41,7 @@ button,input,select{font:inherit;color:inherit}button{cursor:pointer}h1,h2,h3,p,
 .hero{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:24px;align-items:center;margin-top:14px;padding:16px 28px;border-radius:22px;background:#14181D;color:#EEF1F4}
 .hero h1{font-size:26px;font-weight:500;letter-spacing:-.03em;line-height:1.3}.hero p{font-size:14px;color:#A3ABB4;margin-top:6px;line-height:1.55;max-width:620px}
 .hero .cnt{display:flex;gap:24px;margin-top:10px}.hero .cnt b{display:inline;font-size:20px;margin-right:6px;font-weight:300;font-variant-numeric:tabular-nums}.hero .cnt span{font-size:13px;color:#A3ABB4}.hero .cnt>div{white-space:nowrap}
-.hero .live{position:relative;height:150px;border-radius:20px;overflow:hidden;background:#1A1F25}.hero .live svg{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity .5s}.hero .live svg.on{opacity:1}
+.mode{flex-basis:100%;order:9;font-size:12.5px;color:#5B6670;margin:0}.hero .live{position:relative;height:150px;border-radius:20px;overflow:hidden;background:#1A1F25}.hero .live svg{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity .5s}.hero .live svg.on{opacity:1}
 .hero .live .cap{position:absolute;left:16px;bottom:12px;font-size:13px;color:#A3ABB4}.hero .live .cap b{color:#EEF1F4;font-weight:500}
 .fbar{display:flex;gap:8px;align-items:center;margin-left:auto}.dd{position:relative}.dd summary{list-style:none;display:flex;gap:6px;align-items:center;height:38px;padding:0 14px;border:1px solid var(--line);border-radius:19px;font-size:14px;cursor:pointer;background:#fff;white-space:nowrap}.dd summary::-webkit-details-marker{display:none}.dd summary span{color:var(--sub)}.dd summary b{font-weight:600}.dd summary::after{content:"▾";font-size:11px;color:var(--sub)}.dd[open] summary{border-color:var(--ink)}
 .dd .menu{position:absolute;top:44px;right:0;min-width:190px;max-height:60vh;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px rgba(16,19,23,.16);padding:6px;display:flex;flex-direction:column;z-index:30}.dd .menu button{height:40px;text-align:left;padding:0 12px;border:0;border-radius:8px;background:#fff;font-size:14px}.dd .menu button:hover{background:var(--g)}.dd .menu button[aria-pressed=true]{background:var(--ts);color:var(--t);font-weight:600}.dd .menu label{display:flex;gap:8px;align-items:center;min-height:40px;padding:0 10px;font-size:14px;white-space:nowrap}.dd .menu input{width:16px;height:16px;accent-color:var(--t)}
@@ -120,13 +120,13 @@ function swap(el,si){var it=item(el.dataset.k),s=it.samples[si],old=el.dataset.k
 all('[data-var]',el).forEach(function(b){b.setAttribute('aria-pressed',Number(b.dataset.var)===si?'true':'false');});var c=$('input[data-cmp]',el);c.dataset.cmp=it.key+'#'+si;if(i>=0)cmp[i]=c.dataset.cmp;bar();}
 function tcard(t){return '<article class="type" data-t="'+esc(t.key)+'"><button type="button" class="pv" data-topen aria-label="'+esc(t.name)+' 자세히 보기">'+t.sketch_svg+'</button><div class="bd"><div class="tags"><span>'+esc(t.form_label)+'</span><span class="soon">준비 중 · 엔진 없음</span></div><h3>'+esc(t.name)+'</h3><p class="sm">'+esc(t.shows)+'</p><div class="chips">'+t.controls.map(function(c){return '<span>'+esc(c)+'</span>';}).join('')+'</div><div class="eng">필요한 엔진 <b>'+esc(t.engine_name)+'</b></div><div class="ft"><span></span><button type="button" class="add req" data-req aria-pressed="false">필요해요</button></div></div></article>';}
 function build(){var h='',groups=grp==='form'?D.forms:D.quantities.map(function(x){return [x,x];}),open=D.types.filter(function(t){return !t.covered_by.length;});
+h+='<section class="shelf" data-shelf="set"><header><h2>세트</h2><span>지금 한 번에 담을 수 있는 묶음</span></header><p id="setnote" class="sm" role="status" hidden></p><div class="rail">'+D.sets.map(function(s,i){return '<article class="set"><h3>'+esc(s.name)+'</h3><p>'+esc(s.summary)+'</p><ul>'+s.items.map(function(k){return '<li>'+esc(item(k).name)+'</li>';}).join('')+'</ul>'+(s.condition&&s.condition.note?'<p class="sm setcond">'+esc(s.condition.note)+'</p>':'')+'<button type="button" class="add" style="margin:auto 0 0" data-set="'+i+'">세트 담기</button></article>';}).join('')+'</div></section>';
+groups.forEach(function(f){var its=D.items.filter(function(x){return x[grp]===f[0];});if(!its.length)return;var n=its.reduce(function(a,x){return a+x.samples.length;},0);
+h+='<section class="shelf" data-shelf="'+esc(f[0])+'"><header><h2>'+esc(f[1])+'</h2><span><b data-n></b> · 지금 쓸 수 있는 상품 '+its.length+'가지, 조건 '+n+'개</span><div class="nav"><button type="button" data-go="-1" aria-label="앞으로">‹</button><button type="button" data-go="1" aria-label="뒤로">›</button></div></header><div class="rail">'
++its.map(function(it){return card(it,0);}).join('')+'</div></section>';});
+h+='<details class="old" id="soon"><summary>확장 예정 (엔진이 없는 것)<small>준비 중 '+open.length+'가지 · 아직 계산하지 못하고 실행 단추도 없습니다</small></summary>';
 groups.forEach(function(f){var ts=open.filter(function(x){return x[grp]===f[0];});if(!ts.length)return;
 h+='<section class="shelf tshelf" data-shelf="t-'+esc(f[0])+'"><header><h2>'+esc(f[1])+'</h2><span><b data-n></b> · 준비 중 '+ts.length+'가지</span><div class="nav"><button type="button" data-go="-1" aria-label="앞으로">‹</button><button type="button" data-go="1" aria-label="뒤로">›</button></div></header><div class="rail">'+ts.map(tcard).join('')+'</div></section>';});
-h+='<details class="old" id="old"><summary>지금 되는 것 (체결 사례)<small>준비 중 '+open.length+'개 · 지금 되는 것 '+D.items.length+'개 (엔진을 실제로 돌린 결과)</small></summary>';
-h+='<section class="shelf" data-shelf="set"><header><h2>세트</h2><span>한 번에 담는 묶음</span></header><div class="rail">'+D.sets.map(function(s,i){return '<article class="set"><h3>'+esc(s.name)+'</h3><p>'+esc(s.summary)+'</p><ul>'+s.items.map(function(k){return '<li>'+esc(item(k).name)+'</li>';}).join('')+'</ul><button type="button" class="add" style="margin:auto 0 0" data-set="'+i+'">세트 담기</button></article>';}).join('')+'</div></section>';
-groups.forEach(function(f){var its=D.items.filter(function(x){return x[grp]===f[0];});if(!its.length)return;var n=its.reduce(function(a,x){return a+x.samples.length;},0);
-h+='<section class="shelf" data-shelf="'+esc(f[0])+'"><header><h2>'+esc(f[1])+'</h2><span><b data-n></b> · 상품 '+its.length+'가지, 조건 '+n+'개</span><div class="nav"><button type="button" data-go="-1" aria-label="앞으로">‹</button><button type="button" data-go="1" aria-label="뒤로">›</button></div></header><div class="rail">'
-+its.map(function(it){return card(it,0);}).join('')+'</div></section>';});
 h+='</details>';$('#shelves').innerHTML=h;}
 function apply(){var on=areas(),total=0;all('.shelf').forEach(function(sh){if(sh.classList.contains('tshelf')){var ts=0;all('.type',sh).forEach(function(el){var t=typ(el.dataset.t),text=(t.name+' '+t.shows+' '+t.controls.join(' ')+' '+t.engine_name+' '+t.quantity+' '+t.form_label+' '+t.group).toLowerCase(),ok=(form==='all'||t.form===form)&&(use==='all'||t.uses.indexOf(use)>=0)&&(!q||text.indexOf(q)>=0);el.hidden=!ok;if(ok)ts++;var r=hasReq(t.key);el.classList.toggle('rq',r);var b=$('.add',el);b.textContent=r?'필요해요 ✓':'필요해요';b.classList.toggle('in',r);b.setAttribute('aria-pressed',r?'true':'false');});sh.hidden=!ts;total+=ts;var nn=$('[data-n]',sh);if(nn)nn.textContent='보이는 것 '+ts;return;}if(sh.dataset.shelf==='set'){sh.hidden=!!q||form!=='all'||use!=='all';return;}var shown=0;
 all('.item',sh).forEach(function(el){var it=item(el.dataset.k),text=(it.name+' '+it.samples.map(function(x){return x.label;}).join(' ')+' '+it.summary+' '+it.area+' '+it.quantity+' '+it.form_label+' '+it.needs+' '+it.gives).toLowerCase();
@@ -155,7 +155,7 @@ if(tb&&tb.id==='t-close'){$('#tdetail').close();return;}if(tc&&(tb?tb.dataset.to
 var b=e.target.closest&&e.target.closest('button');if(!b){var cd=e.target.closest&&e.target.closest('.item');if(cd&&!e.target.closest('label,input'))detail(cd.dataset.k,Number(cd.dataset.s),cd);return;}var el=b.closest('.item');
 if(b.dataset.var!=null&&el){swap(el,Number(b.dataset.var));return;}if(b.dataset.grp!=null){grp=b.dataset.grp;all('[data-grp]').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});build();apply();return;}
 if(b.dataset.open!=null&&el){detail(el.dataset.k,Number(el.dataset.s),el);return;}if(b.dataset.openK){detail(b.dataset.openK,0);return;}
-if(b.dataset.add!=null&&el){addPick(el.dataset.k,Number(el.dataset.s));apply();return;}if(b.dataset.set!=null){D.sets[Number(b.dataset.set)].items.forEach(function(k){if(!has(k))addPick(k,0);});apply();return;}
+if(b.dataset.add!=null&&el){addPick(el.dataset.k,Number(el.dataset.s));apply();return;}if(b.dataset.set!=null){var st=D.sets[Number(b.dataset.set)],pk=(st.condition&&st.condition.pick)||{};st.items.forEach(function(k){if(!has(k))addPick(k,pk[k]||0);});var nt=$('#setnote');if(nt){nt.textContent=st.name+': '+(st.condition&&st.condition.note||'조건 변수가 없는 상품만 있어 그대로 담습니다');nt.hidden=false;}apply();return;}
 if(b.dataset.form!=null){form=b.dataset.form;all('[data-form]').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});apply();return;}
 if(b.dataset.use!=null){use=b.dataset.use;all('[data-use]').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});apply();return;}
 if(b.dataset.go!=null){var r=$('.rail',b.closest('.shelf'));r.scrollBy({left:Number(b.dataset.go)*r.clientWidth*0.85,behavior:'smooth'});return;}
@@ -176,13 +176,13 @@ $('#own-col').innerHTML=ownN.map(function(x,i){return '<option value="'+i+'">'+e
 $('#own-time').innerHTML='<option value="-1">없음 (샘플링 주파수를 적습니다)</option>'+ownN.map(function(x,i){return '<option value="'+i+'">'+esc(x)+'</option>';}).join('');$('#own-time').value=String(ti);
 $('#own-col').disabled=$('#own-time').disabled=false;$('#own-go').disabled=false;m.textContent=ownN.length+'개 열을 읽었습니다. 값 열을 확인하세요.';ownFs();};r.onerror=function(){m.textContent='파일을 읽지 못했습니다.';};r.readAsText(f);});
 $('#own-time').addEventListener('change',ownFs);
-$('#own-form').addEventListener('submit',function(e){e.preventDefault();if(!ownText||!cur||!cur.own)return;var m=$('#own-msg'),f=$('#own-file').files[0];m.textContent='엔진이 계산하는 중입니다.';
+$('#own-form').addEventListener('submit',function(e){e.preventDefault();if(!ownText||!cur||!cur.own)return;var m=$('#own-msg'),f=$('#own-file').files[0],asked=cur;m.textContent='엔진이 계산하는 중입니다.';
 var body={key:cur.key,csv:ownText,column:Number($('#own-col').value),time_column:Number($('#own-time').value),fs:$('#own-fs').value,fmax:$('#own-fmax').value,unit:$('#own-unit').value,filename:f?f.name:''};
 fetch(D.analyze_url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.json();}).then(function(s){if(s.error){m.textContent=s.error;return;}
-var i=cur.samples.map(function(x){return x.label;}).indexOf(s.label);if(i<0){cur.samples.push(s);i=cur.samples.length-1;}else cur.samples[i]=s;curS=i;sample();m.textContent='계산했습니다: '+s.label;}).catch(function(){m.textContent='서버에 닿지 못했습니다.';});});
-$('#mk').addEventListener('submit',function(e){e.preventDefault();var body={key:cur.key,size:$('#mk-size').value,torque:$('#mk-torque').value};$('#mk-msg').textContent='엔진이 계산하는 중입니다.';
+var tg=asked,i=tg.samples.map(function(x){return x.label;}).indexOf(s.label);if(i<0){tg.samples.push(s);i=tg.samples.length-1;}else tg.samples[i]=s;if(cur===tg){curS=i;sample();m.textContent='계산했습니다: '+tg.name+' · '+s.label;}else m.textContent='「'+tg.name+'」에 계산 결과를 더했습니다. 지금 보는 상품에는 반영하지 않았습니다.';}).catch(function(){m.textContent='서버에 닿지 못했습니다.';});});
+$('#mk').addEventListener('submit',function(e){e.preventDefault();var body={key:cur.key,size:$('#mk-size').value,torque:$('#mk-torque').value},asked=cur;$('#mk-msg').textContent='엔진이 계산하는 중입니다.';
 fetch(D.make_url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.json();}).then(function(s){if(s.error){$('#mk-msg').textContent=s.error;return;}
-var i=cur.samples.map(function(x){return x.label;}).indexOf(s.label);if(i<0){cur.samples.push(s);i=cur.samples.length-1;}curS=i;sample();$('#mk-msg').textContent='다시 만들었습니다: '+s.label;}).catch(function(){$('#mk-msg').textContent='답을 받지 못했습니다. 서버가 켜져 있는지 확인해 주세요.';});});
+var tg=asked,i=tg.samples.map(function(x){return x.label;}).indexOf(s.label);if(i<0){tg.samples.push(s);i=tg.samples.length-1;}else tg.samples[i]=s;if(cur===tg){curS=i;sample();$('#mk-msg').textContent='다시 만들었습니다: '+tg.name+' · '+s.label;}else $('#mk-msg').textContent='「'+tg.name+'」에 결과를 더했습니다. 지금 보는 상품에는 반영하지 않았습니다.';}).catch(function(){$('#mk-msg').textContent='답을 받지 못했습니다. 서버가 켜져 있는지 확인해 주세요.';});});
 /* 맨 위의 살아 있는 한 장: 조이는 과정의 장면을 차례로 */
 (function(){var fr=all('#live svg'),cap=$('#livecap'),i=0;if(!fr.length)return;function show(){fr.forEach(function(x,k){x.classList.toggle('on',k===i);});cap.innerHTML=D.hero.caps[i];}
 show();if(!(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches))setInterval(function(){i=(i+1)%fr.length;show();},1100);})();
@@ -223,9 +223,10 @@ def render_store(items: Sequence[Mapping[str, Any]], data: Mapping[str, Any] | N
             caps.append(f'조이는 과정 · {e(f["joint"].size)} · <b>{x["torque"]:.1f} N·m → {x["preload"]:,.0f} N</b>')
     from cont.packs.fastening.standards import thread_sizes
     T = types_data()
-    blob = json.dumps({"types": T["types"], "engines": T["engines"], "items": list(items), "forms": [[k, v] for k, v in forms.items()], "sets": list(sets), "make_url": make_url, "analyze_url": analyze_url, "compare_max": COMPARE_MAX, "card_variants": CARD_VARIANTS, "quantities": list(data["quantities"]), "meshes": meshes(items),
+    blob = json.dumps({"types": T["types"], "engines": T["engines"], "items": list(items), "forms": [[k, v] for k, v in forms.items()], "sets": [{**x, "condition": set_condition(items, x)} for x in sets], "make_url": make_url, "analyze_url": analyze_url, "compare_max": COMPARE_MAX, "card_variants": CARD_VARIANTS, "quantities": list(data["quantities"]), "meshes": meshes(items),
                        "hero": {"caps": caps}}, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     body = f"""<header class="top"><span class="name">ConT FAB<small>고르기</small></span>
+<p class="mode" id="mode" role="status">{"실시간 작업 가능: 규격·조건을 바꾸면 엔진이 다시 계산합니다." if (make_url or analyze_url) else "공개 시연: 미리 계산한 샘플만 보입니다. 직접 계산은 서버로 띄운 화면에서 됩니다."}</p>
 <label class="find"><svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12.2 12.2L16 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
 <input type="search" id="q" aria-label="물리 정보 찾기" placeholder="찾기: 응력, 4D, 전류, M12" autocomplete="off"></label>
 <nav class="fbar" aria-label="거르기">
@@ -272,6 +273,39 @@ def render_store(items: Sequence[Mapping[str, Any]], data: Mapping[str, Any] | N
     return with_switcher(page, "fab")
 
 
+def record_run(action: str, inputs: Mapping[str, Any], sample: Mapping[str, Any]) -> str:
+    """저장소가 켜져 있으면(CONT_RUN_DIR) 결과를 실행 한 건으로 남기고 run_id를 돌려준다. 꺼져 있으면 빈 문자열. 올린 파일 본문은 해시만 남긴다."""
+    import hashlib
+    from cont.service import api, runs
+    st = runs.store()
+    if st is None:
+        return ""
+    ins = {k: v for k, v in inputs.items() if k != "csv"}
+    if "csv" in inputs:
+        ins["csv_sha256"] = hashlib.sha256(str(inputs["csv"]).encode("utf-8")).hexdigest()
+    body = json.loads(json.dumps(sample, ensure_ascii=False, default=str))
+    rid = api.new_run_id()
+    st.save({"run_id": rid, "created_at": runs.now(), "pack": "fab", "action": action, "question": "", "inputs": ins,
+             "model_version": runs.model_version("fab"), "project_id": "", "asset_id": "", "parent_run_id": "", "status": "complete",
+             "error": "", "response": body, "content_hash": hashlib.sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest(), "revision_id": ""})
+    return rid
+
+
+def stored_sample(run_id: str) -> dict[str, Any]:
+    """저장된 실행에서 샘플을 읽는다. 저장소가 꺼져 있거나 없는 실행이면 KeyError, 기록이 깨졌으면 ValueError."""
+    from cont.service import runs
+    st = runs.store()
+    if st is None:
+        raise KeyError("실행 저장소가 켜져 있지 않습니다")
+    try:
+        rec = st.get(run_id)
+    except runs.RunNotFound:
+        raise KeyError(run_id) from None
+    if rec.get("pack") != "fab" or not isinstance(rec.get("response"), dict):
+        raise KeyError(run_id)
+    return rec["response"]
+
+
 def make_server(port: int = 8768) -> ThreadingHTTPServer:
     page = render_store(catalog(), make_url="/make", analyze_url="/analyze").encode("utf-8")
 
@@ -283,6 +317,14 @@ def make_server(port: int = 8768) -> ThreadingHTTPServer:
         def do_GET(self) -> None:  # noqa: N802
             if self.path in ("/", "/index.html"):
                 self._send(200, page, "text/html; charset=utf-8")
+            elif self.path.startswith("/run/"):
+                try:
+                    out = {"sample": stored_sample(self.path[5:])}
+                except KeyError:
+                    return self._send(404, json.dumps({"error": "저장된 결과를 찾지 못했습니다"}, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
+                except ValueError as exc:
+                    return self._send(500, json.dumps({"error": f"저장된 기록이 깨졌습니다: {exc}"}, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
+                self._send(200, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
             else:
                 self._send(404, b"not found", "text/plain")
 
@@ -295,7 +337,9 @@ def make_server(port: int = 8768) -> ThreadingHTTPServer:
                 if not 0 < n <= (MAX_UPLOAD if analyze else MAX_BODY):
                     raise ValueError("요청을 읽지 못했거나 파일이 너무 큽니다" if analyze else "요청을 읽지 못했습니다")
                 d = json.loads(self.rfile.read(n))
+                ins = d if analyze else {"key": str(d.get("key", "")), "size": d.get("size", ""), "torque": d.get("torque")}
                 out = own_sample(str(d.get("key", "")), d) if analyze else make(str(d.get("key", "")), {"size": d.get("size", ""), "torque": d.get("torque")})
+                out = {**out, "run_id": record_run("analyze" if analyze else "make", ins, out)}
             except Exception as exc:        # 계산할 수 없는 조건이면 이유를 돌려준다 (화면은 그대로 둔다)
                 return self._send(200, json.dumps({"error": (f"이 파일로는 볼 수 없습니다: {exc}" if analyze else f"이 조건으로는 만들지 못했습니다: {exc}")}, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
             self._send(200, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")

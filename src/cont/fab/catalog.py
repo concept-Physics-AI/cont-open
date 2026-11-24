@@ -157,3 +157,24 @@ def types_data() -> dict[str, Any]:
                     "engine": "" if covered else t["engine"], "engine_name": "" if covered else engines[t["engine"]]["name"],
                     "needs": t.get("needs", ""), "ready": t.get("ready", ""), "sketch_svg": svg})
     return {"engines": {k: dict(v) for k, v in engines.items()}, "types": out}
+
+
+def set_condition(items: Sequence[Mapping[str, Any]], one_set: Mapping[str, Any]) -> dict[str, Any]:
+    """세트를 담을 때 쓸 조건. 같은 대상(규격)의 결과가 모든 상품에 있으면 그 조건으로 묶고(common),
+    없으면 서로 다른 조건의 비교용으로 담김을 알린다(mixed). 조건 변수가 없는 상품만 있으면 none.
+    표기만 맞추지 않는다: 각 상품에서 실제로 계산해 둔 샘플만 고른다."""
+    by_key = {i["key"]: i for i in items}
+    members = [by_key[k] for k in one_set["items"] if k in by_key]
+    sized = [m for m in members if any((s.get("params") or {}).get("size") for s in m["samples"])]
+    if not sized:
+        return {"mode": "none", "pick": {}, "note": ""}
+    sizes = [[(s.get("params") or {}).get("size") for s in m["samples"]] for m in sized]
+    common = [z for z in dict.fromkeys(sizes[0]) if z and all(z in x for x in sizes)]
+    if common:
+        z = common[0]
+        pick = {m["key"]: next(i for i, s in enumerate(m["samples"]) if (s.get("params") or {}).get("size") == z) for m in sized}
+        lab = next(s["label"] for s in sized[0]["samples"] if (s.get("params") or {}).get("size") == z)
+        return {"mode": "common", "pick": pick, "note": f"같은 대상과 조건({lab})으로 담습니다"}
+    pick = {m["key"]: 0 for m in sized}
+    conds = ", ".join(f'{m["name"]} {m["samples"][0]["label"]}' for m in sized)
+    return {"mode": "mixed", "pick": pick, "note": f"공통으로 쓸 규격이 없어 서로 다른 조건의 비교용으로 담습니다 ({conds})"}

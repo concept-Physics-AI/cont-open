@@ -108,7 +108,7 @@ def test_pack_gives_the_common_answer_format_and_the_screen_renders(tmp_path):
     assert {"diagnosis", "fastening"} <= set(packs.names())
     assert ans.method.startswith("통계 기준 비교") and ans.confidence.level == "low" and ans.value("anomaly_intervals") == 1
     assert set(ans.to_dict()) == {"question", "quantities", "method", "basis", "confidence", "presentation", "retention", "inputs",
-                      "status", "source", "uncertainty", "residuals", "validation", "scope", "failure_conditions", "fields", "provenance"}
+                      "status", "source", "uncertainty", "residuals", "validation", "evidence_level", "scope", "failure_conditions", "fields", "provenance"}
     page = render_diagnosis(synthetic_case())
     assert page.startswith("<!DOCTYPE html>") and page.count("<svg") == 3 and "이상 징후 2건" in page and "http" not in page
     out = tmp_path / "demo.html"

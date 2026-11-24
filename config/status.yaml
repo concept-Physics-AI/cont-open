@@ -21,7 +21,7 @@ items:
 - key: product_fab
   name: ConT Fab
   status: 뼈대
-  scope: 고르는 곳만 있음 (꾸리는 곳, 시나리오, 공장 화면은 없음)
+  scope: 고르기와 기본 구성기 있음 (조건·크기·순서 설정, 브라우저 저장과 파일 재열기). 현장 신호 연결은 기록만, 계산 결과의 실행 단위 복원, 시나리오, 공장 화면은 없음
   evidence:
   - src/cont/fab
 - key: c1_dialogue

@@ -33,6 +33,12 @@ VALIDATION_COMPARED = "compared"   # 기준값·실측과 대조해 편차를 �
 VALIDATION_LABELS = {VALIDATION_NONE: "검증 전", VALIDATION_COMPARED: "기준값과 대조함"}
 NOT_REPORTED = "보고하지 않음"
 
+# 증거 수준: 이 결과가 어디까지 확인됐는가 (ARCHITECTURE.md). E3 이상은 판정 기준이 정해질 때 연다.
+EVIDENCE_NONE = "E0"       # 물리 증거 없음
+EVIDENCE_REFERENCE = "E1"  # 일관된 기준 계산과 불변식 (식을 구현해 내부 일관성을 확인함)
+EVIDENCE_ANALYTIC = "E2"   # 해석해·표준 기준 문제와 일치. 합성 자료나 가정한 식과의 일치는 해당하지 않는다
+EVIDENCE_LABELS = {EVIDENCE_NONE: "물리 증거 없음", EVIDENCE_REFERENCE: "기준 계산과 불변식 확인", EVIDENCE_ANALYTIC: "해석해·표준 기준과 일치"}
+
 # 식별가능성: 그 관측으로 그 값을 가려낼 수 있는 정도. 점수 하나로 줄이는 식이 정해져 있지 않아 세 단계와 근거 숫자로 낸다 (docs/hidden_physics.md 5절).
 IDENT_OK = "identifiable"
 IDENT_WEAK = "weak"
@@ -128,6 +134,7 @@ class PhysicsAnswer:
     uncertainty: str = ""                                 # 불확실성을 어떻게 반영했는가. 비우면 "보고하지 않음"
     residuals: tuple[Residual, ...] = ()                  # 물리잔차. 비우면 "보고하지 않음"
     validation: str = VALIDATION_NONE
+    evidence_level: str = EVIDENCE_NONE                   # 증거 수준 (E0~E2). 팩이 근거를 갖출 때만 올린다
     scope: str = ""                                       # 적용 범위
     failure_conditions: tuple[str, ...] = ()              # 이 결과가 맞지 않게 되는 조건
     fields: tuple[Field, ...] = ()                        # 물리장. 팩이 분포를 계산했을 때만 채운다
@@ -143,6 +150,8 @@ class PhysicsAnswer:
         return self.get(key).value
 
     def __post_init__(self) -> None:
+        if self.evidence_level not in EVIDENCE_LABELS:
+            raise ValueError(f"evidence_level must be one of {sorted(EVIDENCE_LABELS)}")
         keys = {q.key for q in self.quantities}
         for q in self.quantities:
             missing = [e for e in q.evidence if e not in keys]
@@ -219,10 +228,20 @@ class PhysicsAnswer:
             ["불확실성", self.uncertainty or NOT_REPORTED],
             ["물리잔차", residual or NOT_REPORTED],
             ["검증 상태", f"{VALIDATION_LABELS[self.validation]}. {self.confidence.reason}"],
+            ["증거 수준", f"{self.evidence_level} {EVIDENCE_LABELS[self.evidence_level]}"],
             ["적용 범위", self.scope or NOT_REPORTED],
             ["실패 조건", "; ".join(self.failure_conditions) or NOT_REPORTED],
             ["개정", f"{self.revision_id()}. 만든 곳: {self.provenance.producer or NOT_REPORTED}. 바탕 개정: {self.provenance.parent_revision or '없음'}"],
         ]
+
+    def truth_line(self) -> str:
+        """화면 맨 아래 한 줄 요약 (진실 표시줄). 이 묶음이 가진 값만 모으고 새 값을 만들지 않는다. 없는 항목은 "보고하지 않음"."""
+        kinds = self.statuses() or (self.status,)
+        n_evidence = len({e for q in self.quantities for e in q.evidence})
+        rev = self.revision_id()
+        run = self.provenance.run_id or NOT_REPORTED
+        return (f"{'·'.join(STATUS_LABELS[k] for k in kinds)} · 개정 {rev} · 실행 {run} · 증거 {n_evidence}개 · {VALIDATION_LABELS[self.validation]}"
+                f" · 증거 수준 {self.evidence_level} · 렌더러 버전·사람 승인: {NOT_REPORTED}")
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

@@ -1,0 +1,11 @@
+# 시험용으로 아주 짧게 도는 설정. 수렴을 기대하지 않는다 (재현성·배선 점검용).
+seed: 0
+hidden: [16, 16]
+activation: tanh
+epochs: 30
+learning_rate: 0.01
+n_interior: 200
+n_boundary: 40
+n_initial: 40
+weights: {pde: 1.0, boundary: 1.0, initial: 1.0}
+dtype: float64
