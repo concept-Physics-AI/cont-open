@@ -43,4 +43,4 @@ def names() -> list[str]:
 
 
 def _load_builtin() -> None:
-    from cont.packs import diagnosis, fastening, machining  # noqa: F401  (등록은 import 시점에 일어난다)
+    from cont.packs import diagnosis, fastening, heat, machining  # noqa: F401  (등록은 import 시점에 일어난다)
