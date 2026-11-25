@@ -88,3 +88,48 @@ items:
   status: 없음
   scope: 가상 신호와 합성 관측으로만 확인했다
   evidence: []
+
+# 제품 핵심 흐름. 뼈대는 기존 구성요소가 있다는 뜻이며 통합 완료가 아니다.
+- key: generative_conversation
+  name: 핵심 1 실제 대화와 문맥 유지
+  status: 뼈대
+  scope: LLM 어댑터와 제한된 최근 이력 전달. 실제 공급자 10턴 반복과 프로젝트별 사용자 격리는 미확인
+  evidence:
+  - src/cont/llm
+  - src/cont/dialogue/context.py
+- key: generative_plan
+  name: 핵심 2 작업 계획과 순차 실행
+  status: 뼈대
+  scope: 계획 검증·도구 실행·체크포인트 코드. 실제 LLM 계획 생성과 생성 도구·진행 화면의 통합은 미완료
+  evidence:
+  - src/cont/dialogue/plan.py
+  - src/cont/dialogue/plan_store.py
+- key: generative_outputs
+  name: 핵심 3 다양한 결과물 생성
+  status: 뼈대
+  scope: 체결 계산 결과 렌더러와 이미지 생성 인터페이스·Fake/diffusers 어댑터·SDXL 설정. 실제 가중치 생성 인수는 미확인, 본딩 장면 생성은 없음
+  evidence:
+  - src/cont/generation
+  - src/cont/view
+  - src/cont/shape
+- key: generative_selection_edit
+  name: 핵심 4 선택한 결과 편집
+  status: 없음
+  scope: 기존 체결 조건 변경은 있으나 이미지 영역·부품·그래프·공정 단계의 공통 선택 편집 흐름은 없음
+  evidence: []
+- key: generative_consistency
+  name: 핵심 5 결과 간 일관성
+  status: 뼈대
+  scope: 물리 답변과 실행·원본 자료 기록 기반. 생성 이미지·장면의 공통 대상 구조와 의존 갱신·시간축 통합은 미완료
+  evidence:
+  - src/cont/answer.py
+  - src/cont/service/runs.py
+  - src/cont/service/ledger.py
+- key: generative_resume
+  name: 핵심 6 작업 저장과 이어 하기
+  status: 뼈대
+  scope: 실행 저장·계획 체크포인트·Fab 구성 저장 기반. 대화·선택·카메라·재생 상태를 포함한 프로젝트 전체 재개는 미완료
+  evidence:
+  - src/cont/service/runs.py
+  - src/cont/dialogue/plan_store.py
+  - src/cont/fab

@@ -11,7 +11,6 @@
 | [README.md](../README.md) | 참고 |
 | [docs/diagnosis.md](diagnosis.md) | 보조 |
 | [docs/heat_stack.md](heat_stack.md) | 보조 |
-| [docs/generation.md](generation.md) | 보조 |
 | [docs/diagnosis_screen.md](diagnosis_screen.md) | 보조 |
 | [docs/direction_generalization.md](direction_generalization.md) | 기록 |
 | [docs/fab_store.md](fab_store.md) | 보조 |
@@ -38,4 +37,6 @@
 | [docs/validation_intake.md](validation_intake.md) | 보조 |
 | [docs/signal_analysis.md](signal_analysis.md) | 보조 |
 | [docs/archive_adoption.md](archive_adoption.md) | 참고 |
+| [docs/generative_workflow.md](generative_workflow.md) | 보조 |
+| [docs/differentiation.md](differentiation.md) | 참고 |
 | docs/INDEX.md (이 문서) | 보조 |
