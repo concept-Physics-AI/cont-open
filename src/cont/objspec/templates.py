@@ -20,9 +20,10 @@ def hybrid_bonding_stack(gap: float = 2.0, offset: float = 1.0) -> ObjectSpec:
         ObjPart("die.si", Part("위 다이(실리콘)", "substrate", 1.4, 2.0, 14.0), "die"),
     )
     top = ("die.dielectric", "die.si")
+    start = tuple((i, Pose(dz=gap * 2.0, dx=offset)) for i in top)
     stages = (
         Stage("approach", "접근", tuple((i, Pose(dz=gap, dx=offset)) for i in top)),
         Stage("align", "정렬", tuple((i, Pose(dz=gap, dx=0.0)) for i in top)),
         Stage("contact", "접촉", tuple((i, Pose(dz=0.0, dx=0.0)) for i in top)),
     )
-    return ObjectSpec("하이브리드 본딩 층 구조", parts, stages, dimension_status="illustrative")
+    return ObjectSpec("하이브리드 본딩 층 구조", parts, stages, start=start, dimension_status="illustrative")

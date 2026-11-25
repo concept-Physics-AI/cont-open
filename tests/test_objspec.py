@@ -83,7 +83,7 @@ def test_view_state_ranges(kw):
 
 def test_speed_needs_known_stage_and_sane_factor():
     s = hybrid_bonding_stack()
-    with pytest.raises(ObjectSpecError, match="없는 단계"):
+    with pytest.raises(ObjectSpecError, match="찾지 못했"):
         ViewState().with_speed(s, "zzz", 0.5)
     for f in (0, 0.01, 50, -1):
         with pytest.raises(ObjectSpecError):
@@ -122,7 +122,7 @@ def test_affected_only_representations_that_reference_changed_parts():
 
 def test_affected_includes_removed_and_added_parts():
     s = hybrid_bonding_stack()
-    fewer = dataclasses.replace(s, parts=s.parts[:3], stages=())
+    fewer = dataclasses.replace(s, parts=s.parts[:3], stages=(), start=())
     reps = [_rep(s, "r1", "scene3d", refs=["die.si"]), _rep(s, "r2", "graph", refs=["wafer.si"])]
     assert affected(s, fewer, reps) == {"r1": ["die.si"]}
 

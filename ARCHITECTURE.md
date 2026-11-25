@@ -236,7 +236,7 @@ ConT가 다루는 물리는 두 층이다. **보이는 물리**는 직접 측정
 화면은 `src/cont/view/`(C4 표현)가 답변 묶음과 팩의 상세 결과를 받아 한 파일 HTML로 만든다.
 형상은 `src/cont/shape/`(C5)가 맡는다. 치수에서 도구에 묶이지 않는 형상 명세를 만들고, 화면용 메시와 CAD 파일은 그 명세에서 만든다.
 
-같은 대상을 이미지·3D·4D·그래프가 함께 가리키려면 부품 ID가 필요하다. 이 계약은 `src/cont/objspec/`(공통 대상 명세)가 맡는다. 부품 형상은 기존 `cont.shape.Part`를 그대로 쓰고, 그 위에 부품 ID·층·공정 단계·내용 해시(version)를 더한다. 카메라와 재생 속도는 `ViewState`로 따로 두어 바꿔도 구조 version이 변하지 않는다. 표현이 명세와 어긋나는지(`check`)와, 명세를 고쳤을 때 다시 만들 표현(`affected`)만 정한다. 새 실행·원장 ID를 만들지 않는다. [docs/objspec.md](docs/objspec.md).
+같은 대상을 이미지·3D·4D·그래프가 함께 가리키려면 부품 ID가 필요하다. 이 계약은 `src/cont/objspec/`(공통 대상 명세)가 맡는다. 부품 형상은 기존 `cont.shape.Part`를 그대로 쓰고, 그 위에 부품 ID·층·공정 단계·내용 해시(version)를 더한다. 카메라와 재생 속도는 `ViewState`로 따로 두어 바꿔도 구조 version이 변하지 않는다. 표현이 명세와 어긋나는지(`check`)와, 명세를 고쳤을 때 다시 만들 표현(`affected`)만 정한다. 단계 재생은 `objspec.scene.Timeline`(단계별 자세 보간, 속도는 ViewState)이 정하고, `view/scene4d.py`가 같은 식을 JS로 돌려 3D 장면에서 재생한다. 재생 시간은 설명용이며 물리 시간이 아니다. 새 실행·원장 ID를 만들지 않는다. [docs/objspec.md](docs/objspec.md).
 Studio 대화는 질문의 물리 영역을 먼저 알아본다 (`cont.dialogue.area`, `config/dialogue/areas.yaml`). 대화로 다룰 수 있는 영역은 지금 체결 하나이고, 절삭가공·설비 이상진단 질문은 계산하지 않고 아직 대화가 없다고 알리며, 맞는 영역을 모르면 추측하지 않는다. 영역을 열 때는 이 파일에 키워드를 더하고 `chat`을 켠다.
 대화는 `src/cont/dialogue/`(C1 대화·조율)가 맡는다. 숫자와 판정은 팩이 내고, LLM은 `cont.llm`을 거쳐 말만 다듬으며, LLM이 없어도 규칙으로 답한다.
 
