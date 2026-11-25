@@ -133,3 +133,13 @@ items:
   - src/cont/service/runs.py
   - src/cont/dialogue/plan_store.py
   - src/cont/fab
+- key: generative_evaluation
+  name: 제품 평가 틀 (차별화 가설의 측정)
+  status: 없음
+  scope: 작업 완료율·선택 밖 변경·일관성·재개 성공·지연시간·비용을 재는 측정기와 일반 AI·수동 도구 기준선은 아직 없음(로드맵 Y8)
+  evidence: []
+- key: generative_object_spec
+  name: 공통 대상 명세 (표현 간 같은 부품 ID)
+  status: 없음
+  scope: 본딩 층 구조를 이미지·3D·4D·그래프가 같은 ID로 참조하는 명세는 아직 없음(로드맵 Y9). 기존 형상 명세와 실행·원장 ID는 재사용 후보
+  evidence: []
