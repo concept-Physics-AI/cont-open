@@ -141,3 +141,34 @@ def test_page_renders_and_plays_in_a_real_browser(tmp_path):
         assert "단계 1/3 접근" in pg.inner_text(".info") and pg.inner_text(".play") == "멈춤"
         b.close()
     assert errors == []
+
+
+def test_start_time_is_carried_into_the_scene_data_and_clamped():
+    assert scene_data(S, start_t=3.2)["start_t"] == 3.2
+    h = scene4d(S, start_t=99.0)
+    assert 'value="6.0"' in h                     # 끝을 넘으면 끝으로 자른다
+    assert 'value="2.5"' in scene4d(S, start_t=2.5)
+
+
+@pytest.mark.skipif(_chrome() is None, reason="Chrome이 없으면 브라우저 점검을 건너뛴다")
+def test_reopened_project_scene_starts_at_saved_position(tmp_path):
+    sync_api = pytest.importorskip("playwright.sync_api")
+    from cont.service.project import open_project, save_project
+    view = ViewState().with_camera(azimuth=100.0).with_speed(S, 2, 0.5)
+    save_project(tmp_path / "proj", "p1", "본딩", S, view, ("die.si",), 3.2)
+    o = open_project(tmp_path / "proj")
+    page = tmp_path / "scene.html"
+    page.write_text(scene4d_page(o.state.spec, o.state.view, start_t=o.state.playback_t), encoding="utf-8")
+    with sync_api.sync_playwright() as p:
+        b = p.chromium.launch(executable_path=_chrome(), args=["--no-sandbox", "--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"])
+        pg = b.new_page(viewport={"width": 800, "height": 700})
+        pg.goto(page.as_uri())
+        try:
+            pg.wait_for_selector("canvas[data-ready='1']", timeout=8000)
+        except Exception:
+            if "3D 보기를 쓸 수 없습니다" in pg.inner_text(".msg"):
+                pytest.skip("이 환경의 브라우저에는 WebGL이 없다")
+            raise
+        info = pg.inner_text(".info")
+        b.close()
+    assert "설명용 재생 3.2/8.0 s" in info and "단계 2/3 정렬" in info and "속도 0.5배" in info

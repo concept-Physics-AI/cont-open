@@ -130,6 +130,21 @@ class ObjectSpec:
                         "poses": [{"part": pid, "dz": ps.dz, "dx": ps.dx} for pid, ps in s.poses]} for s in self.stages],
         }
 
+    @classmethod
+    def from_dict(cls, d: dict[str, Any], parent_version: str = "") -> "ObjectSpec":
+        """to_dict()의 역. 저장한 명세를 다시 읽을 때 쓴다. 빠지거나 잘못된 항목은 ObjectSpecError로 거절한다."""
+        try:
+            parts = tuple(ObjPart(p["id"], Part(p["name"], p["role"], p["z0"], p["z1"], p["outer"], p.get("inner", 0.0),
+                                                p.get("profile", "circle"), p.get("sweep", 360.0)), p.get("layer", "")) for p in d["parts"])
+            start = tuple((x["part"], Pose(x["dz"], x["dx"])) for x in d.get("start", []))
+            stages = tuple(Stage(s["id"], s["name"], tuple((x["part"], Pose(x["dz"], x["dx"])) for x in s["poses"])) for s in d.get("stages", []))
+            return cls(d["name"], parts, stages, start, d.get("dimension_status", "illustrative"),
+                       d.get("time_axis", "process_stage"), parent_version)
+        except (KeyError, TypeError, ValueError, AttributeError) as e:
+            if isinstance(e, ObjectSpecError):
+                raise
+            raise ObjectSpecError(f"명세를 읽을 수 없습니다: {type(e).__name__}: {e}") from None
+
     @property
     def version(self) -> str:
         body = json.dumps(self.to_dict(), sort_keys=True, ensure_ascii=False, separators=(",", ":"))
@@ -184,6 +199,18 @@ class ViewState:
         for sid, f in self.stage_speed:
             if not (isinstance(f, (int, float)) and 0.05 <= f <= 20):
                 raise ObjectSpecError(f"단계 {sid}의 배속 {f}: 0.05~20 사이여야 합니다")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"azimuth": self.azimuth, "elevation": self.elevation, "distance": self.distance,
+                "stage_speed": [[sid, f] for sid, f in self.stage_speed]}
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> "ViewState":
+        try:
+            return cls(float(d["azimuth"]), float(d["elevation"]), float(d["distance"]),
+                       tuple((str(s), float(f)) for s, f in d.get("stage_speed", [])))
+        except (KeyError, TypeError, ValueError) as e:
+            raise ObjectSpecError(f"보기 상태를 읽을 수 없습니다: {e}") from None
 
     def speed_of(self, stage_id: str) -> float:
         return dict(self.stage_speed).get(stage_id, 1.0)
