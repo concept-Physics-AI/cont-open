@@ -11,6 +11,11 @@ concepts:
   owner: src/cont/tolerance.py
   defines: [Tolerance, Check]
   rule: 기본은 판정 없이 편차만 보고한다. 값은 config/tolerances에 둔다.
+- key: object_spec
+  name: 공통 대상 명세 (부품 ID, 공정 단계, 보기 상태)
+  owner: src/cont/objspec/spec.py
+  defines: [ObjectSpec, ObjPart, ViewState]
+  rule: 이미지·3D·4D·그래프가 같은 대상을 가리킬 때는 이 명세의 부품 ID를 쓴다. 같은 이름의 클래스를 다시 정의하지 않는다.
 sdk_boundaries:
 - key: llm_provider
   name: LLM 공급자 SDK와 네트워크 호출

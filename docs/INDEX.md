@@ -21,6 +21,7 @@
 | [docs/fastening_sensing.md](fastening_sensing.md) | 보조 |
 | [docs/fastening_slice1.md](fastening_slice1.md) | 보조 |
 | [docs/generation.md](generation.md) | 보조 |
+| [docs/objspec.md](objspec.md) | 보조 |
 | [docs/hidden_physics.md](hidden_physics.md) | 보조 |
 | [docs/input_materials.md](input_materials.md) | 참고 |
 | [docs/scenarios.md](scenarios.md) | 참고 |
