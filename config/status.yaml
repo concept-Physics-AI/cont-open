@@ -27,7 +27,7 @@ items:
 - key: c1_dialogue
   name: C1 대화·조율
   status: 있음
-  scope: 체결과 설비 진단 영역만
+  scope: 체결과 설비 진단 영역만. 계획 객체와 실행기(검증, 건너뜀, 재시도, 취소, 중복 방지, 체크포인트)는 체결 세션 도구와 `solve_physics`로만 시험했고 실제 LLM의 계획 생성은 확인하지 못함
   evidence:
   - src/cont/dialogue
   - src/cont/llm
@@ -40,7 +40,7 @@ items:
 - key: c3_compute
   name: C3 물리 계산
   status: 있음
-  scope: VDI 2230 해석식, 축대칭 유한요소, 키엔츨레 절삭력, 신호 분석
+  scope: VDI 2230 해석식, 축대칭 유한요소, 키엔츨레 절삭력, 신호 분석(시간 단위·단위 정규화·시간 정렬), 적층 1D 열응답(합성 입력과 해석해로만 확인)
   evidence:
   - src/cont/fem
   - src/cont/packs
@@ -68,13 +68,13 @@ items:
 - key: c7_learning
   name: C7 제작·학습
   status: 뼈대
-  scope: 열 영역 PINN 학습·평가 틀(선택 설치, 모델 파일은 커밋하지 않음)과 문지기. 그룹 분할·누출 검사, M05 단계 통계/경량 트리와 M06 체결력 선형 보정의 합성 비교 코드가 있음. 실측 산업별 학습 모형과 학습 기록의 데이터·가중치 추적은 없음
+  scope: 열 영역 PINN 학습·평가 틀(선택 설치, 모델 파일은 커밋하지 않음)과 문지기. 그룹 분할·누출 검사, M05 단계 통계/경량 트리와 M06 체결력 선형 보정의 합성 비교 코드가 있음. 모델 계보 기록·검증 코드(`learn.lineage`)가 있으나 학습 실행이 아직 쓰지 않음. 실측 산업별 학습 모형은 없음
   evidence:
   - src/cont/learn
 - key: service_api
   name: 서비스 층 (API)
   status: 뼈대
-  scope: 이 컴퓨터(127.0.0.1)에서만 열리고 인증이 없음. 엔진 목록, 계산 호출, 실행 저장(켜야 함)과 다시 계산. 사용자 구분과 외부 공개는 없음
+  scope: 이 컴퓨터(127.0.0.1)에서만 열리고 인증이 없음. 엔진 목록, 계산 호출, 실행 저장(켜야 함. 요청 ID 대조와 동시 저장 잠금)과 다시 계산, 계보와 근거 자료 기록(자료 장부는 CONT_LEDGER_DIR, 기본 꺼짐). 사용자 구분과 외부 공개는 없음
   evidence:
   - src/cont/service
 - key: learned_model
