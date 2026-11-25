@@ -107,11 +107,12 @@ items:
 - key: generative_outputs
   name: 핵심 3 다양한 결과물 생성
   status: 뼈대
-  scope: 체결 계산 결과 렌더러와 이미지 생성 인터페이스·Fake/diffusers 어댑터·SDXL 설정. 실제 가중치 생성 인수는 미확인, 본딩 장면 생성은 없음
+  scope: 체결 계산 결과 렌더러와 이미지 생성 인터페이스·Fake/diffusers 어댑터·SDXL 설정. SDXL 실제 가중치 생성을 대표 PC에서 한 번 확인(1024², 30단계, 두 번째 호출 9.7초, 최대 VRAM 11.26GB, 같은 시드 같은 결과; docs/generation.md). 기본 용도 연결은 fake, FLUX·Qwen은 아직 없음. 설명 이미지는 명세에서 요청을 만들 수 있으나 그림 픽셀 검수는 없음
   evidence:
   - src/cont/generation
   - src/cont/view
   - src/cont/shape
+  - docs/generation.md
 - key: generative_selection_edit
   name: 핵심 4 선택한 결과 편집
   status: 없음
