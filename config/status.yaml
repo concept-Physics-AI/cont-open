@@ -1,7 +1,3 @@
-# 지금 무엇이 있고 무엇이 없는가 (상태 한 곳). 상태는 있음 · 뼈대 · 없음 가운데 하나.
-# "있음"은 동작하고 시험했다는 뜻이며 물리적으로 검증됐다는 뜻이 아니다. 범위는 scope에 적는다.
-# 없는 것을 있는 것처럼 적지 않는다: 있음·뼈대는 evidence(실제 파일)가 있어야 하고, 없음은 evidence가 없어야 한다.
-# 점검: tests/test_control_tower.py
 updated: 2026-11-25
 items:
 - key: product_studio
@@ -14,20 +10,23 @@ items:
 - key: product_physics
   name: ConT Physics (전문가용 제품 화면)
   status: 뼈대
-  scope: 체결 한 영역의 작업대 하나 (잰 늘어남에서 체결력과 마찰계수 추정, 목표를 주고 설계 후보 보기). 서비스 층을 부른다. 공개 화면은 합성 관측 예시이고, 값을 바꿔 계산하는 것은 로컬 서비스에서만 된다. 외부 해석 결과 가져오기와 체결 밖의 영역은 없음
+  scope: 체결 한 영역의 작업대 하나 (잰 늘어남에서 체결력과 마찰계수 추정, 목표를 주고 설계 후보 보기). 서비스 층을 부른다. 공개 화면은 합성 관측 예시이고, 값을 바꿔 계산하는
+    것은 로컬 서비스에서만 된다. 외부 해석 결과 가져오기와 체결 밖의 영역은 없음
   evidence:
   - src/cont/view/physics_work.py
   - src/cont/view/physics_page.py
 - key: product_fab
   name: ConT Fab
   status: 뼈대
-  scope: 고르기와 기본 구성기 있음 (조건·크기·순서 설정, 브라우저 저장과 파일 재열기). 현장 신호 연결은 기록만. 서버로 띄우고 실행 저장소(CONT_RUN_DIR)를 켜면 만든 결과가 실행 ID로 남고 다시 열 때 읽힘 (실제 브라우저 시험은 아직 없음). 시나리오, 공장 화면은 없음
+  scope: 고르기와 기본 구성기 있음 (조건·크기·순서 설정, 브라우저 저장과 파일 재열기). 현장 신호 연결은 기록만. 서버로 띄우고 실행 저장소(CONT_RUN_DIR)를 켜면 만든
+    결과가 실행 ID로 남고 다시 열 때 읽힘 (실제 브라우저 시험은 아직 없음). 시나리오, 공장 화면은 없음
   evidence:
   - src/cont/fab
 - key: c1_dialogue
   name: C1 대화·조율
   status: 있음
-  scope: 체결과 설비 진단 영역만. 계획 객체와 실행기(검증, 건너뜀, 재시도, 취소, 중복 방지, 체크포인트)는 체결 세션 도구와 `solve_physics`로만 시험했고 실제 LLM의 계획 생성은 확인하지 못함
+  scope: 체결과 설비 진단 영역만. 계획 객체와 실행기(검증, 건너뜀, 재시도, 취소, 중복 방지, 체크포인트)는 체결 세션 도구와 `solve_physics`로만 시험했고 실제 LLM의
+    계획 생성은 확인하지 못함
   evidence:
   - src/cont/dialogue
   - src/cont/llm
@@ -68,13 +67,15 @@ items:
 - key: c7_learning
   name: C7 제작·학습
   status: 뼈대
-  scope: 열 영역 PINN 학습·평가 틀(선택 설치, 모델 파일은 커밋하지 않음)과 문지기. 그룹 분할·누출 검사, M05 단계 통계/경량 트리와 M06 체결력 선형 보정의 합성 비교 코드가 있음. 모델 계보 기록·검증 코드(`learn.lineage`)가 있으나 학습 실행이 아직 쓰지 않음. 실측 산업별 학습 모형은 없음
+  scope: 열 영역 PINN 학습·평가 틀(선택 설치, 모델 파일은 커밋하지 않음)과 문지기. 그룹 분할·누출 검사, M05 단계 통계/경량 트리와 M06 체결력 선형 보정의 합성 비교
+    코드가 있음. 모델 계보 기록·검증 코드(`learn.lineage`)가 있으나 학습 실행이 아직 쓰지 않음. 실측 산업별 학습 모형은 없음
   evidence:
   - src/cont/learn
 - key: service_api
   name: 서비스 층 (API)
   status: 뼈대
-  scope: 이 컴퓨터(127.0.0.1)에서만 열리고 인증이 없음. 엔진 목록, 계산 호출, 실행 저장(켜야 함. 요청 ID 대조와 동시 저장 잠금)과 다시 계산, 계보와 근거 자료 기록(자료 장부는 CONT_LEDGER_DIR, 기본 꺼짐). 사용자 구분과 외부 공개는 없음
+  scope: 이 컴퓨터(127.0.0.1)에서만 열리고 인증이 없음. 엔진 목록, 계산 호출, 실행 저장(켜야 함. 요청 ID 대조와 동시 저장 잠금)과 다시 계산, 계보와 근거 자료 기록(자료
+    장부는 CONT_LEDGER_DIR, 기본 꺼짐). 사용자 구분과 외부 공개는 없음
   evidence:
   - src/cont/service
 - key: learned_model
@@ -88,8 +89,6 @@ items:
   status: 없음
   scope: 가상 신호와 합성 관측으로만 확인했다
   evidence: []
-
-# 제품 핵심 흐름. 뼈대는 기존 구성요소가 있다는 뜻이며 통합 완료가 아니다.
 - key: generative_conversation
   name: 핵심 1 실제 대화와 문맥 유지
   status: 뼈대
@@ -107,33 +106,44 @@ items:
 - key: generative_outputs
   name: 핵심 3 다양한 결과물 생성
   status: 뼈대
-  scope: 체결 계산 결과 렌더러와 이미지 생성 인터페이스·Fake/diffusers 어댑터·SDXL 설정. SDXL 실제 가중치 생성을 대표 PC에서 한 번 확인(1024², 30단계, 두 번째 호출 9.7초, 최대 VRAM 11.26GB, 같은 시드 같은 결과; docs/generation.md). 기본 용도 연결은 fake, FLUX·Qwen은 아직 없음. 설명 이미지는 명세에서 요청을 만들 수 있으나 그림 픽셀 검수는 없음
+  scope: 체결 계산 결과 렌더러와 이미지 생성 인터페이스·Fake/diffusers 어댑터·SDXL 설정. SDXL 실제 가중치 생성을 대표 PC에서 한 번 확인(1024², 30단계,
+    두 번째 호출 9.7초, 최대 VRAM 11.26GB, 같은 시드 같은 결과; docs/generation.md). 기본 용도 연결은 fake, FLUX·Qwen은 아직 없음. 설명 이미지는
+    명세에서 요청을 만들 수 있으나 그림 픽셀 검수는 없음 본딩 층별 3D·단계 4D가 있으며 대화-생성-화면-프로젝트 전체 통합 인수는 미완료
   evidence:
   - src/cont/generation
   - src/cont/view
   - src/cont/shape
   - docs/generation.md
+  - src/cont/objspec/image.py
+  - src/cont/objspec/scene.py
+  - tests/test_objspec_image.py
 - key: generative_selection_edit
   name: 핵심 4 선택한 결과 편집
-  status: 없음
-  scope: 기존 체결 조건 변경은 있으나 이미지 영역·부품·그래프·공정 단계의 공통 선택 편집 흐름은 없음
-  evidence: []
+  status: 뼈대
+  scope: 본딩 부품 ID·이름·층·옆면 도식 영역 선택과 선택 부품 편집·변경 비교가 있다. 3D 클릭 UI·생성 이미지 픽셀 영역 이해·그래프 공통 선택 연결은 아직 없다
+  evidence:
+  - src/cont/objspec/select.py
+  - tests/test_objspec_select.py
 - key: generative_consistency
   name: 핵심 5 결과 간 일관성
   status: 뼈대
-  scope: 물리 답변과 실행·원본 자료 기록 기반. 생성 이미지·장면의 공통 대상 구조와 의존 갱신·시간축 통합은 미완료
+  scope: 공통 ObjectSpec·표현 검사·변경 부품 기반 재생성 선택과 실행/자료 기록이 있다. 이미지 픽셀 일치·그래프 시간축·프로젝트 전체 의존 갱신 인수는 미완료
   evidence:
   - src/cont/answer.py
   - src/cont/service/runs.py
   - src/cont/service/ledger.py
+  - src/cont/objspec/check.py
 - key: generative_resume
   name: 핵심 6 작업 저장과 이어 하기
   status: 뼈대
-  scope: 실행 저장·계획 체크포인트·Fab 구성 저장 기반. 대화·선택·카메라·재생 상태를 포함한 프로젝트 전체 재개는 미완료
+  scope: 명세·카메라·단계 속도·선택·재생 위치·이미지 기록을 저장·재열기하는 service.project와 실행/계획 체크포인트/Fab 저장이 있다. 대화·계획의 프로젝트 통합 및 화면
+    재개 인수는 미완료
   evidence:
   - src/cont/service/runs.py
   - src/cont/dialogue/plan_store.py
   - src/cont/fab
+  - src/cont/service/project.py
+  - tests/test_project.py
 - key: generative_evaluation
   name: 제품 평가 틀 (차별화 가설의 측정)
   status: 없음
@@ -142,7 +152,10 @@ items:
 - key: generative_object_spec
   name: 공통 대상 명세 (표현 간 같은 부품 ID)
   status: 뼈대
-  scope: 본딩 층 구조(설명용 치수)의 부품 ID·공정 단계·내용 해시, 표현 일치 검사, 고친 뒤 다시 만들 표현 선택. 3D 장면·단계 4D 재생(카메라·단계 속도 수정 포함)은 이 명세를 읽어 브라우저에서 돈다. 이미지 요청도 이 명세의 부품 목록으로 만든다(그림 픽셀 검수는 없음). 가리킨 부품(ID·이름·층·옆면 도식 영역)만 고치는 선택 편집과 변경 전후·다시 만들 표현 선택이 있다. 명세·카메라·단계 속도·선택·재생 위치·이미지 기록은 폴더에 저장하고 모델 호출 없이 다시 열 수 있다(`service.project`). 화면 클릭 연결, 그래프 연결, 대화·계획 저장은 아직 없다
+  scope: 본딩 층 구조(설명용 치수)의 부품 ID·공정 단계·내용 해시, 표현 일치 검사, 고친 뒤 다시 만들 표현 선택. 3D 장면·단계 4D 재생(카메라·단계 속도 수정 포함)은 이
+    명세를 읽어 브라우저에서 돈다. 이미지 요청도 이 명세의 부품 목록으로 만든다(그림 픽셀 검수는 없음). 가리킨 부품(ID·이름·층·옆면 도식 영역)만 고치는 선택 편집과 변경 전후·다시
+    만들 표현 선택이 있다. 명세·카메라·단계 속도·선택·재생 위치·이미지 기록은 폴더에 저장하고 모델 호출 없이 다시 열 수 있다(`service.project`). 화면 클릭 연결, 그래프
+    연결, 대화·계획 저장은 아직 없다
   evidence:
   - src/cont/objspec
   - tests/test_objspec.py

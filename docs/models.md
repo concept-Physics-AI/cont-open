@@ -15,13 +15,13 @@
 | M01 | 대화·작업 계획 | 일부 | `cont.llm` 공급자 어댑터와 체결·열·진단 대화. 체결은 현재 입력·추천과 제한된 최근 이력을 공급자에 전달한다. 대표 PC의 로컬 모델로 체결 명령 7개와 진단 질문 4개를 한 번씩 시험한 기록([llm_check_20261123.md](llm_check_20261123.md))은 이전 방식(현재 문장만 전달) 기준이다 | 새 문맥 방식의 실제 공급자 반복 평가(반복 안정성·다른 공급자 포함), 프로젝트별 영속 문맥·사용자 격리, 영역 간 통합 문맥, 실제 LLM이 계획 객체를 내는지 확인(공급자 필요), 설명·이미지·도식·그래프 도구(지금 등록된 도구는 `solve_physics`와 체결 변경·추천·선택뿐). 계획 객체와 실행기 `cont.dialogue.plan`(검증, 의존 순서, 실패 시 후속 건너뜀, 실패 단계만 재시도, 취소·중복 요청 방지), 체크포인트와 재개 `cont.dialogue.plan_store`, 체결 세션 도구 `cont.dialogue.plan_tools`는 가짜 도구와 체결 세션으로 시험했다 (과제 W) |
 | M02 | 제조 지식·근거 검색 | 없음 | 없음 | 문서 등록, 분할, 검색, 재순위, 근거 연결 |
 | M03 | 도면·이미지·표 이해 | 일부 | CSV 읽기 `cont.signal.csvio`(시간 단위 s·ms·us 선택, 비유한 시각 거부), 단위 정규화 `cont.signal.units`(섭씨·화씨·온도 차·압력·길이, 모르는 단위·차원 불일치 거절), 센서 시간 정렬 `cont.signal.align`(긴 결측은 비움), 원본·파생물 지문 장부 `cont.service.ledger`, 형상 읽기 `cont.shape`(STL, STEP) | OCR, VLM, 열 의미 추출, 업로드 경로에서 장부 자동 등록, 화면의 단위 선택 |
-| M04 | 설명 이미지 생성·편집 | 일부 | `cont.generation` 인터페이스·Fake 및 diffusers 어댑터·SDXL 설정·결과 기록. 실제 모델 생성 인수는 미확인. 계산 그림은 `cont.view`, `cont.fab` | 실제 가중치 생성·성능 확인, 참조 이미지와 부분 편집, 계획·화면·프로젝트 저장 연결. Fake 결과는 실제 생성으로 세지 않음 |
+| M04 | 설명 이미지 생성·편집 | 일부 | `cont.generation` 인터페이스·Fake 및 diffusers 어댑터·SDXL 설정·결과 기록. ObjectSpec 부품 목록 기반 이미지 요청·기록이 있다. SDXL 실제 생성 1회 기록은 docs/generation.md에 있고 제품 전체 통합 인수는 미완료. 계산 그림은 `cont.view`, `cont.fab` | 실제 가중치 생성·성능 확인, 참조 이미지와 부분 편집, 계획·화면·프로젝트 저장 연결. Fake 결과는 실제 생성으로 세지 않음 |
 | M05 | 공통 공정 신호 해석 | 일부 | 스펙트럼·피크·스펙트로그램 `cont.signal.analysis`, 조건별 정상 기준 `cont.packs.diagnosis.baseline`, 이상 구간 검출 `cont.packs.diagnosis.detect`. `cont.learn.m05`에 합성 신호의 단계 통계·물리 잔차+경량 트리 비교, `cont.learn.split`에 그룹 분할·분할 후 시간 창·누출 검사 | 실측 공정 단계 평가, 일반화된 학습 시계열 모형, 공통 표현 학습, 새 설비 전이 시험 |
 | M06 | 체결 상태·품질 추정 | 일부 | 물리 기준 `cont.packs.fastening`(VDI 2230 기준 계산, 늘어남에서 체결력과 마찰 역추정 `estimate`, 조이는 과정 `process`). `cont.learn.m06`에 합성 로트 자료의 물리 기준+토크·각도 선형 보정 비교 | 실측 축력으로 학습한 보정, 품질 분류, 실측 자료 |
 | M07 | 본딩 열·변형·품질 | 일부 | 열 영역의 해석식과 유한차분 `cont.packs.heat`, 학습 후보 PINN `cont.learn`(선택 설치, 문지기 `gate`), 축대칭 유한요소 `cont.fem.axisym`, 적층 1D 열응답 기준과 편차 보고 `cont.packs.heat.stack`(범위는 [heat_stack.md](heat_stack.md), 합성 입력과 해석해로만 확인) | A: 실제 접합 구조의 물성·열원과 실측 비교. B: 열변형·정렬. C: 접합 품질. 대리모형 |
 | M08 | 관절 운동·부하 | 없음 | 없음 | 운동학, 동역학, 시스템 식별 |
 | M09 | 이상 근거·점검 제안 | 일부 | 진단 보고와 점검 안내 `cont.packs.diagnosis.report`, `guidance`, 추세 `trend` | 원인 후보 순위(확인된 정비 사례가 필요), 확률 보정 |
-| M10 | 그래프·3D·4D 구성 계획 | 일부 | 결과를 그리는 렌더러: Fab 미리보기와 3D 돌려 보기 `cont.fab`, 화면 `cont.view` | LLM이 쓰는 장면 사양(스키마, 차원 검사), 그래프와 장면의 시점 동기화 (과제 W5, X8) |
+| M10 | 그래프·3D·4D 구성 계획 | 일부 | ObjectSpec의 본딩 층별 3D·단계 4D·카메라·단계 속도, 부품 선택 편집 `cont.objspec`, Fab 미리보기 `cont.fab`, 화면 `cont.view` | LLM이 쓰는 장면 사양(스키마, 차원 검사), 그래프와 장면의 시점 동기화 (과제 W5, X8) |
 
 ## 읽는 법
 
@@ -120,3 +120,5 @@ Y2 공통 모형 계약, Y3 그룹 분할, Y4 M05 합성 기준선, Y5 M06 합�
 
 기존 개발 검토에서 추린 후속 작업과 완료 증거는 [adoption_tasks.md](adoption_tasks.md)에 있다.
 작업 목록에 들어간 항목을 현재 제품의 구현·검증 완료로 계산하지 않는다.
+
+실제 개발 준비의 세부 계약·현재 범위·준비 시험은 [model_development.md](model_development.md)와 [model_readiness.yaml](model_readiness.yaml)을 따른다. 이 문서의 M01~M10 기능 식별자, 32개 통합 작업 ID, 모형 능력 슬롯은 서로 다른 분류이며 중복된 실행 계획이 아니다.

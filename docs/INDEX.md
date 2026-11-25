@@ -40,7 +40,8 @@
 | [docs/archive_adoption.md](archive_adoption.md) | 참고 |
 | [docs/generative_workflow.md](generative_workflow.md) | 보조 |
 | [docs/differentiation.md](differentiation.md) | 참고 |
-| [docs/integration_control_plan.md](integration_control_plan.md) | 보조 |
+| [docs/integration_control_plan.md](integration_control_plan.md) | 정본 |
+| [docs/model_development.md](model_development.md) | 보조 |
 | docs/INDEX.md (이 문서) | 보조 |
 
 제품 통합 작업의 기계 판독용 정의: [integration_jobs.yaml](integration_jobs.yaml). 현재 제품 상태 파일과 구분하며 자동 실행기는 아직 없다.
