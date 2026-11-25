@@ -50,7 +50,7 @@ var x=uy*vz-uz*vy,y=uz*vx-ux*vz,z=ux*vy-uy*vx,q=Math.sqrt(x*x+y*y+z*z)||1;for(va
 var bp=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,bp);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(t),gl.STATIC_DRAW);
 var bn=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,bn);gl.bufferData(gl.ARRAY_BUFFER,n,gl.STATIC_DRAW);
 return {id:pt.id,bp:bp,bn:bn,count:t.length/3,color:pt.color};});
-var yaw0=data.camera.yaw,pitch0=data.camera.pitch,zoom0=data.camera.zoom,yaw=yaw0,pitch=pitch0,zoom=zoom0,now=0,playing=false,last=null,tick=null;
+var yaw0=data.camera.yaw,pitch0=data.camera.pitch,zoom0=data.camera.zoom,yaw=yaw0,pitch=pitch0,zoom=zoom0,now=Math.min(Math.max(data.start_t||0,0),T.duration),playing=false,last=null,tick=null;
 function label(){var sg=T.segments[0],n=T.segments.length;for(var i=0;i<n;i++){sg=T.segments[i];if(now<sg.t1||i===n-1)break;}
 info.textContent='단계 '+(T.segments.indexOf(sg)+1)+'/'+T.segments.length+' '+sg.name+' · 설명용 재생 '+now.toFixed(1)+'/'+T.duration.toFixed(1)+' s (속도 '+sg.speed+'배)';slider.value=now;}
 function draw(){var w=cv.clientWidth*devicePixelRatio|0,h=cv.clientHeight*devicePixelRatio|0;if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;}
@@ -89,7 +89,7 @@ SCENE_CSS = """
 """
 
 
-def scene_data(spec: ObjectSpec, view: ViewState | None = None, timeline: Timeline | None = None) -> dict:
+def scene_data(spec: ObjectSpec, view: ViewState | None = None, timeline: Timeline | None = None, start_t: float = 0.0) -> dict:
     view = view or ViewState()
     tl = timeline or Timeline(spec, view)
     asm = spec.to_assembly()
@@ -104,13 +104,13 @@ def scene_data(spec: ObjectSpec, view: ViewState | None = None, timeline: Timeli
         parts.append({"id": op.id, "name": part.name, "role": part.role, "color": ROLE_COLOR.get(part.role, "--sub"), "tri": tri.tolist()})
     return {"center": [0.0, 0.0, (z0 + z1 + reach) / 2], "radius": radius, "parts": parts,
             "camera": {"yaw": -math.radians(view.azimuth), "pitch": math.radians(view.elevation), "zoom": 1.0 / view.distance},
-            "timeline": tl.to_dict(), "spec_version": spec.version, "dimension_status": spec.dimension_status}
+            "timeline": tl.to_dict(), "start_t": float(start_t), "spec_version": spec.version, "dimension_status": spec.dimension_status}
 
 
-def scene4d(spec: ObjectSpec, view: ViewState | None = None, label: str = "") -> str:
+def scene4d(spec: ObjectSpec, view: ViewState | None = None, label: str = "", start_t: float = 0.0) -> str:
     """4D 보기 조각(HTML). 화면에는 SCENE_CSS와 SCENE_JS를 한 번씩 넣어야 한다."""
     e = html.escape
-    data = scene_data(spec, view)
+    data = scene_data(spec, view, start_t=start_t)
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     keys = "".join(f'<span class="key" data-part-id="{e(p["id"])}"><i style="background:var({e(p["color"])})"></i>{e(p["name"])}</span>' for p in data["parts"])
     stages = "".join(f'<button type="button" class="stage" data-i="{i}">{i + 1}. {e(sg["name"])}</button>' for i, sg in enumerate(data["timeline"]["segments"]))
@@ -118,13 +118,13 @@ def scene4d(spec: ObjectSpec, view: ViewState | None = None, label: str = "") ->
             else "") + " 재생 시간은 설명용이며 물리 시간이 아닙니다."
     return (f'<div class="s4d"><canvas tabindex="0" role="img" aria-label="{e(label or spec.name)} 단계 장면. 끌거나 화살표 키로 돌리고 휠이나 +, - 키로 확대합니다"></canvas>'
             f'<div class="bar"><button type="button" class="play" aria-pressed="false">재생</button>'
-            f'<input type="range" min="0" max="{data["timeline"]["duration"]}" step="0.01" value="0" aria-label="재생 위치">{stages}'
+            f'<input type="range" min="0" max="{data["timeline"]["duration"]}" step="0.01" value="{min(max(start_t, 0.0), data["timeline"]["duration"])}" aria-label="재생 위치">{stages}'
             f'<button type="button" class="cam">처음 시점으로</button></div>'
             f'<div class="info" aria-live="polite"></div><div class="bar">{keys}</div><div class="sub">{e(note.strip())}</div><div class="sub msg"></div>'
             f'<script type="application/json">{payload}</script></div>')
 
 
-def scene4d_page(spec: ObjectSpec, view: ViewState | None = None, title: str = "") -> str:
+def scene4d_page(spec: ObjectSpec, view: ViewState | None = None, title: str = "", start_t: float = 0.0) -> str:
     """한 파일 HTML. 밝은 화면·어두운 화면을 함께 따르고, 움직임을 줄이는 설정이면 자동 재생하지 않는다(이 보기는 처음부터 자동 재생이 없다)."""
     t = html.escape(title or spec.name)
     css = (":root{--bg:#F5F7FA;--ink:#18385E;--sub:#5B6B7F;--line:#C9D3E0;--sig:#008E94;--band:#8FA6C4;--okbg:#C58B2B}"
@@ -132,4 +132,4 @@ def scene4d_page(spec: ObjectSpec, view: ViewState | None = None, title: str = "
            "body{margin:0;padding:16px;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,sans-serif;max-width:860px}")
     return (f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>{t}</title><style>{css}{SCENE_CSS}</style></head><body><h1 style="font-size:18px">{t}</h1>'
-            f'{scene4d(spec, view)}<script>{SCENE_JS}</script></body></html>')
+            f'{scene4d(spec, view, start_t=start_t)}<script>{SCENE_JS}</script></body></html>')

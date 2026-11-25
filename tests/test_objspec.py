@@ -132,3 +132,17 @@ def test_stage_poses_default_to_original_place():
     approach = s.stages[0]
     assert approach.pose_of("wafer.si") == Pose() and approach.pose_of("die.si").dz == 2.0
     assert s.stages[2].pose_of("die.si") == Pose()
+
+
+def test_spec_and_view_round_trip_through_dict():
+    from cont.objspec import ObjectSpec, ViewState, hybrid_bonding_stack
+    s = hybrid_bonding_stack().edit_part("die.si", z1=2.4)
+    t = ObjectSpec.from_dict(s.to_dict(), s.parent_version)
+    assert t == s and t.version == s.version
+    v = ViewState().with_camera(azimuth=-40.0).with_speed(s, 2, 0.5)
+    assert ViewState.from_dict(v.to_dict()) == v
+    for bad in ({}, {"name": "x"}, {"name": "x", "parts": [{"id": "BAD", "layer": "", "name": "a", "role": "r", "z0": 0, "z1": 1, "outer": 1}]}):
+        with pytest.raises(ObjectSpecError):
+            ObjectSpec.from_dict(bad)
+    with pytest.raises(ObjectSpecError):
+        ViewState.from_dict({"azimuth": 1})
