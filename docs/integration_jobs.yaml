@@ -1,0 +1,949 @@
+schema_version: 1
+kind: development_plan_not_runtime_state
+baseline_commit: 27708280c15d4266068ec43b91947ce1c8a8af58
+decision: 생성형 최우선 · 다양한 물리/숨은 물리/물리 잔차 PINN 병행 · 대규모 현장 학습 후속
+definition_authority: docs/integration_jobs.yaml
+process_authority: docs/integration_control_plan.md
+notes:
+- 기존 코드가 있다는 사실과 이 통합 작업의 인수 완료는 다르다. 모든 작업은 이번 계획의 미착수 정의다.
+- 담당자는 아직 배정하지 않았다. owner_role은 필요한 역할이며 실제 인원 수나 담당자 지정이 아니다.
+- 이 파일만으로 작업을 실행하거나 상태를 자동 변경하는 코드는 아직 없다.
+- depends_on은 해당 작업의 통합 인수 선행조건이다. 인터페이스 초안/독립 구현 준비는 먼저 할 수 있으나 더미 시험을 인수로 계산하지 않는다.
+jobs:
+- id: CT01
+  title: 기준 코드·재사용 자산·미완료 연결 확정
+  track: control
+  owner_role: 통합 책임
+  owner: null
+  planning_state: planned
+  depends_on: []
+  reuse_paths:
+  - config/status.yaml
+  - config/authority.yaml
+  - docs/models.md
+  deliverables:
+  - 기준 커밋에 고정한 기능/코드/시험/실행 증거 대조표
+  - 중복 모듈·문서 불일치 목록과 수정 범위
+  acceptance:
+  - 계획·코드 존재·시험 통과·실제 모델 실행·제품 인수를 서로 다른 칸으로 기록
+  - 'PR #100의 본딩 장면을 포함한 최신 구현을 반영하되 전체 생성 완료로 올리지 않음'
+  negative_tests:
+  - 파일 존재만으로 실제 생성 완료를 표기한 항목을 검토에서 반려
+  rollback: 이전 기준 스냅샷 보존; 코드나 보관 자산 삭제 없음
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: CT02
+  title: 작업 등록·담당·브랜치·의존성 관리
+  track: control
+  owner_role: 통합 책임
+  owner: null
+  planning_state: planned
+  depends_on:
+  - CT01
+  reuse_paths:
+  - config/status.yaml
+  - .github/pull_request_template.md
+  deliverables:
+  - 이 YAML을 읽는 작업 등록/조회/상태 전환 기능
+  - 개발 작업 상태와 제품 실행 상태를 분리한 기록 형식
+  acceptance:
+  - 담당 미지정 작업은 ready/in_progress로 올리지 않음
+  - 동일 파일 변경의 활성 작업을 표시하고 공통 계약 변경은 순서를 정함
+  - 의존 작업 미인수 시 이유와 해소 조건 표시
+  negative_tests:
+  - 순환 의존·없는 작업 ID·중복 ID 거절
+  - 같은 상태 버전의 동시 전환 중 한 건만 반영
+  rollback: 기존 상태 기록과 전환 이력 보존; 상태를 덮어써 없애지 않음
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: CT03
+  title: 완료 증거 등록·검사·단계별 인수
+  track: control
+  owner_role: 검증 책임
+  owner: null
+  planning_state: planned
+  depends_on:
+  - CT02
+  reuse_paths:
+  - tests/test_control_tower.py
+  - src/cont/service/ledger.py
+  deliverables:
+  - 커밋·모델·환경·입력·출력 해시를 가진 증거 목록
+  - 코드/실제 모델/화면/복구/물리 기준 시험의 분리 판정
+  acceptance:
+  - 시험용 응답 증거로 실제 모델 인수를 통과하지 못함
+  - 참조 파일 누락·해시 불일치·다른 커밋의 증거는 재검토 표시
+  - 물리 성능과 소프트웨어 성공을 분리
+  negative_tests:
+  - 위조 완료 표기·건너뛴 필수 시험·누락 산출물·만료된 증거를 차단
+  rollback: 증거 정정은 새 개정으로 추가하고 원본 유지
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: CT04
+  title: 진척·차단·실패·다음 작업 대시보드
+  track: control
+  owner_role: 제품 UI
+  owner: null
+  planning_state: planned
+  depends_on:
+  - CT02
+  - CT03
+  reuse_paths:
+  - config/status.yaml
+  - src/cont/view
+  deliverables:
+  - 작업/제품 기능/실제 실행 증거를 구분한 조회 화면
+  - 차단 원인·다음 작업·담당·검사한 커밋 표시
+  acceptance:
+  - 전체 작업 수와 인수 완료 수를 별도로 표시하고 건너뜀은 완료에 포함하지 않음
+  - 실제 생성 증거 없는 기능은 연결 시험 상태로 표시
+  - 수동 새로고침으로 재현; 예약 실행이나 자동 알림을 새로 만들지 않음
+  negative_tests:
+  - 오래된 스냅샷을 최신으로 표시하지 않음
+  - 권한 없는 실행 기록·비밀값 노출 차단
+  rollback: 기존 상태 파일·PR로 추적 가능; 대시보드 장애가 개발을 막지 않음
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: CT05
+  title: 시험 종류별 CI와 실제 실행 인수 분리
+  track: control
+  owner_role: 검증 책임
+  owner: null
+  planning_state: planned
+  depends_on:
+  - CT03
+  reuse_paths:
+  - .github/workflows/tests.yml
+  - tests/test_generation.py
+  - tests/test_scene4d.py
+  - tests/learn
+  deliverables:
+  - 빠른 계약/회귀, 실제 공급자, 브라우저, PINN 기준 시험의 실행 프로파일
+  - 필수 인수 시험이 skip이면 미인수로 남기는 보고
+  acceptance:
+  - PR의 오프라인 CI와 실제 모델 시험을 별도 집계
+  - 비밀값이 필요한 실행은 허용된 환경에서 명시적으로 수행하고 로그에서 제거
+  - 합성·더미 테스트는 실제 모델 성공률 분모에 섞지 않음
+  negative_tests:
+  - API 미설정·GPU 부족·브라우저/WebGL 미지원은 원인별 blocked 또는 skip이며 통과로 바꾸지 않음
+  rollback: 기존 CI 유지; 새 실제 모델 작업은 선택 실행으로 시작
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: CT06
+  title: 배포 후보·문서·인수 결과 정합 확인
+  track: control
+  owner_role: 통합 책임
+  owner: null
+  planning_state: planned
+  depends_on:
+  - CT03
+  - CT05
+  - QA01
+  - QA02
+  - QA03
+  - QA04
+  reuse_paths:
+  - docs/roadmap.md
+  - config/status.yaml
+  - .github/pull_request_template.md
+  deliverables:
+  - 릴리스 후보 커밋·설정·모델·설치 방법·인수 기록 묶음
+  - 기능 상태표와 미지원 범위 갱신
+  acceptance:
+  - 실제로 인수한 범위만 상태 변경
+  - 병합 후 실제 실행 커밋 확인; 설치 환경별 미실행 항목 공개
+  - 다른 작업자의 변경을 보존하고 동일 파일 충돌을 해결
+  negative_tests:
+  - 이전 커밋의 화면 녹화만으로 최신 릴리스 인수 처리하지 않음
+  rollback: 직전 후보로 코드/설정 복귀; 신규 프로젝트 기록은 보존
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: GF01
+  title: 실제 LLM·이미지 공급자 실행 확인
+  track: generative
+  owner_role: AI 연동
+  owner: null
+  planning_state: planned
+  depends_on:
+  - CT01
+  reuse_paths:
+  - src/cont/llm
+  - src/cont/generation
+  - config/llm/providers.yaml
+  - config/generation/models.yaml
+  deliverables:
+  - 선택 공급자의 텍스트 응답·이미지 생성 실행 절차와 결과
+  - 실제/시험용 공급자 표시 및 환경 준비 점검
+  acceptance:
+  - 실제 모델명·요청 ID/실행 ID·응답·이미지 파일 해시 기록
+  - 시험용 생성기를 실제 결과로 취급하지 않음
+  - 설정된 공급자 ID와 실제 사용 가능 여부를 확인; 새로운 모델을 일괄 도입하지 않음
+  negative_tests:
+  - 키 누락·시간초과·모델 미설치·GPU 메모리 부족을 구분해 표시
+  rollback: 기존 설정 보존; 실패 시 시험용 생성기로 몰래 전환하지 않음
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: GF02
+  title: 최소 프로젝트·대화·대상 상태 저장
+  track: generative
+  owner_role: 백엔드
+  owner: null
+  planning_state: planned
+  depends_on:
+  - CT01
+  reuse_paths:
+  - src/cont/dialogue/context.py
+  - src/cont/service/runs.py
+  - src/cont/service/ledger.py
+  - src/cont/objspec
+  deliverables:
+  - 프로젝트 manifest와 대화·대상·산출물 참조의 최소 저장
+  - ObjectSpec/ViewState와 기존 실행·자료 ID 재사용
+  acceptance:
+  - 두 프로젝트가 같은 부품 이름을 써도 문맥과 산출물이 섞이지 않음
+  - 현재 대상·조건·버전·선택을 다음 대화에 전달
+  - 새 계약은 ARCHITECTURE와 책임 모듈 표를 먼저 갱신
+  negative_tests:
+  - 다른 프로젝트 참조·중복 수정·깨진 참조·미지원 스키마 버전 거절
+  rollback: 새 저장 스키마는 버전 명시; 이전 기록 읽기 또는 명시적 마이그레이션
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: GF03
+  title: 실제 대화에서 계획 생성·검증·실행 연결
+  track: generative
+  owner_role: AI 연동
+  owner: null
+  planning_state: planned
+  depends_on:
+  - GF01
+  - GF02
+  reuse_paths:
+  - src/cont/dialogue/plan.py
+  - src/cont/dialogue/plan_tools.py
+  - src/cont/dialogue/context.py
+  deliverables:
+  - 실제 LLM의 구조화 계획 생성과 기존 Executor 연결
+  - 도구 입력/출력 참조 및 사용자 정정 반영
+  acceptance:
+  - 설명→이미지→3D→4D 요청을 실제 등록 도구 순서로 변환
+  - 방금 것·두 번째·그 부품의 참조를 현재 상태로 해석
+  - 모호한 수정은 대상 확인으로 돌아가고 잘못된 변경을 실행하지 않음
+  negative_tests:
+  - 없는 도구·순환·잘못된 인자·출력 참조 불일치·업로드 문서의 실행 지시를 거절
+  rollback: 실패 계획과 이전 상태 보존; 검증 실패는 도구 실행 전에 종료
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: GF04
+  title: 진행 이벤트·취소·재시도 화면 연결
+  track: generative
+  owner_role: 백엔드/UI
+  owner: null
+  planning_state: planned
+  depends_on:
+  - GF03
+  reuse_paths:
+  - src/cont/dialogue/plan.py
+  - src/cont/dialogue/plan_store.py
+  - src/cont/service
+  deliverables:
+  - 단계별 대기/실행/완료/실패/취소 표시
+  - 재접속 후 이벤트 순번과 최종 상태 복원
+  acceptance:
+  - 완성된 결과부터 표시하고 실패 단계를 설명
+  - 중복 요청은 같은 논리 작업을 이중 적용하지 않음
+  - 취소 뒤 늦은 결과를 현재 프로젝트에 반영하지 않음; 도구 자체 중단 지원 여부 표시
+  negative_tests:
+  - 네트워크 단절·중복 클릭·실행 중 취소·뒤늦은 응답 시험
+  rollback: 완료 단계 산출물 유지; 재시도는 필요한 단계만 새 시도로 기록
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: GF05
+  title: 실제 이미지 생성→화면→프로젝트 연결
+  track: generative
+  owner_role: AI 연동/UI
+  owner: null
+  planning_state: planned
+  depends_on:
+  - GF01
+  - GF02
+  reuse_paths:
+  - src/cont/generation
+  - src/cont/service/ledger.py
+  - src/cont/objspec
+  deliverables:
+  - generate_image 도구 등록과 실제 이미지 카드 표시
+  - ObjectSpec의 부품/조건/버전을 요청과 결과에 연결
+  acceptance:
+  - 프롬프트·모델·seed·실제 파일·부모 자료·대상 버전 추적
+  - 생성 파일이 존재하고 화면에서 열리며 재열기 때 같은 파일 사용
+  - 명세와 그림의 부품 일치는 검수 결과로 기록
+  negative_tests:
+  - 빈 이미지·잘못된 파일 형식·모델 실패·다른 버전 결과가 늦게 도착하는 경우
+  rollback: 실패 산출물은 공개 완료 목록에 올리지 않고 이전 이미지 유지
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: GF06
+  title: 도식·그래프의 구조화 생성과 원본 연결
+  track: generative
+  owner_role: 시각화
+  owner: null
+  planning_state: planned
+  depends_on:
+  - GF02
+  reuse_paths:
+  - src/cont/view
+  - src/cont/answer.py
+  - src/cont/signal/units.py
+  deliverables:
+  - 단위·축·계열·출처가 있는 도식/그래프 사양과 등록 도구
+  - 자연어 요청을 허용 사양으로 변환하는 연결
+  acceptance:
+  - 그래프 점이 사용자 입력/계산 원본과 일치
+  - 단위 변환·축 범위·결측·부품 ID·시간축 출처 보존
+  - 생성 모델이 임의로 그린 곡선을 계산값으로 사용하지 않음
+  negative_tests:
+  - 단위 불일치·존재하지 않는 계열·NaN·범례/대상 버전 불일치 거절
+  rollback: 원본 자료 불변; 표현만 새 버전으로 저장
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: GF07
+  title: 본딩 3D·4D를 대화 도구로 연결
+  track: generative
+  owner_role: 시각화
+  owner: null
+  planning_state: planned
+  depends_on:
+  - GF02
+  reuse_paths:
+  - src/cont/objspec/scene.py
+  - src/cont/view/scene4d.py
+  - tests/test_scene4d.py
+  deliverables:
+  - 기존 장면 생성기를 호출하는 create_scene/animate_stage 도구
+  - 단계·카메라·속도·재생 상태의 프로젝트 연결
+  acceptance:
+  - 같은 부품 ID로 접근·정렬·접촉을 재생
+  - 두 번째 단계 속도만 변경하고 다른 단계와 구조 version 보존
+  - 카메라 회전은 실제 3D 시점 변경; 설명 시간과 물리 시간 구분
+  negative_tests:
+  - 없는 단계·잘못된 속도·WebGL 미지원·오래된 ObjectSpec 입력 처리
+  rollback: 이전 장면과 ViewState를 보존해 복원; 구조 변경 없이 카메라 복귀
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: GF08
+  title: 공통 선택 상태와 자연어 지시 대상 연결
+  track: generative
+  owner_role: 제품 UI
+  owner: null
+  planning_state: planned
+  depends_on:
+  - GF02
+  - GF07
+  reuse_paths:
+  - src/cont/objspec/spec.py
+  - src/cont/objspec/check.py
+  - src/cont/view
+  deliverables:
+  - 이미지 영역·부품·그래프 계열·공정 단계의 선택 계약
+  - 선택 ID/부모 산출물/버전을 대화 문맥에 전달
+  acceptance:
+  - 화면에서 고른 부분과 이 부분이라는 요청의 대상이 일치
+  - 부분/다중 선택을 구분하고 불명확하면 실행 전 확인
+  - 다른 프로젝트 선택이나 오래된 선택은 현재 수정에 사용하지 않음
+  negative_tests:
+  - 대상 삭제·버전 변경·중복 이름·선택 없음에서 모호한 지시
+  rollback: 선택만 바꿀 때 형상·계산을 재실행하지 않음; 이전 선택 복원
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: GF09
+  title: 참조 이미지·마스크 기반 부분 편집
+  track: generative
+  owner_role: AI 연동
+  owner: null
+  planning_state: planned
+  depends_on:
+  - GF05
+  - GF08
+  reuse_paths:
+  - src/cont/generation/base.py
+  - src/cont/generation/registry.py
+  - src/cont/service/ledger.py
+  deliverables:
+  - 편집 지원 공급자 계약과 부모 이미지·마스크 입력
+  - 부분 수정 전후 비교 UI와 결과 기록
+  acceptance:
+  - 실제 편집 모델로 지정 영역 수정; text-to-image만으로 편집 완료 처리하지 않음
+  - 마스크 밖 변화량과 시각 검토 결과 기록
+  - 부품 정체성/수정 의도가 유지되는지 정해진 사례로 평가
+  negative_tests:
+  - 잘못된 마스크 크기·좌표계·지원 안 하는 모델·선택 밖 변경
+  rollback: 원본 이미지 유지; 수정 후보 채택 전 현재 버전 자동 교체 금지
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: GF10
+  title: 변경 영향·결과 일관성·선택 재실행
+  track: generative
+  owner_role: 백엔드
+  owner: null
+  planning_state: planned
+  depends_on:
+  - GF02
+  - GF06
+  - GF07
+  - GF08
+  reuse_paths:
+  - src/cont/objspec/check.py
+  - src/cont/answer.py
+  - src/cont/service/runs.py
+  deliverables:
+  - 산출물 의존 관계와 stale 상태
+  - 부품/조건 수정에 영향받는 도구만 다시 실행
+  acceptance:
+  - 카메라 변경은 물리/이미지 계산을 호출하지 않음
+  - 두께 변경은 관련 장면·그래프·계산을 갱신하거나 stale로 표시
+  - 서로 다른 대상/조건/버전 결과를 최신 묶음으로 합치지 않음
+  negative_tests:
+  - 순환 참조·실패한 파생물·동시 수정·늦은 이전 계산 결과
+  rollback: 수정 묶음을 새 revision으로 저장; 이전 승인 버전 보존
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: GF11
+  title: 전체 프로젝트 저장·종료·재개
+  track: generative
+  owner_role: 백엔드
+  owner: null
+  planning_state: planned
+  depends_on:
+  - GF02
+  - GF04
+  - GF10
+  reuse_paths:
+  - src/cont/service/runs.py
+  - src/cont/service/ledger.py
+  - src/cont/dialogue/plan_store.py
+  - src/cont/fab
+  deliverables:
+  - 대화·계획·선택·대상·산출물·카메라·재생 위치 manifest
+  - 종료 뒤 복원과 중단 작업의 재개
+  acceptance:
+  - 프로세스 종료 후 같은 파일 해시·조건·버전·선택·시점 복원
+  - 기존 산출물 열기에 모델을 재호출하지 않음
+  - 실행 중 종료된 도구의 결과를 확인한 뒤 재시도하며 중복 부작용 방지
+  negative_tests:
+  - 저장 중 종료·누락 파일·해시 변조·손상 manifest·동시 저장·스키마 이전
+  rollback: 원자적 저장과 마지막 정상 manifest; 자동으로 원본을 덮어쓰지 않음
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: GF12
+  title: 이미지·도면·표 입력 이해와 원본 근거
+  track: generative
+  owner_role: AI 연동/입력
+  owner: null
+  planning_state: planned
+  depends_on:
+  - GF01
+  - GF02
+  reuse_paths:
+  - src/cont/signal/csvio.py
+  - src/cont/shape
+  - src/cont/service/ledger.py
+  - src/cont/llm
+  deliverables:
+  - 이미지/문서 입력 경로와 OCR/VLM 추출 계약
+  - 페이지·영역·단위·표 열·원본 위치 확인 UI
+  acceptance:
+  - 추출한 치수/열 이름/단위를 원본 위치와 연결하고 사용자가 정정 가능
+  - 파일 크기·형식·페이지 제한과 지원 범위 명시
+  - 지원 형식별 대표 파일을 실제 모델로 확인
+  negative_tests:
+  - 흐린 글자·단위 누락·충돌 값·악성 지시·손상 파일 처리
+  rollback: 추출값 채택 전 원본과 기존 프로젝트 상태 유지
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: GF13
+  title: 사용자·프로젝트 접근 분리
+  track: generative
+  owner_role: 백엔드/운영
+  owner: null
+  planning_state: planned
+  depends_on:
+  - GF02
+  reuse_paths:
+  - src/cont/service/serve.py
+  - src/cont/service/runs.py
+  - src/cont/service/ledger.py
+  deliverables:
+  - 인증 방식과 프로젝트 소유권/권한 검사
+  - 생성·조회·편집·다운로드 경로의 일관된 접근 검사
+  acceptance:
+  - 사용자 A가 B의 대화/파일/실행 ID를 알아도 접근 불가
+  - 로컬 단일 사용자 모드와 인증된 외부 모드를 구분
+  - 비밀값은 서버에만 두고 생성 파일 URL도 권한 확인
+  negative_tests:
+  - ID 추측·경로 이탈·다른 프로젝트 부모 참조·세션 만료·로그 비밀값 노출
+  rollback: 인증 불능 시 외부 제공 중단; 로컬 개발 데이터는 보존
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: GF14
+  title: 체결·관절 등 다른 사례에 공통 흐름 재사용
+  track: generative
+  owner_role: 제품 통합
+  owner: null
+  planning_state: planned
+  depends_on:
+  - GF03
+  - GF06
+  - GF07
+  - GF10
+  - GF11
+  reuse_paths:
+  - src/cont/packs/fastening
+  - src/cont/objspec
+  - src/cont/view
+  deliverables:
+  - 체결·관절의 설명/구조/동작 템플릿
+  - 산업별 새 코드와 공통 코어 재사용 내역
+  acceptance:
+  - 동일 대화·선택·저장 경로로 본딩 외 두 사례 실행
+  - 관절 설명용 동작과 동역학 계산 지원 여부를 구분
+  - 분야가 바뀌어도 새 대화/저장 엔진을 복제하지 않음
+  negative_tests:
+  - 산업 전환 때 이전 조건·단위·부품 ID가 섞이는 경우
+  rollback: 템플릿 단위 비활성화 가능; 본딩 기준 흐름 유지
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: PF01
+  title: 기존 열 PINN 저장·재사용·작업 분리
+  track: physics
+  owner_role: 물리 AI
+  owner: null
+  planning_state: planned
+  depends_on:
+  - CT01
+  reuse_paths:
+  - src/cont/learn/heat1d.py
+  - src/cont/learn/heat2d.py
+  - src/cont/learn/pack.py
+  - src/cont/learn/record.py
+  deliverables:
+  - 학습 작업과 추론 요청 분리
+  - 가중치·설정·문제·코드·해시·평가 기록 저장/로드
+  acceptance:
+  - 프로세스 재시작 뒤 재학습 없이 같은 모델 결과 재현
+  - 적용 범위·자원 예산·취소/실패 상태 표시
+  - 학습 중에도 생성형 대화와 기본 장면 작업 진행
+  negative_tests:
+  - 손상 가중치·설정/문제 불일치·메모리 부족·취소된 학습 재사용 거절
+  rollback: 직전 모델 또는 지원하는 기준 계산으로 명시적 복귀
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: PF02
+  title: 다양한 물리 문제와 결과 계약
+  track: physics
+  owner_role: 물리 AI
+  owner: null
+  planning_state: planned
+  depends_on:
+  - CT01
+  reuse_paths:
+  - src/cont/answer.py
+  - src/cont/learn/config.py
+  - config/authority.yaml
+  deliverables:
+  - 물리 영역별 방정식·초기/경계조건·물성·단위·좌표·시간 정의
+  - 기존 PhysicsAnswer/Field/Residual과 연결하는 문제 사양
+  acceptance:
+  - 열·구조·진동·유동 각각 입력/출력/적용 범위와 기준 계산을 정의
+  - 지원하지 않는 결합 문제는 명시적으로 거절
+  - 기존 결과 클래스를 복제하지 않음
+  negative_tests:
+  - 단위·차원·경계조건 누락·잘못된 자유도·물리 시간 불일치
+  rollback: 문제 사양을 버전별로 유지하고 기존 열 코드 호환
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: PF03
+  title: 숨은 열 상태·경계조건 역추정 확장
+  track: physics
+  owner_role: 물리 AI
+  owner: null
+  planning_state: planned
+  depends_on:
+  - PF01
+  - PF02
+  reuse_paths:
+  - src/cont/learn/inverse_heat.py
+  - src/cont/learn/gate.py
+  deliverables:
+  - 관측 연산자·관측 위치/시간·미지 파라미터 분리
+  - 추정 상태·불확실성·식별가능성·관측 잔차 보고
+  acceptance:
+  - 기준 문제 합성 관측에서 정답과 추정 편차 보고
+  - 잡음·관측 위치·누락에 따른 결과 변화를 여러 조건으로 확인
+  - 식별 불가능한 조합에서 유일한 정답으로 단정하지 않음
+  negative_tests:
+  - 관측 없음·상충 관측·낮은 민감도·범위 밖 파라미터·초기값 의존
+  rollback: 복원 실패를 시뮬레이션 성공으로 바꾸지 않고 후보와 한계 보존
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: PF04
+  title: 물리 잔차 계산·지도·보정 분리
+  track: physics
+  owner_role: 물리 AI/시각화
+  owner: null
+  planning_state: planned
+  depends_on:
+  - PF02
+  reuse_paths:
+  - src/cont/answer.py
+  - src/cont/learn/heat1d.py
+  - src/cont/learn/heat2d.py
+  - src/cont/learn/inverse_heat.py
+  deliverables:
+  - 방정식/경계/초기/보존 잔차와 관측-모델 차이의 개별 출력
+  - 위치·시간별 잔차 시각화와 보정 전후 비교
+  acceptance:
+  - 단위·정규화·표본 위치·학습에 쓰지 않은 평가점 명시
+  - 잔차 보정은 명시한 자료/범위에서 기준 모델과 비교
+  - 학습 손실 감소와 독립 평가 오차 개선을 별도 보고
+  negative_tests:
+  - 단위 다른 잔차 합산·학습점만으로 평가·낮은 잔차의 잘못된 해
+  rollback: 원래 모델과 보정값 별도 보존; 개선 없는 보정 비활성화
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: PF05
+  title: 구조 물리 PINN 기준 문제
+  track: physics
+  owner_role: 물리 AI
+  owner: null
+  planning_state: planned
+  depends_on:
+  - PF02
+  reuse_paths:
+  - src/cont/fem
+  - src/cont/learn
+  - src/cont/answer.py
+  deliverables:
+  - 봉 또는 보의 한 가지 명시적 구조 문제와 기준 계산
+  - 변위·응력·경계 잔차의 학습/계산/출력
+  acceptance:
+  - 구속·하중·물성·단위를 고정한 기준해/수치해석 대조
+  - 하중/조건 변화에 따른 독립 평가점 편차 기록
+  - 체결 전체 접촉 해석이 완료된 것으로 확장 해석하지 않음
+  negative_tests:
+  - 구속 부족·범위 밖 물성·조건 변경·경계 부근 오차
+  rollback: 기존 FEM/기준 계산 유지; PINN 결과 교체는 평가 후
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: PF06
+  title: 진동 물리 PINN과 파라미터 추정
+  track: physics
+  owner_role: 물리 AI
+  owner: null
+  planning_state: planned
+  depends_on:
+  - PF02
+  reuse_paths:
+  - src/cont/learn
+  - src/cont/signal
+  - src/cont/answer.py
+  deliverables:
+  - 질량·스프링·감쇠의 기준 동역학 문제
+  - 시간 응답·방정식 잔차 및 관측이 있는 경우 파라미터 추정
+  acceptance:
+  - 독립 시간점에서 기준해와 비교
+  - 초기조건·하중·표본 간격·잡음 조건별 편차와 식별가능성 보고
+  - 휴머노이드 전체 동역학 구현과 구분
+  negative_tests:
+  - 불충분 관측·잘못된 시간 단위·시간 범위 외 추론
+  rollback: 기준 동역학 풀이 유지; 추정 실패 시 정해진 조건의 계산만 제공
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: PF07
+  title: 유동 물리 PINN 기준 문제
+  track: physics
+  owner_role: 물리 AI
+  owner: null
+  planning_state: planned
+  depends_on:
+  - PF02
+  reuse_paths:
+  - src/cont/learn
+  - src/cont/answer.py
+  deliverables:
+  - 기준해가 있는 단순 관/채널 유동 문제의 가정과 경계 정의
+  - 속도/압력·방정식/보존 잔차 출력
+  acceptance:
+  - 유동 가정·점성·기하·경계·좌표계를 문서화하고 기준해 대조
+  - 학습 밖 평가점과 경계 부근 편차 보고
+  - 복잡 난류/다상/현장 설비까지 지원한다고 확대하지 않음
+  negative_tests:
+  - 미지원 유동 조건·잘못된 압력 기준·보존 불일치
+  rollback: 지원 범위 밖은 미지원으로 반환; 이전 열/구조 기능에 영향 없음
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: PF08
+  title: PINN 결과를 생성형 작업·4D에 통합
+  track: physics
+  owner_role: 물리 AI/제품 통합
+  owner: null
+  planning_state: planned
+  depends_on:
+  - PF01
+  - PF04
+  - GF07
+  - GF10
+  reuse_paths:
+  - src/cont/answer.py
+  - src/cont/objspec
+  - src/cont/view/scene4d.py
+  - src/cont/dialogue/plan.py
+  deliverables:
+  - 물리 계산 도구와 장면의 공간/시간 매핑
+  - 온도·변위·잔차 계열 선택, 조건 수정 후 영향 갱신
+  acceptance:
+  - 계산 메시/좌표와 화면 장면의 매핑을 확인하고 단위·보간·시간 기준 표시
+  - 설명용 단계 시간과 실제 해석 시간을 혼합하지 않음
+  - PINN 실패 시 일반 설명/이미지 작업을 유지하고 물리 결과는 실패 상태로 남김
+  negative_tests:
+  - 메시/좌표 불일치·오래된 계산 결과·보간 범위 밖·모델 변경
+  rollback: 표시만 끄거나 직전 물리 결과로 명시적 복귀; 원본 값 보존
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: QA01
+  title: 본딩 전체 사용자 흐름 실제 인수
+  track: acceptance
+  owner_role: 검증 책임/제품 책임
+  owner: null
+  planning_state: planned
+  depends_on:
+  - GF03
+  - GF04
+  - GF05
+  - GF06
+  - GF07
+  - GF08
+  - GF09
+  - GF10
+  - GF11
+  reuse_paths:
+  - docs/generative_workflow.md
+  - tests/test_scene4d.py
+  deliverables:
+  - 정해진 대화 시나리오의 실제 모델·브라우저 인수 기록
+  - 생성/편집/저장 증거와 실패 목록
+  acceptance:
+  - 설명→이미지→3D→4D→단계 속도/시점 수정→비교→저장→종료/재열기 수행
+  - 이미지 부분 수정과 부품 조건 변경을 별도 사례로 확인
+  - 반복 횟수/환경/모델을 기록하고 기능성 합격과 통계적 성능 주장을 구분
+  negative_tests:
+  - 단계 중 실패·대상 모호성·이전 버전 선택·재열기 후 후속 수정
+  rollback: 문제 단계만 수정 후 영향받는 인수 사례를 재실행
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: QA02
+  title: 실패·취소·격리·복구 인수
+  track: acceptance
+  owner_role: 검증 책임
+  owner: null
+  planning_state: planned
+  depends_on:
+  - GF04
+  - GF11
+  - GF13
+  reuse_paths:
+  - src/cont/dialogue/plan.py
+  - src/cont/dialogue/plan_store.py
+  - src/cont/service
+  deliverables:
+  - 고장 주입 시나리오별 결과와 복구 기록
+  - 중복 실행·자료 손실·권한 침범 검사
+  acceptance:
+  - 모델 시간초과·브라우저 재접속·저장 중 종료 후 안전한 재개
+  - 다른 사용자의 자료를 읽거나 변경하지 않음
+  - 도구가 취소를 지원하지 않는 경우에도 늦은 결과의 무단 반영 차단
+  negative_tests:
+  - 파일 손상·네트워크 단절·동시 수정·만료 세션·중복 요청
+  rollback: 마지막 정상 상태 복원; 증거 파일을 수정해 통과시키지 않음
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: QA03
+  title: 완료율·수정 부담·지연·비용 기준 측정
+  track: acceptance
+  owner_role: 검증 책임
+  owner: null
+  planning_state: planned
+  depends_on:
+  - QA01
+  - GF04
+  reuse_paths:
+  - docs/differentiation.md
+  - src/cont/dialogue/plan.py
+  deliverables:
+  - 시나리오별 성공/실패/건너뜀과 사용자 재설명 횟수
+  - 첫 결과/전체 완료 지연과 성공 작업당 비용 보고
+  acceptance:
+  - 시도 전체와 성공 시도 비용을 모두 집계하고 실패 비용을 숨기지 않음
+  - 동일 입력·자산·작업 범위·환경 조건으로 비교
+  - 소표본 p95의 한계를 적고 세계 최고 등 성능 주장은 측정 전 하지 않음
+  negative_tests:
+  - 선택한 성공 사례만 집계·더미 결과 혼입·캐시/실제 모델 비용 혼합
+  rollback: 원본 측정 로그 유지; 지표 산식 변경은 보고 버전 증가
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제
+- id: QA04
+  title: 설치·백업·복원·릴리스 후보 인수
+  track: acceptance
+  owner_role: 운영/검증 책임
+  owner: null
+  planning_state: planned
+  depends_on:
+  - GF11
+  - GF12
+  - GF13
+  - QA01
+  - QA02
+  - CT05
+  reuse_paths:
+  - pyproject.toml
+  - src/cont/buildinfo.py
+  - docs/generative_workflow.md
+  deliverables:
+  - 설치/모델 준비/실행/백업/복원/이전 버전 복귀 절차
+  - 배포 후보 커밋과 실제 실행 버전 대조
+  acceptance:
+  - 깨끗한 환경에서 설치하고 저장 프로젝트 복원
+  - 모델 가중치·키를 코드 저장소에 넣지 않음
+  - 인증된 외부 모드의 인수 전에는 로컬 인수와 구분; 공개 자동 실행 없음
+  negative_tests:
+  - 필수 모델 누락·백업 누락·환경 설정 차이·스키마 불일치
+  rollback: 직전 코드/설정으로 복귀하되 사용자 신규 산출물 보존
+  evidence_required:
+  - 검사한 코드 커밋과 실행 환경
+  - 입력·조건·모델/설정 버전
+  - 실행 명령 또는 화면 조작 순서
+  - 실제 출력과 로그·시험 결과
+  - 미실행·건너뜀·남은 문제

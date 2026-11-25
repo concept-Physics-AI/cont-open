@@ -12,6 +12,8 @@ M01·M03·M04·M10과 프로젝트 관리를 먼저 연결한다. M02는 근거 
 
 후속 작업·완료보고는 어느 핵심 사용자 동작을 연결했는지와 실제 공급자·화면·저장 증거를 적는다. 계획 문서의 변경을 기능 구현 완료로 보고하지 않는다. 상세 인수는 [docs/generative_workflow.md](docs/generative_workflow.md)를 따른다.
 
+제품 통합 작업은 [docs/integration_control_plan.md](docs/integration_control_plan.md)의 상태·증거 기준과 [docs/integration_jobs.yaml](docs/integration_jobs.yaml)의 지정 작업 명세를 따른다. 작업 정의와 제품의 현재 상태를 혼동하지 않는다. 개발 작업 ID, 담당, 브랜치, 검사한 커밋과 실제 인수 증거를 남기고 필수 시험의 skip을 완료로 올리지 않는다. 컨트롤타워 대시보드의 구현을 생성형 개발의 선행조건으로 추가하지 않는다.
+
 이 저장소는 여러 AI 도구의 지시가 섞여 구조가 무너졌던 경험에서 다시 시작했다. 아래 규칙을 지킨다.
 
 1. **기준은 이 저장소 하나** (`concept-Physics-AI/cont-open`, 공개). 2026-11-23 이전의 개발 이력은 비공개 저장소 `concept-Physics-AI/cont`에 보관되어 있고 거기서는 더 개발하지 않는다. 옛 저장소(goosang-jung/*, 보관됨)는 읽기만 한다. 가져올 때는 필요한 파일만 옮기고 커밋 메시지에 출처를 적는다.
