@@ -1,0 +1,16 @@
+# 명세 → 이미지 요청 문구. 모델은 영어 문구를 가장 잘 따르므로 부품 역할별 영어 설명을 둔다.
+# 역할에 없는 부품은 role 이름을 그대로 쓴다. 치수는 설명용이며 축척이 아니다.
+lead: "clean schematic cross-section illustration of a stacked semiconductor structure, side view, layers from bottom to top:"
+tail: "flat vector style, plain white background, not to scale, no text, no labels, no people"
+negative: "text, labels, letters, numbers, watermark, photo, realistic metal texture, extra layers"
+roles:
+  substrate: "silicon layer"
+  dielectric: "thin dielectric oxide layer"
+  metal: "copper layer"
+groups:
+  wafer: "wafer side"
+  die: "die side"
+stages:
+  approach: "upper die hovering above the wafer, gap between the two bonding surfaces, slightly shifted sideways"
+  align: "upper die hovering above the wafer, laterally aligned with it, small gap between the surfaces"
+  contact: "upper die resting directly on the wafer, bonding surfaces in contact"
