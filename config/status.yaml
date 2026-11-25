@@ -141,7 +141,9 @@ items:
 - key: generative_object_spec
   name: 공통 대상 명세 (표현 간 같은 부품 ID)
   status: 뼈대
-  scope: 본딩 층 구조(설명용 치수)의 부품 ID·공정 단계·내용 해시, 표현 일치 검사, 고친 뒤 다시 만들 표현 선택. 이미지·3D·4D·그래프 생성기가 이 명세를 실제로 읽는 연결과 저장·복원은 아직 없다
+  scope: 본딩 층 구조(설명용 치수)의 부품 ID·공정 단계·내용 해시, 표현 일치 검사, 고친 뒤 다시 만들 표현 선택. 3D 장면·단계 4D 재생(카메라·단계 속도 수정 포함)은 이 명세를 읽어 브라우저에서 돈다. 이미지·그래프 생성기 연결과 저장·복원은 아직 없다
   evidence:
   - src/cont/objspec
   - tests/test_objspec.py
+  - src/cont/view/scene4d.py
+  - tests/test_scene4d.py

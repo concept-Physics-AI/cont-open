@@ -68,6 +68,7 @@ class ObjectSpec:
     name: str
     parts: tuple[ObjPart, ...]
     stages: tuple[Stage, ...] = ()
+    start: tuple[tuple[str, Pose], ...] = ()      # 첫 단계 전의 자세 (적지 않은 부품은 원래 자리)
     dimension_status: str = "illustrative"
     time_axis: str = "process_stage"
     parent_version: str = ""     # 이 명세를 고쳐 만든 이전 version (해시에는 넣지 않는다)
@@ -81,6 +82,9 @@ class ObjectSpec:
         sids = [s.id for s in self.stages]
         if len(set(sids)) != len(sids):
             raise ObjectSpecError("단계 ID가 겹칩니다")
+        for pid, _ in self.start:
+            if pid not in ids:
+                raise ObjectSpecError(f"시작 자세가 없는 부품 '{pid}'를 가리킵니다")
         for s in self.stages:
             for pid, _ in s.poses:
                 if pid not in ids:
@@ -91,6 +95,19 @@ class ObjectSpec:
             raise ObjectSpecError(f"time_axis는 {TIME_AXES} 중 하나여야 합니다")
 
     # --- 읽기 ---
+    def stage(self, ref: "int | str") -> Stage:
+        """단계를 번호(1부터), 단계 ID, 이름으로 찾는다. "두 번째 단계"는 2, "정렬"은 이름이다. 모호하면 거절한다."""
+        if isinstance(ref, bool):
+            raise ObjectSpecError(f"단계를 가리키는 값이 잘못됐습니다: {ref!r}")
+        if isinstance(ref, int):
+            if not 1 <= ref <= len(self.stages):
+                raise ObjectSpecError(f"{ref}번째 단계가 없습니다 (단계는 {len(self.stages)}개)")
+            return self.stages[ref - 1]
+        hits = [s for s in self.stages if ref in (s.id, s.name)]
+        if len(hits) != 1:
+            raise ObjectSpecError(f"단계 '{ref}'를 찾지 못했거나 둘 이상입니다 (있는 것: {[(s.id, s.name) for s in self.stages]})")
+        return hits[0]
+
     def part(self, part_id: str) -> ObjPart:
         for p in self.parts:
             if p.id == part_id:
@@ -108,6 +125,7 @@ class ObjectSpec:
             "parts": [{"id": p.id, "layer": p.layer, "name": p.part.name, "role": p.part.role, "z0": p.part.z0,
                        "z1": p.part.z1, "outer": p.part.outer, "inner": p.part.inner, "profile": p.part.profile,
                        "sweep": p.part.sweep} for p in self.parts],
+            "start": [{"part": pid, "dz": ps.dz, "dx": ps.dx} for pid, ps in self.start],
             "stages": [{"id": s.id, "name": s.name,
                         "poses": [{"part": pid, "dz": ps.dz, "dx": ps.dx} for pid, ps in s.poses]} for s in self.stages],
         }
@@ -157,9 +175,9 @@ class ViewState:
     def speed_of(self, stage_id: str) -> float:
         return dict(self.stage_speed).get(stage_id, 1.0)
 
-    def with_speed(self, spec: ObjectSpec, stage_id: str, factor: float) -> "ViewState":
-        if stage_id not in [s.id for s in spec.stages]:
-            raise ObjectSpecError(f"없는 단계 ID '{stage_id}' (있는 것: {[s.id for s in spec.stages]})")
+    def with_speed(self, spec: ObjectSpec, stage: "int | str", factor: float) -> "ViewState":
+        """한 단계의 재생 속도만 바꾼다. stage는 번호(1부터)·ID·이름. 다른 단계와 구조는 그대로다."""
+        stage_id = spec.stage(stage).id
         d = dict(self.stage_speed)
         d[stage_id] = factor
         return replace(self, stage_speed=tuple(sorted(d.items())))
