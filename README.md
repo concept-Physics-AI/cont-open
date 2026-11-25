@@ -8,7 +8,7 @@
 
 [제품 기준](ARCHITECTURE.md) · [첫 완성본 인수 흐름](docs/generative_workflow.md) · [개발 순서](docs/roadmap.md) · [차별화 제안](docs/differentiation.md). 이 목표가 모두 구현됐다는 뜻은 아니다.
 
-[상세 통합·컨트롤타워·검증 계획](docs/integration_control_plan.md) · [32개 개발 작업 정의](docs/integration_jobs.yaml). 작업 등록은 기능 구현 완료를 뜻하지 않는다.
+[상세 통합·컨트롤타워·검증 계획](docs/integration_control_plan.md) · [32개 개발 작업·128개 세부 단계](docs/integration_jobs.yaml) · [실제 AI 모형 개발 준비](docs/model_development.md) · [모형 계약 목록](docs/model_readiness.yaml). 작업 등록은 기능 구현 완료를 뜻하지 않는다.
 
 한국형 **물리 기반 생성형 AI**. 현실 세계를 가상의 AI 환경으로 옮기고, 그 환경을 다시 현실 세계와 연결한다.
 대화로 목적을 이해하고 **설명·이미지·도식·그래프·3D·4D를 순차적으로 생성하고 수정하며, 작업을 저장해 이어 가는 것**이 제품 개발의 중심이다. 체결·하이브리드 본딩·관절은 이 능력을 적용하는 사례다.

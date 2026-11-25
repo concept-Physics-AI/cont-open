@@ -1,6 +1,6 @@
-schema_version: 1
+schema_version: 2
 kind: development_plan_not_runtime_state
-baseline_commit: 27708280c15d4266068ec43b91947ce1c8a8af58
+baseline_commit: cd7a63ce705fa0553e2e0682fb8d7a8205638b32
 decision: 생성형 최우선 · PINN 자체 모형 SW를 학습 없이 병행 구현 · 모형 학습과 대규모 현장 학습은 후속
 definition_authority: docs/integration_jobs.yaml
 process_authority: docs/integration_control_plan.md
@@ -10,6 +10,7 @@ notes:
 - 이 파일만으로 작업을 실행하거나 상태를 자동 변경하는 코드는 아직 없다.
 - depends_on은 해당 작업의 통합 인수 선행조건이다. 인터페이스 초안/독립 구현 준비는 먼저 할 수 있으나 더미 시험을 인수로 계산하지 않는다.
 - '2026-11-25 후속 지시: 현재 PINN 작업의 인수는 새 학습 실행이나 학습된 가중치 없이 통과해야 한다. 기준 해석기와 신경망 구조/잔차 연산 시험을 구분한다.'
+- 정적 계획 검사기는 정의의 정합성만 검사한다. 담당 배정·작업 실행·실제 모형 인수·자동 학습을 수행하지 않는다.
 jobs:
 - id: CT01
   title: 기준 코드·재사용 자산·미완료 연결 확정
@@ -37,6 +38,40 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C1
+  - C2
+  - C3
+  - C4
+  - C5
+  - C6
+  model_refs: []
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: CT01.01
+    action: 기준 커밋과 미병합 변경을 조사한다
+    output: 기준 SHA·범위·충돌 후보 표
+    check: main과 작업 트리의 차이를 기록
+  - id: CT01.02
+    action: 여섯 능력의 기존 모듈과 시험을 대조한다
+    output: 기능-코드-시험-실행 증거 표
+    check: 파일 존재와 실행 인수를 분리
+  - id: CT01.03
+    action: 최근 ObjectSpec 이미지·선택·프로젝트 저장 코드와 SDXL 실제 생성 기록을 상태표에 반영한다
+    output: 현황 정정 diff
+    check: 전체 제품 완료로 올리지 않음
+  - id: CT01.04
+    action: 실행 환경과 우선 차단 요인을 정리한다
+    output: GF01/GF02/PF01 착수 입력
+    check: 공급자 설정과 실제 가용성을 구분
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: CT02
   title: 작업 등록·담당·브랜치·의존성 관리
   track: control
@@ -65,6 +100,40 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C1
+  - C2
+  - C3
+  - C4
+  - C5
+  - C6
+  model_refs: []
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: CT02.01
+    action: 작업 정의와 상태 이력을 분리한다
+    output: 작업 ID·owner·branch·상태 개정 계약
+    check: 사용자 run_id와 혼용 없음
+  - id: CT02.02
+    action: 의존 DAG와 변경 경로를 조회한다
+    output: 선행조건·동일 파일 충돌 목록
+    check: 없는 ID·순환·중복 ID 거절
+  - id: CT02.03
+    action: 담당 선점과 상태 전환을 구현한다
+    output: 단일 작성자와 원자적 개정 처리
+    check: 같은 개정의 동시 변경 한 건만 성공
+  - id: CT02.04
+    action: 차단 해제·취소·재개를 연결한다
+    output: 이유·담당·다음 행동·이력
+    check: 미인수 의존 작업을 완료로 간주하지 않음
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: CT03
   title: 완료 증거 등록·검사·단계별 인수
   track: control
@@ -92,6 +161,40 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C1
+  - C2
+  - C3
+  - C4
+  - C5
+  - C6
+  model_refs: []
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: CT03.01
+    action: 증거 종류와 귀속을 정의한다
+    output: code/unit/provider/browser/restore/physics 구분
+    check: 시험용 응답을 provider 증거로 거절
+  - id: CT03.02
+    action: 증거 파일과 입력·출력 해시를 등록한다
+    output: 불변 증거 manifest
+    check: 누락·다른 커밋·손상 파일 탐지
+  - id: CT03.03
+    action: 필수 인수 항목과 실행 결과를 대조한다
+    output: pass/fail/skip/not_run 판정
+    check: 필수 skip이 accepted를 만들지 않음
+  - id: CT03.04
+    action: 정정과 무효화 이력을 보존한다
+    output: 부모 증거·재검사 대상
+    check: 원본 삭제 없이 새 개정 추가
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: CT04
   title: 진척·차단·실패·다음 작업 대시보드
   track: control
@@ -121,6 +224,40 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C1
+  - C2
+  - C3
+  - C4
+  - C5
+  - C6
+  model_refs: []
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: CT04.01
+    action: 조회 데이터와 제품 상태를 구분한다
+    output: 작업·제품·모형 준비의 별도 조회 모델
+    check: 작업 수로 제품 완성률을 주장하지 않음
+  - id: CT04.02
+    action: 담당·차단·다음 작업을 표시한다
+    output: 여섯 필수 정보 카드
+    check: owner 미정과 의존 미충족 표시
+  - id: CT04.03
+    action: 증거에서 실행까지 이동한다
+    output: 커밋·로그·출력 참조 링크
+    check: 깨진 링크와 권한 없는 자료 차단
+  - id: CT04.04
+    action: 필터와 재접속을 시험한다
+    output: 트랙·담당·상태별 조회
+    check: 조회가 작업 실행·학습을 시작하지 않음
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: CT05
   title: 시험 종류별 CI와 실제 실행 인수 분리
   track: control
@@ -152,6 +289,40 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C1
+  - C2
+  - C3
+  - C4
+  - C5
+  - C6
+  model_refs: []
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: CT05.01
+    action: 시험 프로파일을 분리한다
+    output: offline/provider/browser/pinn_software/learn_regression
+    check: 기존 학습 회귀와 현재 무학습 인수 분리
+  - id: CT05.02
+    action: 실제 공급자 시험의 준비 조건을 둔다
+    output: 명시적 실행 옵션·환경 점검
+    check: 인증 누락을 성공으로 처리하지 않음
+  - id: CT05.03
+    action: PINN 학습 진입점을 차단한 시험을 둔다
+    output: train/optimizer 호출 감시 fixture
+    check: 첫 조회·저장·복원에서 새 학습 호출 0
+  - id: CT05.04
+    action: 프로파일별 보고와 CI를 연결한다
+    output: 실행 SHA별 결과 묶음
+    check: 실행하지 않은 프로파일은 not_run
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: CT06
   title: 배포 후보·문서·인수 결과 정합 확인
   track: control
@@ -185,6 +356,40 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C1
+  - C2
+  - C3
+  - C4
+  - C5
+  - C6
+  model_refs: []
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: CT06.01
+    action: 인수된 작업과 후보 커밋을 묶는다
+    output: 릴리스 후보 manifest
+    check: 변경된 입력·모형의 오래된 증거 제외
+  - id: CT06.02
+    action: 정본과 실제 기능 상태를 대조한다
+    output: 문서·설정·미지원 범위 정정
+    check: 계획만 있는 기능의 완료 표기 차단
+  - id: CT06.03
+    action: 설치·복원·복귀 증거를 확인한다
+    output: QA04 참조·모델 준비 안내
+    check: 기존 프로젝트의 이전 버전 보존
+  - id: CT06.04
+    action: 배포 후보의 진행 또는 보류를 기록한다
+    output: 결정·잔여 위험·다음 작업
+    check: 누락된 필수 인수는 보류 사유
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: GF01
   title: 실제 LLM·이미지 공급자 실행 확인
   track: generative
@@ -201,6 +406,7 @@ jobs:
   deliverables:
   - 선택 공급자의 텍스트 응답·이미지 생성 실행 절차와 결과
   - 실제/시험용 공급자 표시 및 환경 준비 점검
+  - 기존 SDXL 단발 실행 기록을 docs/generation.md에서 재사용하고 본딩 프로젝트 통합 실행으로 추가 인수
   acceptance:
   - 실제 모델명·요청 ID/실행 ID·응답·이미지 파일 해시 기록
   - 시험용 생성기를 실제 결과로 취급하지 않음
@@ -214,6 +420,38 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C1
+  - C3
+  model_refs:
+  - LLM_CHAT
+  - IMAGE_CREATE
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: GF01.01
+    action: 설정된 공급자의 실제 능력과 환경을 조회한다
+    output: 텍스트·비전·생성·편집 능력 표
+    check: 설정 파일의 모델명을 설치 증거로 쓰지 않음
+  - id: GF01.02
+    action: 실제 텍스트 응답을 한 번 끝까지 받는다
+    output: 요청·응답·모델 식별·지연 로그
+    check: 더미 응답과 연결 오류를 분리
+  - id: GF01.03
+    action: 실제 이미지 파일을 생성해 연다
+    output: PNG·내용 해시·실행 환경
+    check: Fake.real=false는 실제 생성 인수 제외
+  - id: GF01.04
+    action: 실패 유형과 자원 회수 경로를 시험한다
+    output: 인증/모델없음/시간초과/메모리부족 분류
+    check: 비밀값 노출과 무한 재시도 없음
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: GF02
   title: 최소 프로젝트·대화·대상 상태 저장
   track: generative
@@ -227,8 +465,10 @@ jobs:
   - src/cont/service/runs.py
   - src/cont/service/ledger.py
   - src/cont/objspec
+  - src/cont/service/project.py
+  - tests/test_project.py
   deliverables:
-  - 프로젝트 manifest와 대화·대상·산출물 참조의 최소 저장
+  - 기존 프로젝트 manifest에 대화·계획·실행 참조를 확장하는 최소 저장
   - ObjectSpec/ViewState와 기존 실행·자료 ID 재사용
   acceptance:
   - 두 프로젝트가 같은 부품 이름을 써도 문맥과 산출물이 섞이지 않음
@@ -243,6 +483,38 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C1
+  - C5
+  - C6
+  model_refs:
+  - LLM_CHAT
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: GF02.01
+    action: 기존 service.project에 대화·계획·실행 참조를 확장할 계약을 정한다
+    output: 최소 프로젝트 manifest 계약
+    check: 동일 개념의 새 ID 체계 중복 없음
+  - id: GF02.02
+    action: 기존 원자적 저장·개정·복구를 재사용하고 확장 계약의 충돌을 시험한다
+    output: 읽기·쓰기·프로젝트 revision
+    check: 저장 실패 시 이전 개정 유지
+  - id: GF02.03
+    action: 대화 문맥과 선택 대상 참조를 복원한다
+    output: 대화·대상·산출물 참조 로드
+    check: 다른 프로젝트의 같은 이름 혼입 없음
+  - id: GF02.04
+    action: 생성·장면 도구에 프로젝트 문맥을 전달한다
+    output: GF03/GF05/GF07 공통 입력
+    check: 누락된 대상과 오래된 개정 거절
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: GF03
   title: 실제 대화에서 계획 생성·검증·실행 연결
   track: generative
@@ -272,6 +544,38 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C1
+  - C2
+  model_refs:
+  - LLM_CHAT
+  - LLM_PLAN
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: GF03.01
+    action: 실제 LLM의 계획 출력 스키마를 정한다
+    output: 단계 ID·도구·인자·의존·예상 출력
+    check: 자유 텍스트를 실행 코드로 취급하지 않음
+  - id: GF03.02
+    action: 기존 계획 검증기와 도구 허용 목록을 연결한다
+    output: 스키마 검증·인자 정규화
+    check: 알 수 없는 도구·순환·없는 대상 차단
+  - id: GF03.03
+    action: 후속 지시를 기존 프로젝트의 변경 계획으로 만든다
+    output: 선택·부모 산출물·영향 범위
+    check: 모호한 대상은 질문하며 변경하지 않음
+  - id: GF03.04
+    action: 한 요청을 실제 도구 실행까지 연결한다
+    output: 대화-계획-실행-출력 추적
+    check: 실패 단계 이후 의존 작업을 성공 표시하지 않음
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: GF04
   title: 진행 이벤트·취소·재시도 화면 연결
   track: generative
@@ -300,6 +604,37 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C2
+  - C6
+  model_refs:
+  - LLM_PLAN
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: GF04.01
+    action: 실행과 시도별 이벤트 계약을 정한다
+    output: run/step/attempt/event 순번
+    check: 계획 상태와 개발 작업 상태 분리
+  - id: GF04.02
+    action: 화면에 실제 진행 이벤트를 전달한다
+    output: 대기·실행·완료·실패 카드
+    check: 가짜 진행률 대신 관측 이벤트 표시
+  - id: GF04.03
+    action: 취소·재시도·중복 요청을 처리한다
+    output: idempotency·취소 토큰·시도 기록
+    check: 늦게 끝난 취소 결과의 자동 적용 금지
+  - id: GF04.04
+    action: 연결 끊김 뒤 진행을 복원한다
+    output: 최종 이벤트 이후 재조회
+    check: 이벤트 중복·역순에도 최종 상태 일치
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: GF05
   title: 실제 이미지 생성→화면→프로젝트 연결
   track: generative
@@ -313,6 +648,10 @@ jobs:
   - src/cont/generation
   - src/cont/service/ledger.py
   - src/cont/objspec
+  - src/cont/objspec/image.py
+  - tests/test_objspec_image.py
+  - src/cont/service/project.py
+  - tests/test_project.py
   deliverables:
   - generate_image 도구 등록과 실제 이미지 카드 표시
   - ObjectSpec의 부품/조건/버전을 요청과 결과에 연결
@@ -329,6 +668,37 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C3
+  - C5
+  model_refs:
+  - IMAGE_CREATE
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: GF05.01
+    action: ObjectSpec 기반 이미지 요청을 생성 도구로 감싼다
+    output: 기존 image.py 재사용 어댑터
+    check: prompt의 부품 선언과 실제 픽셀 검수 분리
+  - id: GF05.02
+    action: 실제 모델 결과를 원장에 기록한다
+    output: 원본 이미지·params·부모·spec version
+    check: 빈 파일·잘못된 형식·취소 결과 거절
+  - id: GF05.03
+    action: 결과 카드와 오류·재생성 동작을 붙인다
+    output: 실제 이미지 표시·원본 열기
+    check: 같은 버튼 중복 호출의 비용 중복 방지
+  - id: GF05.04
+    action: 프로젝트를 다시 열어 생성 기록을 확인한다
+    output: 이미지 파일·해시·대상 복원
+    check: 파일이 없으면 성공 카드 대신 누락 표시
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: GF06
   title: 도식·그래프의 구조화 생성과 원본 연결
   track: generative
@@ -357,6 +727,37 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C3
+  - C5
+  model_refs:
+  - SCENE_SPEC
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: GF06.01
+    action: ChartSpec과 도식 입력 계약을 정의한다
+    output: 축·계열·단위·원본·시간 종류
+    check: 수치 원본 없는 그래프의 물리 수치 주장 차단
+  - id: GF06.02
+    action: 원본 결과에서 그래프 데이터를 만든다
+    output: 데이터 인덱스·변환 이력
+    check: 단위 변환·결측·비유한 값 시험
+  - id: GF06.03
+    action: 계열 선택·확대·내보내기를 연결한다
+    output: 그래프 보기 상태와 원본 링크
+    check: 화면 보간을 원본 측정값으로 저장하지 않음
+  - id: GF06.04
+    action: 대상 변경과 그래프 버전을 연결한다
+    output: stale/재생성 표시
+    check: 원본 데이터와 화면 값 대조
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: GF07
   title: 본딩 3D·4D를 대화 도구로 연결
   track: generative
@@ -385,6 +786,37 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C3
+  - C4
+  model_refs:
+  - SCENE_SPEC
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: GF07.01
+    action: 기존 본딩 장면 생성기를 도구로 등록한다
+    output: create_scene와 입력 검증
+    check: 기존 부품 ID·명세 재사용
+  - id: GF07.02
+    action: 접근·정렬·접촉 단계를 대화와 연결한다
+    output: 단계 ID·순서·재생 시간
+    check: 설명 재생시간과 물리 시간 구분
+  - id: GF07.03
+    action: 속도·회전·확대를 ViewState 변경으로 처리한다
+    output: 카메라와 단계별 속도 패치
+    check: 카메라 변경에 물리 계산 재호출 없음
+  - id: GF07.04
+    action: 브라우저에서 실제 3D·4D 조작을 확인한다
+    output: 장면·이벤트·화면 기록
+    check: 정렬 단계만 변경되고 구조 개정은 유지
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: GF08
   title: 공통 선택 상태와 자연어 지시 대상 연결
   track: generative
@@ -398,6 +830,10 @@ jobs:
   - src/cont/objspec/spec.py
   - src/cont/objspec/check.py
   - src/cont/view
+  - src/cont/objspec/select.py
+  - tests/test_objspec_select.py
+  - src/cont/service/project.py
+  - tests/test_project.py
   deliverables:
   - 이미지 영역·부품·그래프 계열·공정 단계의 선택 계약
   - 선택 ID/부모 산출물/버전을 대화 문맥에 전달
@@ -414,6 +850,38 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C1
+  - C4
+  model_refs:
+  - IMAGE_EDIT
+  - SCENE_SPEC
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: GF08.01
+    action: 선택 대상의 공통 envelope를 정한다
+    output: artifact/part/series/stage/region·version
+    check: 화면 좌표와 세계 좌표의 종류 명시
+  - id: GF08.02
+    action: 기존 ID·이름·층·도식 선택 코드를 연결한다
+    output: select.py와 후보 표시
+    check: 모호한 이름을 임의 부품으로 확정하지 않음
+  - id: GF08.03
+    action: 3D 클릭·그래프·이미지 마스크 입력을 연결한다
+    output: UI selection→대화 문맥
+    check: 도식 선택을 생성 이미지 픽셀 인식으로 취급하지 않음
+  - id: GF08.04
+    action: 선택 버전 검사를 수정 직전에 수행한다
+    output: 선택 유효성·부모 버전 검사
+    check: 다른 프로젝트·오래된 선택 거절
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: GF09
   title: 참조 이미지·마스크 기반 부분 편집
   track: generative
@@ -443,6 +911,37 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C3
+  - C4
+  model_refs:
+  - IMAGE_EDIT
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: GF09.01
+    action: 참조 이미지·마스크 편집 계약을 확장한다
+    output: 공급자 capability·부모 해시·마스크
+    check: 편집 미지원 공급자를 생성으로 몰래 대체하지 않음
+  - id: GF09.02
+    action: 마스크 좌표·해상도·알파를 정규화한다
+    output: 원본 좌표 기준 편집 요청
+    check: 확대된 화면 좌표의 잘못된 적용 차단
+  - id: GF09.03
+    action: 실제 편집 모델을 호출하고 새 버전으로 저장한다
+    output: 원본·마스크·편집 결과·모델 로그
+    check: 원본 이미지 덮어쓰기 없음
+  - id: GF09.04
+    action: 선택 안팎의 변화와 사용자 의도를 검토한다
+    output: 전후 비교·변경 범위·인수 기록
+    check: 영역 밖 보존을 모델 호출 성공만으로 보장하지 않음
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: GF10
   title: 변경 영향·결과 일관성·선택 재실행
   track: generative
@@ -458,6 +957,8 @@ jobs:
   - src/cont/objspec/check.py
   - src/cont/answer.py
   - src/cont/service/runs.py
+  - src/cont/service/project.py
+  - tests/test_project.py
   deliverables:
   - 산출물 의존 관계와 stale 상태
   - 부품/조건 수정에 영향받는 도구만 다시 실행
@@ -474,6 +975,38 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C4
+  - C5
+  model_refs:
+  - LLM_PLAN
+  - SCENE_SPEC
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: GF10.01
+    action: 산출물 의존과 입력 지문을 연결한다
+    output: 대상·조건·모델·부모 dependency graph
+    check: 순환·누락 부모 거절
+  - id: GF10.02
+    action: 변경 종류별 영향 범위를 계산한다
+    output: 형상/조건/보기/재생시간별 affected 목록
+    check: 카메라 수정과 형상 수정의 영향 구분
+  - id: GF10.03
+    action: 새 버전 발행과 stale 표기를 원자적으로 한다
+    output: 변경 전후 개정·재생성 계획
+    check: 실패한 일부 결과를 최신 전체로 표시하지 않음
+  - id: GF10.04
+    action: 필요한 도구만 재실행한다
+    output: 호출 diff·변경하지 않은 해시
+    check: 무관한 결과와 원본 이력 유지
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: GF11
   title: 전체 프로젝트 저장·종료·재개
   track: generative
@@ -489,6 +1022,8 @@ jobs:
   - src/cont/service/ledger.py
   - src/cont/dialogue/plan_store.py
   - src/cont/fab
+  - src/cont/service/project.py
+  - tests/test_project.py
   deliverables:
   - 대화·계획·선택·대상·산출물·카메라·재생 위치 manifest
   - 종료 뒤 복원과 중단 작업의 재개
@@ -505,6 +1040,35 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C6
+  model_refs: []
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: GF11.01
+    action: 기존 service.project manifest에 대화·계획 체크포인트를 통합한다
+    output: 대화·계획·선택·파일·ViewState·재생 위치
+    check: 기존 최소 저장 계약의 명시적 마이그레이션
+  - id: GF11.02
+    action: 기존 게시·복구 코드를 재사용하고 확장 manifest의 중단·손상을 시험한다
+    output: 임시 저장·검사·마지막 정상 개정
+    check: 저장 중 종료에도 정상본 접근 가능
+  - id: GF11.03
+    action: 복원 후 중단 실행을 재개 가능 상태로 만든다
+    output: 파일 검사·이벤트 복원·재개 정책
+    check: 이미 완료된 유료 도구의 자동 중복 실행 없음
+  - id: GF11.04
+    action: 프로세스 종료 뒤 같은 작업을 이어간다
+    output: 재열기·후속 수정 인수 기록
+    check: 카메라·선택·재생 위치·원본 해시 대조
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: GF12
   title: 이미지·도면·표 입력 이해와 원본 근거
   track: generative
@@ -535,6 +1099,38 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C1
+  - C3
+  model_refs:
+  - VLM_INPUT
+  - KNOWLEDGE_RETRIEVAL
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: GF12.01
+    action: 파일 형식과 파서/VLM 책임을 정한다
+    output: 이미지·도면·표의 추출 라우팅
+    check: 지원하지 않는 형식과 손상 파일 안내
+  - id: GF12.02
+    action: 원본 위치를 가진 추출 구조를 만든다
+    output: 페이지·bbox·셀·단위·미확정 값
+    check: 보이지 않는 치수·재질을 확정값으로 채우지 않음
+  - id: GF12.03
+    action: 원본과 추출값을 나란히 정정한다
+    output: 검토 UI·수정 이력·확정 상태
+    check: 추출과 사용자 확정을 분리
+  - id: GF12.04
+    action: 확정된 값만 ObjectSpec과 도구 입력으로 보낸다
+    output: 원본 참조·변환 이력
+    check: 정정 전 결과의 stale 처리
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: GF13
   title: 사용자·프로젝트 접근 분리
   track: generative
@@ -547,6 +1143,8 @@ jobs:
   - src/cont/service/serve.py
   - src/cont/service/runs.py
   - src/cont/service/ledger.py
+  - src/cont/service/project.py
+  - tests/test_project.py
   deliverables:
   - 인증 방식과 프로젝트 소유권/권한 검사
   - 생성·조회·편집·다운로드 경로의 일관된 접근 검사
@@ -563,6 +1161,35 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C6
+  model_refs: []
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: GF13.01
+    action: 배포 환경에 맞는 인증·소유권 계약을 정한다
+    output: 사용자·프로젝트·권한 경계
+    check: 로컬 단독 모드와 다중 사용자 모드 명시
+  - id: GF13.02
+    action: 모든 읽기·쓰기·실행 경로에 검사한다
+    output: 서비스 경로별 권한 표
+    check: 임의 project_id로 타인 데이터 접근 차단
+  - id: GF13.03
+    action: 파일·이벤트·캐시·다운로드를 격리한다
+    output: 사용자별 저장·캐시 키
+    check: 같은 부품 이름·파일명도 분리
+  - id: GF13.04
+    action: 권한 변경·세션 만료·교차 요청을 시험한다
+    output: 거절 로그·세션 동작
+    check: 권한 실패 시 생성이나 비용 발생 없음
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: GF14
   title: 체결·관절 등 다른 사례에 공통 흐름 재사용
   track: generative
@@ -595,6 +1222,38 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C1
+  - C3
+  - C4
+  - C6
+  model_refs: []
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: GF14.01
+    action: 체결·관절 사례의 공통/전용 입력을 정의한다
+    output: 산업 템플릿 manifest
+    check: 핵심 코어 복사 없이 기존 ID·도구 사용
+  - id: GF14.02
+    action: 체결 구조·순서 설명을 기존 계산과 연결한다
+    output: 조립·체결 단계·그래프
+    check: 설명용 동작과 실제 축력 추정 구분
+  - id: GF14.03
+    action: 관절 부품·제한·설명 궤적을 연결한다
+    output: 링크·관절·동작 장면
+    check: 동역학 없는 애니메이션을 토크 예측으로 표시하지 않음
+  - id: GF14.04
+    action: 같은 편집·저장 인수 시나리오를 반복한다
+    output: 본딩/체결/관절 비교 보고
+    check: 사례마다 별도 대화·저장 엔진을 만들지 않음
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: PF01
   title: 학습 없이 실행되는 PINN 모형 등록·저장·조회 구조
   track: physics
@@ -626,6 +1285,37 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C3
+  - C5
+  model_refs:
+  - PINN_HEAT
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: PF01.01
+    action: 첫 조회의 암묵적 학습 진입점을 식별한다
+    output: pack.py 호출 경로와 분리 설계
+    check: 기존 연구용 train API는 보존
+  - id: PF01.02
+    action: 문제·모형 구성·가중치 상태를 분리한다
+    output: untrained/config_ready/weights_present 계약
+    check: 가중치 존재와 추론 인수 상태를 구분
+  - id: PF01.03
+    action: 조회에서 학습 대신 기준 계산을 선택한다
+    output: 실제 method·지원 범위·미지원 처리
+    check: 미학습 신경망 출력을 물리값으로 반환하지 않음
+  - id: PF01.04
+    action: 설정 저장·재시작·복원 경로를 시험한다
+    output: 가중치 없는 모형 기록
+    check: train/optimizer 호출 차단 상태로 통과
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: PF02
   title: 자체 PINN 구조·물리 문제·잔차 연산 계약
   track: physics
@@ -656,6 +1346,41 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C3
+  - C5
+  model_refs:
+  - PINN_HEAT
+  - PINN_STRUCTURE
+  - PINN_VIBRATION
+  - PINN_FLOW
+  - RESIDUAL_OPERATOR
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: PF02.01
+    action: 물리 문제 공통 계약을 확정한다
+    output: 좌표·시간·단위·물성·형상·초기/경계조건
+    check: 누락 조건·차원 불일치 거절
+  - id: PF02.02
+    action: 영역별 네트워크 입출력을 구성한다
+    output: 입력 차원·출력장·정규화·미분 차수
+    check: 가중치 없이 구조·shape·유한값만 점검
+  - id: PF02.03
+    action: 방정식·조건별 잔차 함수를 분리한다
+    output: residual operators와 후속 loss 인터페이스
+    check: loss 계산이 optimizer 실행을 시작하지 않음
+  - id: PF02.04
+    action: 기준장과 공통 결과 형식을 연결한다
+    output: PhysicsAnswer/Field/Residual 매핑
+    check: 알려진 기준 함수에서 연산·단위·좌표 점검
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: PF03
   title: 숨은 물리 역문제 인터페이스와 관측 연산
   track: physics
@@ -686,6 +1411,37 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C3
+  - C5
+  model_refs:
+  - INVERSE_OPERATOR
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: PF03.01
+    action: 관측 연산과 미지 파라미터를 분리한다
+    output: 관측 위치·시각·종류·범위 계약
+    check: 관측 없이 숨은 물리 식별 완료를 주장하지 않음
+  - id: PF03.02
+    action: 기준 계산에서 관측 위치로 투영한다
+    output: observation operator·보간 정책
+    check: 영역 밖·누락·불일치 단위 처리
+  - id: PF03.03
+    action: 지원하는 기존 역산을 명시적으로 연결한다
+    output: 해석 역산 결과·민감도·지원 상태
+    check: 신경망 학습과 수치 역산의 method 분리
+  - id: PF03.04
+    action: 정보 부족과 비유일성을 표시한다
+    output: 식별가능성 상태·추가 관측 안내
+    check: 구현하지 않은 불확실성 수치는 null
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: PF04
   title: 학습 없는 물리 잔차 계산·지도와 보정 인터페이스
   track: physics
@@ -715,6 +1471,38 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C3
+  - C5
+  model_refs:
+  - PINN_HEAT
+  - RESIDUAL_OPERATOR
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: PF04.01
+    action: 잔차 종류와 단위를 별도로 정의한다
+    output: PDE/BC/IC/보존/관측 계약
+    check: 서로 다른 단위의 잔차를 그대로 합산하지 않음
+  - id: PF04.02
+    action: 고정 함수·기준해·수치장에서 잔차를 계산한다
+    output: 위치·시간·원식·이산화 정보
+    check: 기준 계산의 이산화 오차와 모델 오차 구분
+  - id: PF04.03
+    action: 잔차 지도와 그래프를 만든다
+    output: 장·범례·원본·정규화 기준
+    check: 잔차가 작다는 이유만으로 실제 정확도를 확정하지 않음
+  - id: PF04.04
+    action: 미래 보정 모형 포트를 준비한다
+    output: 보정 입력/출력·적용 여부
+    check: 가중치 없는 보정은 비활성·보정값 없음
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: PF05
   title: 구조 물리 자체 모형 SW 구현
   track: physics
@@ -743,6 +1531,37 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C3
+  - C5
+  model_refs:
+  - PINN_STRUCTURE
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: PF05.01
+    action: 봉 또는 보 한 문제의 지원 범위를 고정한다
+    output: 재료·단면·하중·구속·단위
+    check: 미지원 접촉/소성/대변형을 일반해로 처리하지 않음
+  - id: PF05.02
+    action: 변위 출력 네트워크와 미분 연산을 구성한다
+    output: 구조 모형 SW·잔차 함수
+    check: 학습 없이 차원·미분·경계 연산 시험
+  - id: PF05.03
+    action: 지원 조건의 기준 구조 계산을 연결한다
+    output: 실제 해석식/수치해·변위·응력
+    check: 기준 계산이 없는 입력은 unsupported
+  - id: PF05.04
+    action: 화면과 설정 복원을 연결한다
+    output: 변형 표시 배율·원래 형상·모형 상태
+    check: 표시 배율과 물리 변위를 분리
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: PF06
   title: 진동 물리 자체 모형 SW 구현
   track: physics
@@ -771,6 +1590,37 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C3
+  - C5
+  model_refs:
+  - PINN_VIBRATION
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: PF06.01
+    action: 질량·스프링·감쇠 문제를 정의한다
+    output: 초기값·입력 힘·시간·계수
+    check: 음수 질량 등 허용하지 않는 입력 거절
+  - id: PF06.02
+    action: 시간 응답 모형과 잔차 연산을 구성한다
+    output: 변위·속도·가속도 관계
+    check: train 호출 없이 shape·미분 시험
+  - id: PF06.03
+    action: 기준 ODE 계산과 관측 비교를 연결한다
+    output: 응답 배열·method·시간축
+    check: 시간 단위·샘플 간격·초기조건 대조
+  - id: PF06.04
+    action: 그래프·동작·설정 저장을 연결한다
+    output: 같은 시간 인덱스의 장면
+    check: 재생 속도 변경이 물리 응답 배열을 바꾸지 않음
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: PF07
   title: 유동 물리 자체 모형 SW 구현
   track: physics
@@ -798,6 +1648,37 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C3
+  - C5
+  model_refs:
+  - PINN_FLOW
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: PF07.01
+    action: 기준해가 있는 단순 관/채널 범위를 정한다
+    output: 정상/비압축 등 지원 가정·경계
+    check: 난류·다상·복잡 형상 범용 지원 주장 금지
+  - id: PF07.02
+    action: 속도·압력 출력과 잔차 연산을 구성한다
+    output: 좌표·출력 단위·연속/운동량 잔차
+    check: 미학습 네트워크 값은 개발 시험 내부만 사용
+  - id: PF07.03
+    action: 지원 범위의 기준 유동장을 연결한다
+    output: 실제 method·물성·격자·유동장
+    check: 지원 가정 위반 입력 거절
+  - id: PF07.04
+    action: 장·유선 표현과 복원을 시험한다
+    output: 원본 유동장·시각화 설정
+    check: 장식 입자 속도를 계산값으로 혼동하지 않음
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: PF08
   title: 학습 전 물리 결과·PINN 상태의 생성형 화면 통합
   track: physics
@@ -830,6 +1711,37 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C3
+  - C5
+  model_refs:
+  - RESIDUAL_OPERATOR
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: PF08.01
+    action: 물리 결과와 장면의 공간·시간 계약을 잇는다
+    output: 부품/mesh/좌표변환/time_kind 매핑
+    check: 메시·단위·시간 불일치 차단
+  - id: PF08.02
+    action: 기준장과 잔차 표시를 생성 도구에 등록한다
+    output: field/residual 도구와 실제 method
+    check: 기준 계산 결과에 PINN 예측 표기 없음
+  - id: PF08.03
+    action: 조건 변경 시 물리 결과와 표현을 함께 갱신한다
+    output: 입력 지문·stale·영향 목록
+    check: 장면만 최신이고 수치가 이전이면 경고
+  - id: PF08.04
+    action: 모형 준비 상태와 계산 장면을 저장한다
+    output: untrained 설정·기준 결과·뷰 복원
+    check: 가중치 없이 전체 경로에서 새 학습 호출 0
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: QA01
   title: 본딩 전체 사용자 흐름 실제 인수
   track: acceptance
@@ -865,6 +1777,40 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C1
+  - C2
+  - C3
+  - C4
+  - C5
+  - C6
+  model_refs: []
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: QA01.01
+    action: 본딩 인수 입력과 예상 행동을 고정한다
+    output: T01~T08 시나리오·필수 도구 목록
+    check: 생성 결과 이미지를 미리 고정해 대체하지 않음
+  - id: QA01.02
+    action: 실제 모델로 순차 생성·편집을 수행한다
+    output: 대화·계획·이미지·장면·도구 로그
+    check: 한 흐름에서 동일 대상·버전 추적
+  - id: QA01.03
+    action: 프로세스 종료 후 재개한다
+    output: 파일·카메라·선택·재생 상태 비교
+    check: 새 대화로 우회하지 않고 저장된 문맥 사용
+  - id: QA01.04
+    action: 성공·실패·미실행을 판정한다
+    output: 시나리오별 증거와 재시험 목록
+    check: 핵심 단계 누락을 전체 통과로 요약하지 않음
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: QA02
   title: 실패·취소·격리·복구 인수
   track: acceptance
@@ -879,6 +1825,8 @@ jobs:
   - src/cont/dialogue/plan.py
   - src/cont/dialogue/plan_store.py
   - src/cont/service
+  - src/cont/service/project.py
+  - tests/test_project.py
   deliverables:
   - 고장 주입 시나리오별 결과와 복구 기록
   - 중복 실행·자료 손실·권한 침범 검사
@@ -895,6 +1843,40 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C1
+  - C2
+  - C3
+  - C4
+  - C5
+  - C6
+  model_refs: []
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: QA02.01
+    action: 고장 주입 지점과 복구 기대값을 고정한다
+    output: 공급자/네트워크/저장/권한별 표
+    check: 재현 입력과 주입 시각 기록
+  - id: QA02.02
+    action: 시간초과·취소·중복 이벤트를 실행한다
+    output: attempt·event·중복 적용 검사
+    check: 늦은 결과가 최신 개정을 덮어쓰지 않음
+  - id: QA02.03
+    action: 저장 손상과 교차 사용자 요청을 시험한다
+    output: 원본 해시·거절 로그·복구 결과
+    check: 자료 손실·권한 침범을 정상으로 숨기지 않음
+  - id: QA02.04
+    action: 고장 해제 뒤 사용자 작업을 이어간다
+    output: 복구 후 실제 수정·저장
+    check: 복구 과정의 중복 유료 실행을 별도 확인
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: QA03
   title: 완료율·수정 부담·지연·비용 기준 측정
   track: acceptance
@@ -923,6 +1905,40 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C1
+  - C2
+  - C3
+  - C4
+  - C5
+  - C6
+  model_refs: []
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: QA03.01
+    action: 측정 정의와 분모를 고정한다
+    output: 성공/실패/skip·재설명·지연·비용 정의
+    check: 실패 시도 비용을 성공 작업 비용에서 누락하지 않음
+  - id: QA03.02
+    action: 이벤트와 공급자 사용량을 모은다
+    output: 첫 결과/완료 시간·토큰·비용 출처
+    check: 알 수 없는 비용은 0 대신 unknown
+  - id: QA03.03
+    action: 고정된 시나리오를 반복한다
+    output: 시나리오·환경·모델별 표본 목록
+    check: 작은 표본의 분위수 한계를 함께 기록
+  - id: QA03.04
+    action: 다음 개선 작업을 실패 유형으로 정한다
+    output: 근거가 있는 우선순위 변경안
+    check: 측정 전 경쟁 우위·정확도 수치를 주장하지 않음
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
 - id: QA04
   title: 설치·백업·복원·릴리스 후보 인수
   track: acceptance
@@ -940,6 +1956,8 @@ jobs:
   - pyproject.toml
   - src/cont/buildinfo.py
   - docs/generative_workflow.md
+  - src/cont/service/project.py
+  - tests/test_project.py
   deliverables:
   - 설치/모델 준비/실행/백업/복원/이전 버전 복귀 절차
   - 배포 후보 커밋과 실제 실행 버전 대조
@@ -956,3 +1974,45 @@ jobs:
   - 실행 명령 또는 화면 조작 순서
   - 실제 출력과 로그·시험 결과
   - 미실행·건너뜀·남은 문제
+  core_objectives:
+  - C1
+  - C2
+  - C3
+  - C4
+  - C5
+  - C6
+  model_refs: []
+  new_training_required: false
+  entry_requirements:
+  - 기준 커밋과 변경 파일 범위를 고정하고 실제 담당·브랜치를 기록
+  - 선행 작업의 필요한 계약·증거를 확인; 미충족이면 독립 설계 범위와 차단 사유를 기록
+  - 이 작업이 연결하는 핵심 사용자 동작과 실패 시험을 먼저 확인
+  implementation_steps:
+  - id: QA04.01
+    action: 의존·모델·설정·마이그레이션을 고정한다
+    output: 설치 manifest·라이선스·버전
+    check: 설정명만 있고 사용할 수 없는 모델 탐지
+  - id: QA04.02
+    action: 깨끗한 환경에서 설치와 실제 흐름을 실행한다
+    output: 실행 SHA·환경·시나리오 로그
+    check: 개발자 캐시에 기대지 않음
+  - id: QA04.03
+    action: 백업 복원과 이전 릴리스 복귀를 시험한다
+    output: 백업 해시·프로젝트 복원·복귀 절차
+    check: 이전 프로젝트를 파괴하는 마이그레이션 차단
+  - id: QA04.04
+    action: 릴리스 후보 증거를 CT06으로 넘긴다
+    output: 누락 인수·운영 제한·재현 명령
+    check: 자료 없는 완료 서술 대신 실제 참조 첨부
+  handoff_required:
+  - 현재 커밋·PR·변경 파일·실행 환경
+  - 실제 실행한 명령·시험 결과·미실행 인수·증거 위치
+  - 다음 작업에 넘길 계약 개정·입출력 샘플·재현 명령·차단 해소 조건
+model_contracts: docs/model_readiness.yaml
+core_objectives:
+  C1: 대화·문맥
+  C2: 계획·순차 실행
+  C3: 다양한 생성
+  C4: 선택 편집
+  C5: 결과 일관성
+  C6: 저장·이어 하기

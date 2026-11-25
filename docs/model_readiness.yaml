@@ -1,0 +1,312 @@
+schema_version: 1
+kind: model_readiness_plan_not_runtime_registry
+baseline_commit: cd7a63ce705fa0553e2e0682fb8d7a8205638b32
+process_authority: docs/integration_control_plan.md
+notes:
+- 모형 능력 슬롯과 연산자 목록이다. 13개 독립 거대모형을 학습하는 계획이 아니다.
+- runtime_acceptance는 이 제품 흐름에 대한 인수 상태다. 기존 연구·단위 시험의 존재를 부정하지 않는다.
+- config_ref는 설정 위치 참조다. 공급자 설치·실행·편집 지원을 증명하지 않는다.
+- 새 학습은 현재 필수가 아니며 자동 실행하지 않는다. 미학습 PINN 물리 값은 지원하는 기준 계산에서만 낸다.
+models:
+- id: LLM_CHAT
+  area: M01
+  kind: 기반모형 추론
+  role: 대화·지시·문맥 유지
+  inputs: messages, project revision, object/selection refs
+  outputs: 답변, 확인 질문 또는 검증할 도구 의도
+  job_refs:
+  - GF01
+  - GF02
+  - GF03
+  reuse_paths:
+  - src/cont/llm
+  - src/cont/dialogue/context.py
+  config_ref: config/llm/providers.yaml
+  new_training_required: false
+  owner: null
+  runtime_acceptance: pending
+  acceptance: 10턴 정정·모호한 대상·프로젝트 전환에서 문맥 일치
+  implementation_note: 기반모형 변경 없이 문맥 조립·평가·도구 계약을 우선 구현
+  failure_policy: 입력/능력/환경/시간초과/지원범위 오류를 명시하고 기존 산출물을 보존
+  evidence_required:
+  - 코드·계약·설정 개정
+  - 입력·출력·모델 또는 실제 계산 방법
+  - 성공·실패·미실행 구분과 재현 명령
+- id: LLM_PLAN
+  area: M01
+  kind: 기반모형 추론
+  role: 계획·도구 선택·재계획
+  inputs: 요청, 허용 도구 schema, 대상/부모 버전
+  outputs: 단계 DAG, typed arguments, output refs
+  job_refs:
+  - GF03
+  - GF04
+  - GF10
+  reuse_paths:
+  - src/cont/dialogue/plan.py
+  - src/cont/dialogue/plan_tools.py
+  config_ref: config/llm/providers.yaml
+  new_training_required: false
+  owner: null
+  runtime_acceptance: pending
+  acceptance: 없는 도구·순환·오래된 선택 거절, 실제 순차 실행
+  implementation_note: LLM_CHAT과 동일 모델 공유 가능; 계획 검증 책임은 코드
+  failure_policy: 입력/능력/환경/시간초과/지원범위 오류를 명시하고 기존 산출물을 보존
+  evidence_required:
+  - 코드·계약·설정 개정
+  - 입력·출력·모델 또는 실제 계산 방법
+  - 성공·실패·미실행 구분과 재현 명령
+- id: VLM_INPUT
+  area: M03
+  kind: 기반모형 추론
+  role: 이미지·도면·표 의미 추출
+  inputs: 원본 파일 hash, 페이지/영역, 요청 필드
+  outputs: 값·단위·원본 위치·불명/확정 상태
+  job_refs:
+  - GF12
+  reuse_paths:
+  - src/cont/llm
+  - src/cont/signal/csvio.py
+  config_ref: config/llm/providers.yaml
+  new_training_required: false
+  owner: null
+  runtime_acceptance: pending
+  acceptance: 원본 대조·단위 누락·가려진 치수·손상 입력 시험
+  implementation_note: OCR/파서와 VLM 분담; 사용자 확정값만 계산에 전달
+  failure_policy: 입력/능력/환경/시간초과/지원범위 오류를 명시하고 기존 산출물을 보존
+  evidence_required:
+  - 코드·계약·설정 개정
+  - 입력·출력·모델 또는 실제 계산 방법
+  - 성공·실패·미실행 구분과 재현 명령
+- id: IMAGE_CREATE
+  area: M04
+  kind: 기반모형 추론
+  role: 실제 이미지 생성
+  inputs: ObjectSpec version, prompt, generation settings
+  outputs: 이미지 파일·hash·model·real·부품 선언
+  job_refs:
+  - GF01
+  - GF05
+  reuse_paths:
+  - src/cont/generation
+  - src/cont/objspec/image.py
+  config_ref: config/generation/models.yaml
+  new_training_required: false
+  owner: null
+  runtime_acceptance: pending
+  acceptance: 실제 파일 열기·명세 대비 검토·저장 재개
+  implementation_note: SDXL 실제 생성 1회 기록은 docs/generation.md에 있음; 기본 fake 설정과 본딩 제품 통합 인수는 별도
+  failure_policy: 입력/능력/환경/시간초과/지원범위 오류를 명시하고 기존 산출물을 보존
+  evidence_required:
+  - 코드·계약·설정 개정
+  - 입력·출력·모델 또는 실제 계산 방법
+  - 성공·실패·미실행 구분과 재현 명령
+- id: IMAGE_EDIT
+  area: M04
+  kind: 기반모형 추론
+  role: 참조 이미지·부분 편집
+  inputs: parent image hash, mask, transform, instruction
+  outputs: 새 이미지·parent·mask·변경 비교
+  job_refs:
+  - GF08
+  - GF09
+  reuse_paths:
+  - src/cont/generation/base.py
+  - src/cont/generation/registry.py
+  config_ref: config/generation/models.yaml
+  new_training_required: false
+  owner: null
+  runtime_acceptance: pending
+  acceptance: 실제 편집 호출·선택 안팎 비교·원본 보존
+  implementation_note: 현 ImageRequest에 참조/마스크 계약 확장 필요; 공급자 능력 확인 후 연결
+  failure_policy: 입력/능력/환경/시간초과/지원범위 오류를 명시하고 기존 산출물을 보존
+  evidence_required:
+  - 코드·계약·설정 개정
+  - 입력·출력·모델 또는 실제 계산 방법
+  - 성공·실패·미실행 구분과 재현 명령
+- id: SCENE_SPEC
+  area: M10
+  kind: 명세 생성·렌더링
+  role: 그래프·3D·4D 사양과 수정
+  inputs: ObjectSpec, data/field refs, selection, ViewState
+  outputs: 검증된 표현 사양·renderer artifacts
+  job_refs:
+  - GF06
+  - GF07
+  - GF08
+  - GF10
+  reuse_paths:
+  - src/cont/objspec
+  - src/cont/view/scene4d.py
+  config_ref: config/llm/providers.yaml
+  new_training_required: false
+  owner: null
+  runtime_acceptance: pending
+  acceptance: 같은 부품·단위·버전, 카메라 변경 시 불필요 재계산 0
+  implementation_note: 별도 거대모형 불필요; LLM은 사양, 수치는 계산기, 화면은 엔진
+  failure_policy: 입력/능력/환경/시간초과/지원범위 오류를 명시하고 기존 산출물을 보존
+  evidence_required:
+  - 코드·계약·설정 개정
+  - 입력·출력·모델 또는 실제 계산 방법
+  - 성공·실패·미실행 구분과 재현 명령
+- id: KNOWLEDGE_RETRIEVAL
+  area: M02
+  kind: 검색·근거
+  role: 문서 검색과 근거 연결
+  inputs: 허용된 문서, query, project scope
+  outputs: 문서/페이지/구간·검색 점수·답변 근거
+  job_refs:
+  - GF12
+  reuse_paths:
+  - src/cont/llm
+  config_ref: config/llm/providers.yaml
+  new_training_required: false
+  owner: null
+  runtime_acceptance: pending
+  acceptance: 근거 없는 단정·권한 밖 문서 참조 차단
+  implementation_note: 보강 기능; 임베딩/재순위 실제 공급자 선택은 후속이며 기존 LLM 설정이 검색 모델 구현 증거는 아님
+  failure_policy: 입력/능력/환경/시간초과/지원범위 오류를 명시하고 기존 산출물을 보존
+  evidence_required:
+  - 코드·계약·설정 개정
+  - 입력·출력·모델 또는 실제 계산 방법
+  - 성공·실패·미실행 구분과 재현 명령
+- id: PINN_HEAT
+  area: PINN
+  kind: 자체 모형 SW
+  role: 열 네트워크·문제·잔차
+  inputs: x/y/t, 재료, 형상, BC/IC, normalization
+  outputs: 모형 구성·잔차·기준 온도장
+  job_refs:
+  - PF01
+  - PF02
+  - PF04
+  reuse_paths:
+  - src/cont/learn/heat1d.py
+  - src/cont/learn/heat2d.py
+  - src/cont/learn/pack.py
+  config_ref: null
+  new_training_required: false
+  owner: null
+  runtime_acceptance: pending
+  acceptance: 가중치 없이 구성·미분·잔차·저장·기준 계산; 자동 학습 0
+  implementation_note: 열 연구 코드 재사용; 첫 조회 암묵적 학습 분리 먼저
+  failure_policy: 입력/능력/환경/시간초과/지원범위 오류를 명시하고 기존 산출물을 보존
+  evidence_required:
+  - 코드·계약·설정 개정
+  - 입력·출력·모델 또는 실제 계산 방법
+  - 성공·실패·미실행 구분과 재현 명령
+- id: PINN_STRUCTURE
+  area: PINN
+  kind: 자체 모형 SW
+  role: 봉/보 구조 네트워크·잔차
+  inputs: 좌표, 단면, 탄성계수, 하중/구속
+  outputs: 모형 구성·변위/응력 기준장·잔차
+  job_refs:
+  - PF02
+  - PF05
+  reuse_paths:
+  - src/cont/fem
+  - src/cont/learn
+  config_ref: null
+  new_training_required: false
+  owner: null
+  runtime_acceptance: pending
+  acceptance: 정한 한 문제의 기준 계산·단위·경계·복원
+  implementation_note: 구조 PINN 자체 SW는 새 구현; 기존 FEM이 모든 보 문제를 지원한다고 가정하지 않음
+  failure_policy: 입력/능력/환경/시간초과/지원범위 오류를 명시하고 기존 산출물을 보존
+  evidence_required:
+  - 코드·계약·설정 개정
+  - 입력·출력·모델 또는 실제 계산 방법
+  - 성공·실패·미실행 구분과 재현 명령
+- id: PINN_VIBRATION
+  area: PINN
+  kind: 자체 모형 SW
+  role: 질량·스프링·감쇠 응답 모형
+  inputs: t, mass, stiffness, damping, force, IC
+  outputs: 모형 구성·기준 응답·잔차
+  job_refs:
+  - PF02
+  - PF06
+  reuse_paths:
+  - src/cont/learn
+  - src/cont/signal
+  config_ref: null
+  new_training_required: false
+  owner: null
+  runtime_acceptance: pending
+  acceptance: 고정 계수 기준 ODE·시간축·미분·복원
+  implementation_note: 휴머노이드 전체 동역학과 별도 범위; 초기 시험은 단일 자유도
+  failure_policy: 입력/능력/환경/시간초과/지원범위 오류를 명시하고 기존 산출물을 보존
+  evidence_required:
+  - 코드·계약·설정 개정
+  - 입력·출력·모델 또는 실제 계산 방법
+  - 성공·실패·미실행 구분과 재현 명령
+- id: PINN_FLOW
+  area: PINN
+  kind: 자체 모형 SW
+  role: 단순 관/채널 유동 모형
+  inputs: 좌표, 형상, 물성, 경계, 지원 가정
+  outputs: 모형 구성·기준 속도/압력장·잔차
+  job_refs:
+  - PF02
+  - PF07
+  reuse_paths:
+  - src/cont/learn
+  - src/cont/answer.py
+  config_ref: null
+  new_training_required: false
+  owner: null
+  runtime_acceptance: pending
+  acceptance: 기준해가 있는 한 문제와 가정 위반 거절
+  implementation_note: 난류·다상 일반 모델로 확대하지 않음
+  failure_policy: 입력/능력/환경/시간초과/지원범위 오류를 명시하고 기존 산출물을 보존
+  evidence_required:
+  - 코드·계약·설정 개정
+  - 입력·출력·모델 또는 실제 계산 방법
+  - 성공·실패·미실행 구분과 재현 명령
+- id: INVERSE_OPERATOR
+  area: PINN
+  kind: 물리 연산자
+  role: 숨은 물리·관측·역산 계약
+  inputs: 관측 위치/시각/값, 미지 파라미터, bounds
+  outputs: 관측 투영·차이·지원하는 기준 역산·식별 상태
+  job_refs:
+  - PF03
+  reuse_paths:
+  - src/cont/learn/inverse_heat.py
+  - src/cont/learn/gate.py
+  config_ref: null
+  new_training_required: false
+  owner: null
+  runtime_acceptance: pending
+  acceptance: 누락·영역 밖·비유일성·미지원 불확실성 처리
+  implementation_note: 독립 거대모형 아님; 관측 없이 미지 물리 식별을 보장하지 않음
+  failure_policy: 입력/능력/환경/시간초과/지원범위 오류를 명시하고 기존 산출물을 보존
+  evidence_required:
+  - 코드·계약·설정 개정
+  - 입력·출력·모델 또는 실제 계산 방법
+  - 성공·실패·미실행 구분과 재현 명령
+- id: RESIDUAL_OPERATOR
+  area: PINN
+  kind: 물리 연산자
+  role: 방정식·조건·보존·관측 잔차
+  inputs: field, equation, conditions, units, sampling
+  outputs: 종류별 잔차장·단위·정규화·근거
+  job_refs:
+  - PF02
+  - PF04
+  - PF08
+  reuse_paths:
+  - src/cont/answer.py
+  - src/cont/learn
+  config_ref: null
+  new_training_required: false
+  owner: null
+  runtime_acceptance: pending
+  acceptance: 알려진 함수에서 연산 점검; 단위 다른 잔차 분리
+  implementation_note: 잔차 평가 자체는 학습 아님; 후속 보정은 가중치 없으면 비활성
+  failure_policy: 입력/능력/환경/시간초과/지원범위 오류를 명시하고 기존 산출물을 보존
+  evidence_required:
+  - 코드·계약·설정 개정
+  - 입력·출력·모델 또는 실제 계산 방법
+  - 성공·실패·미실행 구분과 재현 명령
