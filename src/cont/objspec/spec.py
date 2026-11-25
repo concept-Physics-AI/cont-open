@@ -149,6 +149,19 @@ class ObjectSpec:
         parts = tuple(new if p.id == part_id else p for p in self.parts)
         return replace(self, parts=parts, parent_version=self.version, dimension_status="user_input")
 
+    def edit_stage_pose(self, stage: "int | str", part_id: str, **changes: float) -> "ObjectSpec":
+        """한 단계에서 한 부품의 끝 자세(dz, dx)만 고친다. 부품 모양과 다른 단계는 그대로다."""
+        st = self.stage(stage)
+        self.part(part_id)
+        bad = set(changes) - {"dz", "dx"}
+        if bad or not changes:
+            raise ObjectSpecError(f"고칠 수 있는 자세 항목은 dz, dx뿐입니다: {sorted(bad) or '없음'}")
+        poses = dict(st.poses)
+        poses[part_id] = replace(poses.get(part_id, Pose()), **changes)
+        new = replace(st, poses=tuple(sorted(poses.items())))
+        stages = tuple(new if x.id == st.id else x for x in self.stages)
+        return replace(self, stages=stages, parent_version=self.version, dimension_status="user_input")
+
     def changed_parts(self, other: "ObjectSpec") -> tuple[str, ...]:
         """self → other에서 달라진 부품 ID (없어졌거나 새로 생긴 것 포함)."""
         a, b = {p.id: p for p in self.parts}, {p.id: p for p in other.parts}
