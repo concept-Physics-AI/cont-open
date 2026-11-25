@@ -223,6 +223,7 @@ Studio 대화는 질문의 물리 영역을 먼저 알아본다 (`cont.dialogue.
 | 허용 오차와 편차 계산 (Tolerance, Check) | `src/cont/tolerance.py` | 기본은 판정 없이 편차만 보고한다 |
 | LLM 공급자 SDK와 네트워크 호출 | `src/cont/llm/` | 다른 모듈은 어댑터 인터페이스만 쓴다 |
 | 학습 도구(PyTorch) 호출 | `src/cont/learn/` | `torch`는 이 패키지 안에서만 가져온다. 다른 모듈은 `cont.learn`의 인터페이스만 쓴다 |
+| 이미지 생성 도구(diffusers 등) 호출 | `src/cont/generation/` | `diffusers`·`transformers`는 이 패키지 안에서만 가져온다. 다른 모듈은 `get_generator`만 쓴다 |
 
 위반하면 테스트가 실패한다. 표에 개념을 더하거나 책임 모듈을 옮기려면 이 절을 먼저 고친다. 표가 막는 것은 중복 정의와 SDK 직접 호출뿐이며, 물리 값이 엔진에서만 나오는지는 이 점검이 보지 못한다.
 
@@ -230,6 +231,7 @@ Studio 대화는 질문의 물리 영역을 먼저 알아본다 (`cont.dialogue.
 
 - **허용 오차**: `config/tolerances/` 프로파일. 기본값은 *판정 없음(편차만 보고)*. 환경마다 프로파일을 만들어 `CONT_TOLERANCE_PROFILE`로 고른다.
 - **LLM 공급자**: `config/llm/` + `src/cont/llm/`. 외부 API와 자체 모델(Ollama 등)을 같은 인터페이스로. `CONT_LLM_PROVIDER`로 고른다.
+- **이미지 생성 모델**: `config/generation/` + `src/cont/generation/`. 용도(draft·general·text_heavy)에 모델을 연결한다. `CONT_GEN_MODEL`로 고른다. 가중치는 저장소 밖.
 - **진단 기준값**: `config/diagnosis/`. `CONT_DIAGNOSIS_PROFILE`로 현장별 설정을 고른다.
 - **데이터 위치**: Z: 경로는 `CONT_DATA_ROOT` 등 환경 변수로만.
 

@@ -1,0 +1,15 @@
+# Image generation models. Weights are NEVER in the repository; local paths go in models.local.yaml (not in git).
+# Pick one: CONT_GEN_MODEL=<name>; otherwise the model mapped to the purpose; otherwise 'default'.
+default: fake
+
+# Which model serves which purpose. Real models are added here after the comparison runs (docs/generation.md).
+purposes:
+  draft: fake
+  general: fake
+  text_heavy: fake
+
+models:
+  # offline stand-in for tests: real=False, never counted as a real generation
+  fake:
+    type: fake
+    model: fake
