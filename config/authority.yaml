@@ -22,3 +22,8 @@ sdk_boundaries:
   allowed_in: src/cont/learn
   modules: [torch]
   rule: torch는 cont.learn 안에서만 가져온다. 설치하지 않아도 나머지 기능은 그대로 돈다.
+- key: image_generation
+  name: 이미지 생성 도구(diffusers 등) 호출
+  allowed_in: src/cont/generation
+  modules: [diffusers, transformers]
+  rule: 이미지 모델 호출은 cont.generation 어댑터에서만 한다. 설치하지 않아도 나머지 기능은 그대로 돈다.

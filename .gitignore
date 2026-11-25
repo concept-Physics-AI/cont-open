@@ -13,6 +13,7 @@ dist/
 !.env.example
 config/tolerances/profiles/*.local.yaml
 config/llm/providers.local.yaml
+config/generation/models.local.yaml
 # data and models live on Z:, never in git
 data/
 models/
