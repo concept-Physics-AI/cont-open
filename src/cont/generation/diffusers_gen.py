@@ -7,6 +7,7 @@ Config (config/generation/models.yaml):
     dtype: float16
     steps: 30
     guidance: 5.0
+    variant: fp16           # download only the fp16 files (about half the size)
     offload: false          # true = move parts to CPU when VRAM is short (slower)
 Weights are downloaded into the Hugging Face cache (set HF_HOME to keep it outside the repository).
 Nothing heavy is imported until generate() is called, so a PC without diffusers still runs everything else.
@@ -19,7 +20,7 @@ from typing import Any, Callable
 from .base import GenerationError, ImageRequest, ImageResult
 
 
-def _default_loader(model: str, dtype: str, offload: bool, pipeline: str | None) -> Any:
+def _default_loader(model: str, dtype: str, offload: bool, pipeline: str | None, variant: str | None = None) -> Any:
     try:
         import torch
         import diffusers
@@ -31,7 +32,8 @@ def _default_loader(model: str, dtype: str, offload: bool, pipeline: str | None)
     if td is None:
         raise GenerationError(f"dtype '{dtype}' not one of float16, bfloat16, float32")
     cls = getattr(diffusers, pipeline) if pipeline else diffusers.AutoPipelineForText2Image
-    pipe = cls.from_pretrained(model, torch_dtype=td)
+    extra = {"variant": variant, "use_safetensors": True} if variant else {}
+    pipe = cls.from_pretrained(model, torch_dtype=td, **extra)
     if offload:
         pipe.enable_model_cpu_offload()
     else:
@@ -48,16 +50,17 @@ class Diffusers:
     real = True
 
     def __init__(self, name: str, model: str, dtype: str = "float16", steps: int = 30, guidance: float = 5.0,
-                 offload: bool = False, pipeline: str | None = None,
+                 offload: bool = False, pipeline: str | None = None, variant: str | None = None,
                  loader: Callable[..., Any] | None = None,
                  generator_factory: Callable[[int], Any] | None = None, **_: Any):
         self.name, self.model, self.dtype, self.steps, self.guidance = name, model, dtype, int(steps), float(guidance)
         self.offload, self.pipeline, self._loader, self._pipe = bool(offload), pipeline, loader or _default_loader, None
+        self.variant = variant
         self._gen = generator_factory or _default_generator
 
     def _get(self) -> Any:
         if self._pipe is None:  # loaded once, kept for the next request
-            self._pipe = self._loader(self.model, self.dtype, self.offload, self.pipeline)
+            self._pipe = self._loader(self.model, self.dtype, self.offload, self.pipeline, self.variant)
         return self._pipe
 
     def generate(self, request: ImageRequest) -> ImageResult:

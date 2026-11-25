@@ -151,8 +151,8 @@ class _Pipe:
 def _adapter(pipe, **kw):
     loads = []
 
-    def loader(model, dtype, offload, pipeline):
-        loads.append((model, dtype, offload, pipeline))
+    def loader(model, dtype, offload, pipeline, variant):
+        loads.append((model, dtype, offload, pipeline, variant))
         return pipe
 
     return Diffusers(name="m", model="org/model", loader=loader, generator_factory=lambda seed: seed, **kw), loads
@@ -208,3 +208,9 @@ def test_real_model_makes_a_png():
     g = get_generator(os.environ.get("CONT_GEN_REAL_MODEL"))
     r = g.generate(ImageRequest("a steel hex bolt on white background", width=512, height=512, seed=1, steps=10))
     assert r.real and r.png[:8] == b"\x89PNG\r\n\x1a\n" and r.width == 512
+
+
+def test_diffusers_passes_variant_to_loader():
+    g, loads = _adapter(_Pipe(), variant="fp16")
+    g.generate(ImageRequest("a"))
+    assert loads[0][-1] == "fp16"
