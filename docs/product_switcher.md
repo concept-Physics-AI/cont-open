@@ -2,17 +2,21 @@
 
 > 상태: 보조
 
+## 다음 통합 목표 (2026-11-25)
+
+세 제품은 [생성·편집 작업 흐름](generative_workflow.md)의 프로젝트·대상·조건·선택 결과를 공유해야 한다. Studio에서 생성·수정한 결과를 Physics에서 검토하고 Fab에 배치한 뒤 다시 열어 이어 간다. 아래 주소 이동은 현재 구현이며, 프로젝트 통합이 끝났다는 뜻은 아니다.
+
 세 제품 화면은 서버가 따로 돌아도 맨 위에 같은 막대(높이 40px)를 단다. 지금 있는 탭이 표시되고, 나머지를 누르면 그 제품으로 이동한다.
 
 | 제품 | 하는 일 | 화면 | 기본 주소 |
 |---|---|---|---|
 | Studio | 물리를 모르는 사람이 대화로 정확한 물리 기반 AI를 쓰는 곳 | 체결 대화 화면 (`cont.dialogue.serve_fastening`) | 127.0.0.1:8766 |
-| Physics | 물리·설계 전문가가 AI를 쉽게 쓰게 돕는 소프트웨어 | 제품 화면은 아직 없고, 코어 엔진 목록만 보인다 (`cont.view.physics_page`) | 127.0.0.1:8769 |
+| Physics | 물리·설계 전문가가 AI를 쉽게 쓰게 돕는 소프트웨어 | 체결 작업대와 열 비교·엔진 목록 (`cont.view.physics_work`, `cont.view.physics_page`) | 127.0.0.1:8769 |
 | FAB | 자기만의 Physical AI를 쉽게 만드는 곳 | 고르기 화면 (`cont.fab.store`), 이상진단 화면(FAB으로 만든 화면)도 FAB 쪽 | 127.0.0.1:8768 |
 
 - 이름·한 줄 설명·주소는 `config/products.yaml`. 주소는 환경 변수 `CONT_STUDIO_URL`, `CONT_PHYSICS_URL`, `CONT_FAB_URL`로 바꾼다. 주소가 비어 있는 탭은 이동하지 않는다.
 - 막대를 다는 코드는 `cont.view.switcher.with_switcher()` 하나이며, 화면마다 이 함수만 부른다.
-- Physics 화면은 "지금 있는 엔진"(`config/physics/engines.yaml`, 코드의 팩 이름과 같은지 테스트로 확인)과 "아직 없는 엔진"(FAB 표현 유형이 기다리는 엔진)만 보인다. 엔진을 새로 만들지 않았고, 계산하지 않는다.
+- Physics는 체결 작업대와 열 비교·엔진 목록을 포함한다. 실제 계산·입력 변경은 연결한 서비스와 실행 방식에 따라 다르며 정적 시연을 실시간 기능으로 표시하지 않는다.
 - 실행: `python -m cont.view.physics_page` (또는 `--out 파일.html`).
 
 ## 공통 Shell 정리 (2026-11-24 대표 결정, UI 화면구성 계획 §5 검토)
