@@ -13,3 +13,11 @@ models:
   fake:
     type: fake
     model: fake
+
+  # real models (diffusers). Weights download into the Hugging Face cache: set HF_HOME outside the repository.
+  sdxl:
+    type: diffusers
+    model: stabilityai/stable-diffusion-xl-base-1.0
+    dtype: float16
+    steps: 30
+    guidance: 5.0

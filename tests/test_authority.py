@@ -13,6 +13,11 @@ def _py_files():
     return [p for p in SRC.rglob("*.py") if "__pycache__" not in p.parts]
 
 
+def _allowed(b):
+    a = b["allowed_in"]
+    return [a] if isinstance(a, str) else list(a)
+
+
 def _rel(p):
     return p.relative_to(ROOT).as_posix()
 
@@ -21,7 +26,8 @@ def test_owners_exist():
     for c in TABLE["concepts"]:
         assert (ROOT / c["owner"]).is_file(), f"{c['key']}: {c['owner']}가 없습니다"
     for b in TABLE["sdk_boundaries"]:
-        assert (ROOT / b["allowed_in"]).is_dir(), f"{b['key']}: {b['allowed_in']}가 없습니다"
+        for d in _allowed(b):
+            assert (ROOT / d).is_dir(), f"{b['key']}: {d}가 없습니다"
 
 
 def test_owner_defines_its_symbols():
@@ -53,14 +59,14 @@ def _imported(tree):
 
 def test_sdk_calls_only_inside_allowed_dir():
     for b in TABLE["sdk_boundaries"]:
-        allowed = ROOT / b["allowed_in"]
+        allowed = [ROOT / d for d in _allowed(b)]
         banned = tuple(b["modules"])
         for p in _py_files():
-            if allowed in p.parents:
+            if any(a in p.parents for a in allowed):
                 continue
             tree = ast.parse(p.read_text(encoding="utf-8"))
             bad = [m for m in _imported(tree) if any(m == x or m.startswith(x + ".") for x in banned)]
-            assert not bad, f"{_rel(p)}가 {bad}을(를) 직접 불러옵니다. {b['allowed_in']} 안에서만 허용됩니다"
+            assert not bad, f"{_rel(p)}가 {bad}을(를) 직접 불러옵니다. {_allowed(b)} 안에서만 허용됩니다"
 
 
 def test_checker_catches_violation(tmp_path):

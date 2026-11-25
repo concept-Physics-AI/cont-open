@@ -119,3 +119,92 @@ def test_unregistered_type_refused(tmp_path):
         "default: f\nmodels:\n  f: {type: nowhere}\n", encoding="utf-8")
     with pytest.raises(KeyError, match="not registered"):
         get_generator(config_dir=tmp_path)
+
+
+# ---- diffusers adapter: tested with a fake pipeline, no diffusers/GPU needed ----
+import io
+import os
+
+from cont.generation.diffusers_gen import Diffusers
+
+
+class _Img:
+    def __init__(self, w, h):
+        self.width, self.height = w, h
+
+    def save(self, buf, format):
+        buf.write(b"\x89PNG-fake")
+
+
+class _Pipe:
+    def __init__(self):
+        self.calls = []
+
+    def __call__(self, **kw):
+        self.calls.append(kw)
+
+        class Out:
+            images = [_Img(kw["width"], kw["height"])]
+        return Out()
+
+
+def _adapter(pipe, **kw):
+    loads = []
+
+    def loader(model, dtype, offload, pipeline):
+        loads.append((model, dtype, offload, pipeline))
+        return pipe
+
+    return Diffusers(name="m", model="org/model", loader=loader, generator_factory=lambda seed: seed, **kw), loads
+
+
+def test_diffusers_adapter_passes_request_and_marks_real():
+    pipe = _Pipe()
+    g, loads = _adapter(pipe, steps=20, guidance=4.5)
+    r = g.generate(ImageRequest("a bolt", width=512, height=256, seed=7, negative_prompt="blur"))
+    c = pipe.calls[0]
+    assert (c["width"], c["height"], c["num_inference_steps"], c["guidance_scale"]) == (512, 256, 20, 4.5)
+    assert c["prompt"] == "a bolt" and c["negative_prompt"] == "blur"
+    assert r.real is True and r.weights == "org/model" and r.record()["params"]["steps"] == 20
+    assert (r.width, r.height) == (512, 256)
+
+
+def test_diffusers_loads_once_and_request_steps_win():
+    pipe = _Pipe()
+    g, loads = _adapter(pipe, steps=20)
+    g.generate(ImageRequest("a"))
+    g.generate(ImageRequest("b", steps=4))
+    assert len(loads) == 1 and [c["num_inference_steps"] for c in pipe.calls] == [20, 4]
+    assert "negative_prompt" not in pipe.calls[0]
+
+
+def test_diffusers_empty_output_is_an_error():
+    class Empty:
+        def __call__(self, **kw):
+            class O:
+                images = []
+            return O()
+
+    g, _ = _adapter(Empty())
+    with pytest.raises(GenerationError, match="no image"):
+        g.generate(ImageRequest("a"))
+
+
+def test_diffusers_type_is_registered_and_lazy():
+    # building one must not import diffusers or touch a GPU
+    import sys
+    import tempfile
+    from pathlib import Path
+    d = Path(tempfile.mkdtemp()) / "generation"
+    d.mkdir()
+    (d / "models.yaml").write_text("default: s\nmodels:\n  s: {type: diffusers, model: x/y}\n", encoding="utf-8")
+    g = get_generator(config_dir=d.parent)
+    assert g.real is True and "diffusers" not in sys.modules
+
+
+@pytest.mark.skipif(os.environ.get("CONT_GEN_REAL") != "1",
+                    reason="real model run is off by default: set CONT_GEN_REAL=1 and CONT_GEN_REAL_MODEL=<name>")
+def test_real_model_makes_a_png():
+    g = get_generator(os.environ.get("CONT_GEN_REAL_MODEL"))
+    r = g.generate(ImageRequest("a steel hex bolt on white background", width=512, height=512, seed=1, steps=10))
+    assert r.real and r.png[:8] == b"\x89PNG\r\n\x1a\n" and r.width == 512

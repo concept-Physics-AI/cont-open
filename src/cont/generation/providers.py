@@ -44,4 +44,6 @@ class Fake:
                            params={"asked_width": request.width, "asked_height": request.height, "steps": request.steps})
 
 
-BUILTIN_TYPES = {"fake": Fake}
+from .diffusers_gen import Diffusers  # noqa: E402  (imports diffusers only when generating)
+
+BUILTIN_TYPES = {"fake": Fake, "diffusers": Diffusers}

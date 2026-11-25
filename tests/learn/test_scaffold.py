@@ -31,9 +31,9 @@ def test_record_fingerprint_ignores_environment_only():
 
 
 def test_torch_is_imported_only_inside_learn():
-    """torch 가져오기는 cont.learn 안에서만 (config/authority.yaml의 학습 경계)."""
+    """torch 가져오기는 허용된 패키지 안에서만 (cont.learn, 이미지 모델 실행용 cont.generation; config/authority.yaml)."""
     for p in SRC.rglob("*.py"):
-        if "learn" in p.relative_to(SRC).parts:
+        if {"learn", "generation"} & set(p.relative_to(SRC).parts):
             continue
         for n in ast.walk(ast.parse(p.read_text(encoding="utf-8"))):
             names = [a.name for a in n.names] if isinstance(n, ast.Import) else [n.module or ""] if isinstance(n, ast.ImportFrom) else []
