@@ -155,7 +155,7 @@ def _adapter(pipe, **kw):
         loads.append((model, dtype, offload, pipeline))
         return pipe
 
-    return Diffusers(name="m", model="org/model", loader=loader, **kw), loads
+    return Diffusers(name="m", model="org/model", loader=loader, generator_factory=lambda seed: seed, **kw), loads
 
 
 def test_diffusers_adapter_passes_request_and_marks_real():

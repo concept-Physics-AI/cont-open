@@ -39,14 +39,21 @@ def _default_loader(model: str, dtype: str, offload: bool, pipeline: str | None)
     return pipe
 
 
+def _default_generator(seed: int) -> Any:
+    import torch
+    return torch.Generator("cuda" if torch.cuda.is_available() else "cpu").manual_seed(seed)
+
+
 class Diffusers:
     real = True
 
     def __init__(self, name: str, model: str, dtype: str = "float16", steps: int = 30, guidance: float = 5.0,
                  offload: bool = False, pipeline: str | None = None,
-                 loader: Callable[..., Any] | None = None, **_: Any):
+                 loader: Callable[..., Any] | None = None,
+                 generator_factory: Callable[[int], Any] | None = None, **_: Any):
         self.name, self.model, self.dtype, self.steps, self.guidance = name, model, dtype, int(steps), float(guidance)
         self.offload, self.pipeline, self._loader, self._pipe = bool(offload), pipeline, loader or _default_loader, None
+        self._gen = generator_factory or _default_generator
 
     def _get(self) -> Any:
         if self._pipe is None:  # loaded once, kept for the next request
@@ -56,8 +63,7 @@ class Diffusers:
     def generate(self, request: ImageRequest) -> ImageResult:
         pipe = self._get()
         steps = request.steps or self.steps
-        import torch
-        gen = torch.Generator("cuda" if torch.cuda.is_available() else "cpu").manual_seed(request.seed)
+        gen = self._gen(request.seed)
         kw: dict[str, Any] = dict(prompt=request.prompt, width=request.width, height=request.height,
                                   num_inference_steps=steps, guidance_scale=self.guidance, generator=gen)
         if request.negative_prompt:
