@@ -40,7 +40,7 @@ def select(spec: ObjectSpec, ref: str) -> Selection:
     if len(names) == 1:
         return Selection((names[0],), "name")
     if len(names) > 1:
-        raise SelectionError(f"이름 '{ref}'인 부품이 {len(names)}개입니다", tuple(names))
+        raise SelectionError(f"이름 '{ref}'인 부품이 {len(names)}개입니다: {', '.join(names)}", tuple(names))
     layer = tuple(pid for pid, _, l in by if l == ref)
     if layer:
         return Selection(layer, "layer")
@@ -48,7 +48,7 @@ def select(spec: ObjectSpec, ref: str) -> Selection:
     if len(part) == 1:
         return Selection((part[0],), "name")
     if len(part) > 1:
-        raise SelectionError(f"'{ref}'가 여러 부품에 해당합니다. 하나를 골라 주세요", tuple(part))
+        raise SelectionError(f"'{ref}'가 여러 부품에 해당합니다. 하나를 골라 주세요: {', '.join(part)}", tuple(part))
     raise SelectionError(f"'{ref}'에 해당하는 부품이 없습니다", tuple(pid for pid, _, _ in by))
 
 
