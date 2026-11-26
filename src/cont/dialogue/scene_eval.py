@@ -125,8 +125,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--repeat", type=int, default=None)
     ap.add_argument("--only", nargs="*", default=None)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--cases", default=None, help="사례 파일 (기본 config/dialogue/scene_eval.yaml)")
     a = ap.parse_args(argv)
-    res = run(get_provider(a.llm), load_cases(), a.only, a.repeat)
+    res = run(get_provider(a.llm), load_cases(Path(a.cases) if a.cases else None), a.only, a.repeat)
     text = json.dumps(res, ensure_ascii=False, indent=1)
     if a.out:
         Path(a.out).write_text(text, encoding="utf-8")

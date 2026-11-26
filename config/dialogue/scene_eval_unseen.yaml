@@ -1,0 +1,87 @@
+# 보지 않은 사례 측정용. scene_eval.yaml의 사례와 문장·대상이 겹치지 않게 새로 썼고, 프롬프트를 이 사례에 맞춰 고치지 않은 상태에서 처음 측정한다.
+# 형식과 expect 어휘는 scene_eval.yaml과 같다. 사용: python -m cont.dialogue.scene_eval --cases config/dialogue/scene_eval_unseen.yaml
+repeat: 3
+timeout_s: 300
+llm_opts: {temperature: 0}
+
+cases:
+  # --- 정상 요청, 표현만 다름 ---
+  - id: u_speed_approach_quarter
+    turns: ["접근 단계는 0.25배속으로 천천히 보여줘"]
+    expect: {speed: {approach: 0.25}}
+  - id: u_speed_contact_double
+    turns: ["접촉 단계를 두 배 빠르게 재생해줘"]
+    expect: {speed: {contact: 2.0}}
+  - id: u_speed_last_ordinal
+    turns: ["마지막 단계를 0.5배로 해줘"]
+    expect: {speed: {contact: 0.5}}
+  - id: u_speed_first_ordinal
+    turns: ["첫 번째 단계는 1.5배 빠르게"]
+    expect: {speed: {approach: 1.5}}
+  - id: u_camera_elevation
+    turns: ["카메라 고도를 40도로 맞춰줘"]
+    expect: {camera: {elevation: 40}}
+  - id: u_camera_distance
+    turns: ["카메라 거리를 1.5로 바꿔줘"]
+    expect: {camera: {distance: 1.5}}
+  - id: u_camera_three
+    turns: ["카메라를 방위각 45도, 고도 20도, 거리 2로 설정해줘"]
+    expect: {camera: {azimuth: 45, elevation: 20, distance: 2}}
+  - id: u_seek_decimal
+    turns: ["1.5초 지점으로 이동해줘"]
+    expect: {playback_t: 1.5}
+  - id: u_edit_outer
+    turns: ["위 다이(실리콘)를 선택하고 바깥 반지름 outer를 12로 줄여줘"]
+    expect: {parts: {die.si: {outer: 12}}, selection: [die.si]}
+  - id: u_select_by_id
+    turns: ["die.dielectric 부품을 선택해줘"]
+    expect: {selection: [die.dielectric]}
+  - id: u_select_name
+    turns: ["아래 웨이퍼(실리콘)를 선택해줘"]
+    expect: {selection: [wafer.si]}
+  - id: u_image_align
+    turns: ["정렬 단계 설명 그림을 하나 만들어줘"]
+    expect: {images: 1}
+  - id: u_it_follow_edit
+    turns: ["아래 웨이퍼(실리콘)를 선택해줘", "그걸 바깥 반지름 18로 바꿔줘"]
+    expect: {parts: {wafer.si: {outer: 18}}, selection: [wafer.si]}
+  - id: u_three_ops
+    turns: ["접근 단계는 0.5배, 접촉 단계는 2배로 하고 카메라는 방위각 30도로 돌려줘"]
+    expect: {speed: {approach: 0.5, contact: 2.0}, camera: {azimuth: 30}}
+  - id: u_camera_then_save
+    turns: ["카메라를 방위각 200도로 돌리고 저장해줘"]
+    expect: {camera: {azimuth: 200}}
+  - id: u_undo_by_restating
+    turns: ["접근 단계를 0.5배로 해줘", "방금 바꾼 건 취소하고 원래 속도로 돌려줘"]
+    expect: {}
+  # --- 모호하거나 지원하지 않아 실행하지 않아야 함 ---
+  - id: u_amb_silicon
+    turns: ["실리콘 부분의 윗면 z1을 3으로 해줘"]
+    expect: {unchanged: true}
+  - id: u_amb_top_parts
+    turns: ["위쪽 부품의 outer를 10으로 해줘"]
+    expect: {unchanged: true}
+  - id: u_amb_die_side
+    turns: ["다이 쪽 부품의 z0를 1.5로 해줘"]
+    expect: {unchanged: true}
+  - id: u_amb_stage_pronoun
+    turns: ["그 단계를 더 느리게 해줘"]
+    expect: {unchanged: true}
+  - id: u_amb_it_no_context
+    turns: ["그 부품을 2로 올려줘"]
+    expect: {unchanged: true}
+  - id: u_unknown_part
+    turns: ["접착제 층의 윗면 z1을 2로 해줘"]
+    expect: {unchanged: true}
+  - id: u_unknown_stage
+    turns: ["냉각 단계를 0.5배로 해줘"]
+    expect: {unchanged: true}
+  - id: u_physical_value
+    turns: ["접촉 압력을 5MPa로 설정해줘"]
+    expect: {unchanged: true}
+  - id: u_question_only
+    turns: ["지금 구조를 한 문장으로 설명해줘"]
+    expect: {unchanged: true}
+  - id: u_out_of_range_seek
+    turns: ["재생 위치를 100초로 옮겨줘"]
+    expect: {unchanged: true}
