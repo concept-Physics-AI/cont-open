@@ -9,7 +9,6 @@
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping
@@ -27,8 +26,21 @@ SYSTEM_PROMPT = (
     "도구와 인자는 아래 목록에 있는 것만 쓴다. 단계는 '2'처럼 순번 문자열이나 단계 ID로 적는다. '방금 것'·'그 부품'은 현재 상태의 선택·이미지로 해석한다. "
     "부품을 고치려면 먼저 select_part나 select_region으로 선택하고 edit_part를 depends_on으로 잇는다. 요청에 없는 변경은 넣지 않는다. "
     "요청이 가리키는 부품이 상태로 하나로 정해지지 않으면(예: '유전층'은 아래·위 둘이다) 어느 쪽인지 추측하지 말고 {\"steps\":[]}를 답한다. "
+    "edit_part의 changes 항목 이름은 name(이름), z0(아래면 높이), z1(윗면 높이), outer(바깥 반지름), inner(안쪽 반지름)만 쓴다. 다른 이름을 만들지 않는다. "
+    "되돌리기·취소는 지원하지 않는다. 이전 값을 짐작해 되돌리는 계획을 만들지 말고 {\"steps\":[]}를 답한다(사용자가 새 값을 말하면 그 값으로 고친다). "
     "치수·물리 값을 지어내지 않는다. 요청에 값이 없으면 계획에 넣지 말고 {\"steps\":[]}를 답한다."
 )
+
+_EDITABLE = ("name", "z0", "z1", "outer", "inner")                        # 프롬프트의 changes 항목 이름. 시험이 select._FIELDS와 같은지 확인한다
+
+
+def _first_json(raw: str) -> Any:
+    """응답에서 첫 JSON 객체 하나만 읽는다. 뒤에 글이나 다른 객체가 붙어도 앞의 객체를 쓴다."""
+    i = raw.find("{")
+    if i < 0:
+        raise ValueError("JSON 객체가 없습니다")
+    obj, _ = json.JSONDecoder().raw_decode(raw[i:])
+    return obj
 
 
 @dataclass
@@ -198,9 +210,8 @@ class SceneSession:
             raw = self.provider.complete(self._messages(text), **self.llm_opts).text
         except Exception as e:                                           # 공급자 오류는 요청 실패로 남기고 상태를 건드리지 않는다
             return self._end(Turn(text, "refused", f"공급자 호출에 실패했습니다({type(e).__name__}). 아무것도 실행하지 않았습니다."))
-        m = re.search(r"\{.*\}", raw, re.S)
         try:
-            plan = parse(json.loads(m.group(0) if m else ""))
+            plan = parse(_first_json(raw))
             if not plan.steps:
                 return self._end(Turn(text, "refused", "요청을 실행 가능한 단계로 풀지 못했습니다(값이 빠졌거나 지원하지 않는 요청). 아무것도 실행하지 않았습니다."))
             tools = self.tools()

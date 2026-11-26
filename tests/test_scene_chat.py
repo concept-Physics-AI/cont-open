@@ -162,3 +162,20 @@ def test_plan_validate_accepts_tuple_types_and_refuses_bool_for_numbers():
     for bad in (True, "1"):
         with pytest.raises(PlanError, match="int/float"):
             validate(Plan((Step("a", "t", {"x": bad}),)), {"t": tool})
+
+
+def test_prompt_field_names_match_editable_fields_and_say_undo_is_unsupported():
+    from cont.dialogue.scene_chat import _EDITABLE, SYSTEM_PROMPT
+    from cont.objspec.select import _FIELDS
+    assert _EDITABLE == _FIELDS
+    assert all(f in SYSTEM_PROMPT for f in _FIELDS)
+    assert "되돌리기·취소는 지원하지 않는다" in SYSTEM_PROMPT
+
+
+def test_first_json_object_is_used_when_text_follows_it(tmp_path):
+    p = plan(step("s1", "set_camera", azimuth=90))
+    text = json.dumps(p, ensure_ascii=False) + "\n설명: 카메라를 돌렸습니다 {참고}"
+    s = session(tmp_path, text)
+    t = s.turn("카메라를 방위각 90도로")
+    assert t.kind == "done" and s.view.azimuth == 90
+    assert session(tmp_path, "JSON 없음").turn("x").kind == "refused"

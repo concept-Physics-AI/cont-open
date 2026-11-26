@@ -53,7 +53,7 @@ cases:
     expect: {camera: {azimuth: 200}}
   - id: u_undo_by_restating
     turns: ["접근 단계를 0.5배로 해줘", "방금 바꾼 건 취소하고 원래 속도로 돌려줘"]
-    expect: {}
+    expect: {speed: {approach: 0.5}}            # 되돌리기는 지원하지 않으므로 거절하고 0.5배가 남는 것이 맞다 (처음 측정에서는 {}로 적었으나 되돌리기를 거절하기로 정한 뒤 고침)
   # --- 모호하거나 지원하지 않아 실행하지 않아야 함 ---
   - id: u_amb_silicon
     turns: ["실리콘 부분의 윗면 z1을 3으로 해줘"]
