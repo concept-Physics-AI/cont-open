@@ -1,0 +1,48 @@
+# 장면 대화 계획 품질 측정 (실제 LLM 공급자로 반복). 한 사례 = 새 세션에서 turns를 차례로 말하고 expect를 코드가 검사한다.
+# expect 어휘: unchanged(상태 그대로) | speed{단계ID: 배율} | camera{azimuth|elevation|distance: 값} | parts{부품ID: {항목: 값}} |
+#              selection[부품ID] | playback_t | images(개수) | reopen_speed{단계ID: 배율}(저장 후 다시 연 상태).
+# 명시한 것 말고는 처음 상태와 같아야 한다(요청에 없는 변경은 실패).
+repeat: 3                       # 사례마다 반복 횟수
+timeout_s: 300                  # 공급자 한 번 호출의 제한 시간
+llm_opts: {temperature: 0}      # 공급자에 넘기는 옵션
+
+cases:
+  - id: speed_half_align
+    turns: ["정렬 단계만 절반 속도로 해줘"]
+    expect: {speed: {align: 0.5}}
+  - id: speed_by_ordinal
+    turns: ["두 번째 단계를 0.5배로 느리게 해줘"]
+    expect: {speed: {align: 0.5}}
+  - id: camera_azimuth
+    turns: ["카메라를 방위각 90도로 돌려줘"]
+    expect: {camera: {azimuth: 90}}
+  - id: camera_and_speed
+    turns: ["정렬 단계는 0.5배로 느리게 하고 카메라를 방위각 120도로 돌려서 보여줘"]
+    expect: {speed: {align: 0.5}, camera: {azimuth: 120}}
+  - id: seek_time
+    turns: ["재생 위치를 3초로 옮겨줘"]
+    expect: {playback_t: 3.0}
+  - id: edit_top_die
+    turns: ["위 다이(실리콘)의 윗면 z1을 2.4로 올려줘"]
+    expect: {parts: {die.si: {z1: 2.4}}, selection: [die.si]}
+  - id: image_contact
+    turns: ["접촉 단계 설명 이미지를 만들어줘"]
+    expect: {images: 1}
+  - id: correction_two_turns
+    turns: ["정렬 단계를 0.5배로 해줘", "아니, 0.25배로 바꿔줘"]
+    expect: {speed: {align: 0.25}}
+  - id: context_it_two_turns
+    turns: ["위 다이(실리콘)를 선택해줘", "그 부품의 윗면 z1을 2.5로 올려줘"]
+    expect: {parts: {die.si: {z1: 2.5}}, selection: [die.si]}
+  - id: ambiguous_reference
+    turns: ["유전층의 윗면 z1을 1.5로 해줘"]
+    expect: {unchanged: true}
+  - id: unknown_target
+    turns: ["접합부 온도를 800K로 올려줘"]
+    expect: {unchanged: true}
+  - id: missing_value
+    turns: ["정렬 단계를 더 느리게 해줘"]
+    expect: {unchanged: true}
+  - id: save_and_reopen
+    turns: ["정렬 단계를 0.5배로 하고 프로젝트를 저장해줘"]
+    expect: {speed: {align: 0.5}, reopen_speed: {align: 0.5}}

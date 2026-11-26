@@ -43,8 +43,10 @@ class Turn:
 class SceneSession:
     def __init__(self, spec: ObjectSpec, generator: Generator, provider: Any | None = None, *, root: str | Path | None = None,
                  project_id: str = "", name: str = "", view: ViewState | None = None, selection: tuple[str, ...] = (),
-                 playback_t: float = 0.0, saved_images: list[Any] | None = None, context_limits: ContextLimits | None = None):
+                 playback_t: float = 0.0, saved_images: list[Any] | None = None, context_limits: ContextLimits | None = None,
+                 llm_opts: Mapping[str, Any] | None = None):
         self.generator, self.provider = generator, provider
+        self.llm_opts = dict(llm_opts or {})                             # 공급자 호출 옵션(예: temperature)
         self.root, self.project_id, self.name = Path(root) if root else None, project_id, name
         self.spec, self.view, self.selection, self.playback_t = spec, view or ViewState(), tuple(selection), float(playback_t)
         self.saved_images: list[Any] = list(saved_images or [])           # 저장된 이미지 (SavedImage)
@@ -192,7 +194,7 @@ class SceneSession:
         if self.provider is None:
             return self._end(Turn(text, "refused", "계획을 만들 LLM 공급자가 연결되어 있지 않습니다. 아무것도 실행하지 않았습니다."))
         try:
-            raw = self.provider.complete(self._messages(text)).text
+            raw = self.provider.complete(self._messages(text), **self.llm_opts).text
         except Exception as e:                                           # 공급자 오류는 요청 실패로 남기고 상태를 건드리지 않는다
             return self._end(Turn(text, "refused", f"공급자 호출에 실패했습니다({type(e).__name__}). 아무것도 실행하지 않았습니다."))
         m = re.search(r"\{.*\}", raw, re.S)
