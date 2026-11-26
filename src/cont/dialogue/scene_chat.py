@@ -26,6 +26,7 @@ SYSTEM_PROMPT = (
     "너는 장면 편집 계획기다. 사용자 요청을 등록된 도구 호출 계획으로만 답한다. 출력은 JSON 한 개 {\"steps\":[{\"id\":\"s1\",\"tool\":..,\"args\":{..},\"depends_on\":[..]}]}이고 다른 글은 쓰지 않는다. "
     "도구와 인자는 아래 목록에 있는 것만 쓴다. 단계는 '2'처럼 순번 문자열이나 단계 ID로 적는다. '방금 것'·'그 부품'은 현재 상태의 선택·이미지로 해석한다. "
     "부품을 고치려면 먼저 select_part나 select_region으로 선택하고 edit_part를 depends_on으로 잇는다. 요청에 없는 변경은 넣지 않는다. "
+    "요청이 가리키는 부품이 상태로 하나로 정해지지 않으면(예: '유전층'은 아래·위 둘이다) 어느 쪽인지 추측하지 말고 {\"steps\":[]}를 답한다. "
     "치수·물리 값을 지어내지 않는다. 요청에 값이 없으면 계획에 넣지 말고 {\"steps\":[]}를 답한다."
 )
 
@@ -43,8 +44,10 @@ class Turn:
 class SceneSession:
     def __init__(self, spec: ObjectSpec, generator: Generator, provider: Any | None = None, *, root: str | Path | None = None,
                  project_id: str = "", name: str = "", view: ViewState | None = None, selection: tuple[str, ...] = (),
-                 playback_t: float = 0.0, saved_images: list[Any] | None = None, context_limits: ContextLimits | None = None):
+                 playback_t: float = 0.0, saved_images: list[Any] | None = None, context_limits: ContextLimits | None = None,
+                 llm_opts: Mapping[str, Any] | None = None):
         self.generator, self.provider = generator, provider
+        self.llm_opts = dict(llm_opts or {})                             # 공급자 호출 옵션(예: temperature)
         self.root, self.project_id, self.name = Path(root) if root else None, project_id, name
         self.spec, self.view, self.selection, self.playback_t = spec, view or ViewState(), tuple(selection), float(playback_t)
         self.saved_images: list[Any] = list(saved_images or [])           # 저장된 이미지 (SavedImage)
@@ -192,7 +195,7 @@ class SceneSession:
         if self.provider is None:
             return self._end(Turn(text, "refused", "계획을 만들 LLM 공급자가 연결되어 있지 않습니다. 아무것도 실행하지 않았습니다."))
         try:
-            raw = self.provider.complete(self._messages(text)).text
+            raw = self.provider.complete(self._messages(text), **self.llm_opts).text
         except Exception as e:                                           # 공급자 오류는 요청 실패로 남기고 상태를 건드리지 않는다
             return self._end(Turn(text, "refused", f"공급자 호출에 실패했습니다({type(e).__name__}). 아무것도 실행하지 않았습니다."))
         m = re.search(r"\{.*\}", raw, re.S)
