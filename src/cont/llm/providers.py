@@ -23,6 +23,21 @@ def _key(env_name: str | None) -> str | None:
     return val
 
 
+def _message_text(msg: dict[str, Any]) -> str:
+    """응답 본문. 본문이 비고 'commentary'라는 이름의 도구 호출이 있으면 그 인자를 본문으로 쓴다.
+
+    gpt-oss(Ollama)는 도구를 주지 않았는데도 답을 'commentary' 채널로 보내 Ollama가 가짜 도구 호출로 분류하고
+    content를 비우는 일이 있다. 인자 문자열이 모델이 쓴 답 그대로이므로 그것을 돌려준다(다른 이름의 도구 호출은 건드리지 않는다)."""
+    text = msg.get("content") or ""
+    if text.strip():
+        return text
+    for tc in msg.get("tool_calls") or []:
+        fn = tc.get("function") or {}
+        if fn.get("name") == "commentary" and isinstance(fn.get("arguments"), str) and fn["arguments"].strip():
+            return fn["arguments"]
+    return text
+
+
 class OpenAICompatible:
     def __init__(self, name: str, model: str, base_url: str, api_key_env: str | None = None,
                  timeout: float = 120, headers: dict[str, str] | None = None, **_: Any):
@@ -39,8 +54,8 @@ class OpenAICompatible:
             req.add_header("Authorization", f"Bearer {key}")
         with urllib.request.urlopen(req, timeout=self.timeout) as r:
             data = json.loads(r.read())
-        return LLMResponse(data["choices"][0]["message"]["content"], self.name, body["model"],
-                           data.get("usage", {}), data)
+        msg = data["choices"][0]["message"]
+        return LLMResponse(_message_text(msg), self.name, body["model"], data.get("usage", {}), data)
 
 
 class Anthropic:
