@@ -24,8 +24,8 @@ class PlanError(ValueError):
 class Tool:
     name: str
     run: Callable[..., Mapping[str, Any]]
-    args: Mapping[str, type]                       # 필수 인자 이름 → 형식
-    optional: Mapping[str, type] = field(default_factory=dict)
+    args: Mapping[str, type | tuple]               # 필수 인자 이름 → 형식(또는 형식 묶음)
+    optional: Mapping[str, type | tuple] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -79,8 +79,9 @@ def validate(plan: Plan, tools: Mapping[str, Tool]) -> list[str]:
             raise PlanError(f"'{s.id}' 단계 인자가 맞지 않습니다 (빠짐: {missing}, 모르는 인자: {extra})")
         for k, v in s.args.items():
             want = {**t.args, **t.optional}[k]
-            if isinstance(v, bool) and want is not bool or not isinstance(v, want):
-                raise PlanError(f"'{s.id}' 단계의 '{k}'는 {want.__name__} 형식이어야 합니다")
+            wants = want if isinstance(want, tuple) else (want,)       # (int, float)처럼 여러 형식을 허용하는 도구 인자
+            if isinstance(v, bool) and bool not in wants or not isinstance(v, wants):
+                raise PlanError(f"'{s.id}' 단계의 '{k}'는 {'/'.join(w.__name__ for w in wants)} 형식이어야 합니다")
         for d in s.depends_on:
             if d not in ids:
                 raise PlanError(f"'{s.id}' 단계가 없는 단계 '{d}'에 의존합니다")
