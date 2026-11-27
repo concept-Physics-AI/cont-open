@@ -120,7 +120,7 @@ items:
 - key: generative_selection_edit
   name: 핵심 4 선택한 결과 편집
   status: 뼈대
-  scope: 본딩 부품 ID·이름·층·옆면 도식 영역 선택과 선택 부품 편집·변경 비교가 있다. 3D 클릭 UI·생성 이미지 픽셀 영역 이해·그래프 공통 선택 연결은 아직 없다
+  scope: 본딩 부품 ID·이름·층·옆면 도식 영역 선택과 선택 부품 편집·변경 비교가 있다. 3D 클릭 선택(`s4d:select`→`select_from_screen`)은 있으나 웹 화면 연결·생성 이미지 픽셀 영역 이해·그래프 공통 선택 연결은 아직 없다
   evidence:
   - src/cont/objspec/select.py
   - tests/test_objspec_select.py

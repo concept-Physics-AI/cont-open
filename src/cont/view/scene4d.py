@@ -3,6 +3,8 @@
 - 부품은 명세의 부품 ID로 구분되고, 단계 자세는 `objspec.Timeline`이 준다. 같은 식을 JS가 다시 계산한다(POSE_JS).
 - 재생 시간은 설명용이다. 물리 시간이 아니며, 온도·응력·접합 품질은 이 보기에 없다.
 - 카메라와 단계별 속도는 `ViewState`에서 온다. 바꿔도 구조(부품 모양)는 다시 만들지 않는다.
+- 부품을 누르면 선택한다(Shift/Ctrl/⌘ 누르고 누르면 여러 개). 선택은 화면 밖으로 `s4d:select` 이벤트(선택한 부품 ID들과 장면의 명세 version)로 알리고,
+  밖에서는 `data.selection`(처음)이나 `box.s4dSelect(ids)`(나중)로 넣는다. 누른 곳의 부품은 부품마다 다른 색으로 따로 그린 화면에서 읽는다(가려진 부품은 고르지 않는다).
 - 외부 라이브러리 없이 WebGL만 쓰고, WebGL이 없으면 글로 알린다. 움직임을 줄이는 설정이면 자동 재생하지 않는다.
 """
 from __future__ import annotations
@@ -13,7 +15,7 @@ import math
 
 import numpy as np
 
-from cont.objspec import ObjectSpec, ViewState
+from cont.objspec import ObjectSpec, ObjectSpecError, ViewState
 from cont.objspec.scene import Timeline
 from cont.shape import assembly_mesh
 
@@ -37,11 +39,11 @@ var gl=cv.getContext('webgl',{antialias:true}),info=box.querySelector('.info'),s
 if(!gl){box.querySelector('.msg').textContent='이 브라우저에서는 3D 보기를 쓸 수 없습니다.';cv.style.display='none';return;}
 function sh(t,s){var o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);return o;}
 var pr=gl.createProgram();
-gl.attachShader(pr,sh(gl.VERTEX_SHADER,'attribute vec3 p;attribute vec3 n;uniform mat3 r;uniform vec3 c;uniform vec3 o;uniform float s;uniform float a;varying float l;'+
-'void main(){vec3 q=r*((p+o-c)*s);vec3 m=normalize(r*n);l=0.38+0.62*max(dot(m,normalize(vec3(0.35,0.55,0.75))),0.0);gl_Position=vec4(q.x/a,q.y,-q.z*0.5,1.0);}'));
+gl.attachShader(pr,sh(gl.VERTEX_SHADER,'attribute vec3 p;attribute vec3 n;uniform mat3 r;uniform vec3 c;uniform vec3 o;uniform float s;uniform float a;uniform float f;varying float l;'+
+'void main(){vec3 q=r*((p+o-c)*s);vec3 m=normalize(r*n);l=mix(0.38+0.62*max(dot(m,normalize(vec3(0.35,0.55,0.75))),0.0),1.0,f);gl_Position=vec4(q.x/a,q.y,-q.z*0.5,1.0);}'));
 gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,'precision mediump float;uniform vec3 k;varying float l;void main(){gl_FragColor=vec4(k*l,1.0);}'));
 gl.linkProgram(pr);gl.useProgram(pr);
-var U={};['r','c','o','s','a','k'].forEach(function(x){U[x]=gl.getUniformLocation(pr,x)});
+var U={};['r','c','o','s','a','k','f'].forEach(function(x){U[x]=gl.getUniformLocation(pr,x)});
 var ap=gl.getAttribLocation(pr,'p'),an=gl.getAttribLocation(pr,'n');
 function rgb(v){var d=document.createElement('i');d.style.color='var('+v+')';box.appendChild(d);var m=getComputedStyle(d).color.match(/[\d.]+/g);box.removeChild(d);return [m[0]/255,m[1]/255,m[2]/255];}
 var parts=data.parts.map(function(pt){var t=pt.tri,n=new Float32Array(t.length);
@@ -49,27 +51,61 @@ for(var i=0;i<t.length;i+=9){var ux=t[i+3]-t[i],uy=t[i+4]-t[i+1],uz=t[i+5]-t[i+2
 var x=uy*vz-uz*vy,y=uz*vx-ux*vz,z=ux*vy-uy*vx,q=Math.sqrt(x*x+y*y+z*z)||1;for(var j=0;j<9;j+=3){n[i+j]=x/q;n[i+j+1]=y/q;n[i+j+2]=z/q;}}
 var bp=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,bp);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(t),gl.STATIC_DRAW);
 var bn=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,bn);gl.bufferData(gl.ARRAY_BUFFER,n,gl.STATIC_DRAW);
-return {id:pt.id,bp:bp,bn:bn,count:t.length/3,color:pt.color};});
+var lo=[1e9,1e9,1e9],hi=[-1e9,-1e9,-1e9];for(var i=0;i<t.length;i+=3){for(var j=0;j<3;j++){lo[j]=Math.min(lo[j],t[i+j]);hi[j]=Math.max(hi[j],t[i+j]);}}
+return {id:pt.id,name:pt.name,bp:bp,bn:bn,count:t.length/3,color:pt.color,mid:[(lo[0]+hi[0])/2,(lo[1]+hi[1])/2,(lo[2]+hi[2])/2]};});
+var names={};parts.forEach(function(p){names[p.id]=p.name;});
 var yaw0=data.camera.yaw,pitch0=data.camera.pitch,zoom0=data.camera.zoom,yaw=yaw0,pitch=pitch0,zoom=zoom0,now=Math.min(Math.max(data.start_t||0,0),T.duration),playing=false,last=null,tick=null;
+var sel=(data.selection||[]).filter(function(id){return names[id]!==undefined;}),keys=box.querySelectorAll('.key[data-part-id]');
+function isSel(id){return sel.indexOf(id)>=0;}
 function label(){var sg=T.segments[0],n=T.segments.length;for(var i=0;i<n;i++){sg=T.segments[i];if(now<sg.t1||i===n-1)break;}
-info.textContent='단계 '+(T.segments.indexOf(sg)+1)+'/'+T.segments.length+' '+sg.name+' · 설명용 재생 '+now.toFixed(1)+'/'+T.duration.toFixed(1)+' s (속도 '+sg.speed+'배)';slider.value=now;}
+info.textContent='단계 '+(T.segments.indexOf(sg)+1)+'/'+T.segments.length+' '+sg.name+' · 설명용 재생 '+now.toFixed(1)+'/'+T.duration.toFixed(1)+' s (속도 '+sg.speed+'배)'+(sel.length?' · 선택: '+sel.map(function(i){return names[i];}).join(', '):'');slider.value=now;
+box.dataset.selected=sel.join(',');keys.forEach(function(b){b.setAttribute('aria-pressed',isSel(b.dataset.partId)?'true':'false');});}
+var pf=null,pt=null,pd=null,pw=0,ph=0;
+function pickBuf(w,h){if(!pf){pf=gl.createFramebuffer();pt=gl.createTexture();pd=gl.createRenderbuffer();}if(pw===w&&ph===h)return;pw=w;ph=h;
+gl.bindTexture(gl.TEXTURE_2D,pt);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+gl.bindRenderbuffer(gl.RENDERBUFFER,pd);gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_COMPONENT16,w,h);
+gl.bindFramebuffer(gl.FRAMEBUFFER,pf);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,pt,0);gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,pd);gl.bindFramebuffer(gl.FRAMEBUFFER,null);}
+function drawParts(pick,w,h){var cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+var R=[cy,sp*sy,-cp*sy, -sy,sp*cy,-cp*cy, 0,cp,sp],hl=pick?null:rgb('--hi,#D6336C');
+gl.uniformMatrix3fv(U.r,false,new Float32Array(R));gl.uniform3fv(U.c,data.center);gl.uniform1f(U.s,zoom/data.radius);gl.uniform1f(U.a,w/h);gl.uniform1f(U.f,pick?1:0);
+parts.forEach(function(p,i){var ps=poseAt(T,now,p.id);gl.uniform3f(U.o,ps[1],0,ps[0]);
+if(pick)gl.uniform3f(U.k,(i+1)/255,0,0);else{var k=rgb(p.color);if(isSel(p.id))k=[k[0]*0.35+hl[0]*0.65,k[1]*0.35+hl[1]*0.65,k[2]*0.35+hl[2]*0.65];gl.uniform3fv(U.k,k);}
+gl.bindBuffer(gl.ARRAY_BUFFER,p.bp);gl.enableVertexAttribArray(ap);gl.vertexAttribPointer(ap,3,gl.FLOAT,false,0,0);
+gl.bindBuffer(gl.ARRAY_BUFFER,p.bn);gl.enableVertexAttribArray(an);gl.vertexAttribPointer(an,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,p.count);});}
 function draw(){var w=cv.clientWidth*devicePixelRatio|0,h=cv.clientHeight*devicePixelRatio|0;if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;}
 gl.viewport(0,0,w,h);var bg=rgb('--bg');gl.clearColor(bg[0],bg[1],bg[2],1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);
-var cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
-var R=[cy,sp*sy,-cp*sy, -sy,sp*cy,-cp*cy, 0,cp,sp];
-gl.uniformMatrix3fv(U.r,false,new Float32Array(R));gl.uniform3fv(U.c,data.center);gl.uniform1f(U.s,zoom/data.radius);gl.uniform1f(U.a,w/h);
-parts.forEach(function(p){var ps=poseAt(T,now,p.id);gl.uniform3f(U.o,ps[1],0,ps[0]);gl.uniform3fv(U.k,rgb(p.color));
-gl.bindBuffer(gl.ARRAY_BUFFER,p.bp);gl.enableVertexAttribArray(ap);gl.vertexAttribPointer(ap,3,gl.FLOAT,false,0,0);
-gl.bindBuffer(gl.ARRAY_BUFFER,p.bn);gl.enableVertexAttribArray(an);gl.vertexAttribPointer(an,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,p.count);});label();}
+drawParts(false,w,h);label();}
+function pickAt(cx,cy){var r=cv.getBoundingClientRect(),w=cv.width,h=cv.height;if(!w||!h||!r.width||!r.height)return null;
+var x=Math.floor((cx-r.left)*w/r.width),y=h-1-Math.floor((cy-r.top)*h/r.height);if(x<0||y<0||x>=w||y>=h)return null;
+pickBuf(w,h);gl.bindFramebuffer(gl.FRAMEBUFFER,pf);gl.viewport(0,0,w,h);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);
+drawParts(true,w,h);var b=new Uint8Array(4);gl.readPixels(x,y,1,1,gl.RGBA,gl.UNSIGNED_BYTE,b);gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,w,h);
+return b[0]>0&&b[0]<=parts.length?parts[b[0]-1].id:null;}
+function emit(src){box.dispatchEvent(new CustomEvent('s4d:select',{bubbles:true,detail:{ids:sel.slice(),spec_version:data.spec_version,source:src}}));}
+function choose(id,multi,src){var before=sel.join(',');
+if(id===null){if(!multi)sel=[];}else if(multi){var i=sel.indexOf(id);if(i>=0)sel.splice(i,1);else sel.push(id);}else sel=[id];
+draw();if(sel.join(',')!==before)emit(src);}
+keys.forEach(function(b){b.addEventListener('click',function(e){choose(b.dataset.partId,e.shiftKey||e.ctrlKey||e.metaKey,'legend');});});
+box.s4dSelect=function(ids){sel=(ids||[]).filter(function(id){return names[id]!==undefined;});draw();return sel.slice();};
+box.s4dProject=function(id){var p=parts.filter(function(q){return q.id===id;})[0];if(!p)return null;var ps=poseAt(T,now,id),r=cv.getBoundingClientRect();
+var cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch),s=zoom/data.radius,
+v=[(p.mid[0]+ps[1]-data.center[0])*s,(p.mid[1]-data.center[1])*s,(p.mid[2]+ps[0]-data.center[2])*s],
+qx=cy*v[0]-sy*v[1],qy=sp*sy*v[0]+sp*cy*v[1]+cp*v[2],a=cv.width/cv.height;
+return [(qx/a*0.5+0.5)*r.width,(0.5-qy*0.5)*r.height];};
 function clamp(){pitch=Math.max(-1.5,Math.min(1.5,pitch));zoom=Math.max(0.4,Math.min(6,zoom));}
 function stop(){playing=false;playBtn.textContent='재생';playBtn.setAttribute('aria-pressed','false');tick=null;}
 function frame(ts){if(!playing)return;if(tick===null)tick=ts;now+=(ts-tick)/1000;tick=ts;if(now>=T.duration){now=T.duration;draw();stop();return;}draw();requestAnimationFrame(frame);}
 playBtn.addEventListener('click',function(){if(playing){stop();return;}if(now>=T.duration)now=0;playing=true;tick=null;playBtn.textContent='멈춤';playBtn.setAttribute('aria-pressed','true');requestAnimationFrame(frame);});
 slider.addEventListener('input',function(){stop();now=parseFloat(slider.value);draw();});
 box.querySelectorAll('.stage').forEach(function(b){b.addEventListener('click',function(){stop();now=T.segments[+b.dataset.i].t0;draw();});});
-cv.addEventListener('pointerdown',function(e){last=[e.clientX,e.clientY];cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing';});
-cv.addEventListener('pointermove',function(e){if(!last)return;yaw-=(e.clientX-last[0])*0.01;pitch+=(e.clientY-last[1])*0.01;last=[e.clientX,e.clientY];clamp();draw();});
-function up(){last=null;cv.style.cursor='grab';}cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+var down=null,dragging=false;
+cv.addEventListener('pointerdown',function(e){down=[e.clientX,e.clientY];last=down;dragging=false;cv.setPointerCapture(e.pointerId);});
+cv.addEventListener('pointermove',function(e){if(!down)return;if(!dragging){if(Math.hypot(e.clientX-down[0],e.clientY-down[1])<5)return;dragging=true;cv.style.cursor='grabbing';}
+yaw-=(e.clientX-last[0])*0.01;pitch+=(e.clientY-last[1])*0.01;last=[e.clientX,e.clientY];clamp();draw();});
+function up(e){var click=down&&!dragging&&e&&e.type==='pointerup';down=null;last=null;dragging=false;cv.style.cursor='grab';
+if(click)choose(pickAt(e.clientX,e.clientY),e.shiftKey||e.ctrlKey||e.metaKey,'canvas');}
+cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
 cv.addEventListener('wheel',function(e){e.preventDefault();zoom*=e.deltaY<0?1.1:0.9;clamp();draw();},{passive:false});
 cv.addEventListener('keydown',function(e){var k=e.key,d=0.1;if(k==='ArrowLeft')yaw+=d;else if(k==='ArrowRight')yaw-=d;else if(k==='ArrowUp')pitch-=d;else if(k==='ArrowDown')pitch+=d;
 else if(k==='+'||k==='=')zoom*=1.1;else if(k==='-')zoom*=0.9;else return;e.preventDefault();clamp();draw();});
@@ -85,11 +121,21 @@ SCENE_CSS = """
 .s4d .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}.s4d input[type=range]{flex:1;min-width:140px}
 .s4d button{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:4px 12px;cursor:pointer}
 .s4d button:hover{border-color:var(--sig)}.s4d .info{font-size:13px;color:var(--sub);margin-top:4px}
-.s4d .key{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--sub)}.s4d .key i{width:11px;height:11px;border-radius:2px;display:inline-block;border:1px solid var(--line)}
+.s4d .key{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--sub);padding:2px 8px}.s4d .key i{width:11px;height:11px;border-radius:2px;display:inline-block;border:1px solid var(--line)}
+.s4d .key[aria-pressed=true]{border-color:var(--hi,#D6336C);color:var(--ink);box-shadow:inset 0 0 0 1px var(--hi,#D6336C)}
 """
 
 
-def scene_data(spec: ObjectSpec, view: ViewState | None = None, timeline: Timeline | None = None, start_t: float = 0.0) -> dict:
+def _check_selection(spec: ObjectSpec, selection: tuple[str, ...] | list[str]) -> list[str]:
+    ids = list(selection)
+    bad = [i for i in ids if i not in spec.part_ids]
+    if bad:
+        raise ObjectSpecError(f"선택에 명세에 없는 부품이 있습니다: {bad}")
+    return list(dict.fromkeys(ids))
+
+
+def scene_data(spec: ObjectSpec, view: ViewState | None = None, timeline: Timeline | None = None, start_t: float = 0.0,
+               selection: tuple[str, ...] | list[str] = ()) -> dict:
     view = view or ViewState()
     tl = timeline or Timeline(spec, view)
     asm = spec.to_assembly()
@@ -104,19 +150,23 @@ def scene_data(spec: ObjectSpec, view: ViewState | None = None, timeline: Timeli
         parts.append({"id": op.id, "name": part.name, "role": part.role, "color": ROLE_COLOR.get(part.role, "--sub"), "tri": tri.tolist()})
     return {"center": [0.0, 0.0, (z0 + z1 + reach) / 2], "radius": radius, "parts": parts,
             "camera": {"yaw": -math.radians(view.azimuth), "pitch": math.radians(view.elevation), "zoom": 1.0 / view.distance},
-            "timeline": tl.to_dict(), "start_t": float(start_t), "spec_version": spec.version, "dimension_status": spec.dimension_status}
+            "timeline": tl.to_dict(), "start_t": float(start_t), "selection": _check_selection(spec, selection),
+            "spec_version": spec.version, "dimension_status": spec.dimension_status}
 
 
-def scene4d(spec: ObjectSpec, view: ViewState | None = None, label: str = "", start_t: float = 0.0) -> str:
-    """4D 보기 조각(HTML). 화면에는 SCENE_CSS와 SCENE_JS를 한 번씩 넣어야 한다."""
+def scene4d(spec: ObjectSpec, view: ViewState | None = None, label: str = "", start_t: float = 0.0,
+            selection: tuple[str, ...] | list[str] = ()) -> str:
+    """4D 보기 조각(HTML). 화면에는 SCENE_CSS와 SCENE_JS를 한 번씩 넣어야 한다. selection은 처음에 선택해 둘 부품 ID들이다."""
     e = html.escape
-    data = scene_data(spec, view, start_t=start_t)
+    data = scene_data(spec, view, start_t=start_t, selection=selection)
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
-    keys = "".join(f'<span class="key" data-part-id="{e(p["id"])}"><i style="background:var({e(p["color"])})"></i>{e(p["name"])}</span>' for p in data["parts"])
+    chosen = set(data["selection"])
+    keys = "".join(f'<button type="button" class="key" data-part-id="{e(p["id"])}" aria-pressed="{"true" if p["id"] in chosen else "false"}">'
+                   f'<i style="background:var({e(p["color"])})"></i>{e(p["name"])}</button>' for p in data["parts"])
     stages = "".join(f'<button type="button" class="stage" data-i="{i}">{i + 1}. {e(sg["name"])}</button>' for i, sg in enumerate(data["timeline"]["segments"]))
     note = ("치수는 설명용 값입니다." if spec.dimension_status == "illustrative" else "치수는 사용자가 입력한 값입니다." if spec.dimension_status == "user_input"
             else "") + " 재생 시간은 설명용이며 물리 시간이 아닙니다."
-    return (f'<div class="s4d"><canvas tabindex="0" role="img" aria-label="{e(label or spec.name)} 단계 장면. 끌거나 화살표 키로 돌리고 휠이나 +, - 키로 확대합니다"></canvas>'
+    return (f'<div class="s4d"><canvas tabindex="0" role="img" aria-label="{e(label or spec.name)} 단계 장면. 끌거나 화살표 키로 돌리고 휠이나 +, - 키로 확대합니다. 부품을 누르면 선택하고, 아래 부품 단추로도 고를 수 있습니다"></canvas>'
             f'<div class="bar"><button type="button" class="play" aria-pressed="false">재생</button>'
             f'<input type="range" min="0" max="{data["timeline"]["duration"]}" step="0.01" value="{min(max(start_t, 0.0), data["timeline"]["duration"])}" aria-label="재생 위치">{stages}'
             f'<button type="button" class="cam">처음 시점으로</button></div>'
@@ -124,12 +174,13 @@ def scene4d(spec: ObjectSpec, view: ViewState | None = None, label: str = "", st
             f'<script type="application/json">{payload}</script></div>')
 
 
-def scene4d_page(spec: ObjectSpec, view: ViewState | None = None, title: str = "", start_t: float = 0.0) -> str:
+def scene4d_page(spec: ObjectSpec, view: ViewState | None = None, title: str = "", start_t: float = 0.0,
+                 selection: tuple[str, ...] | list[str] = ()) -> str:
     """한 파일 HTML. 밝은 화면·어두운 화면을 함께 따르고, 움직임을 줄이는 설정이면 자동 재생하지 않는다(이 보기는 처음부터 자동 재생이 없다)."""
     t = html.escape(title or spec.name)
-    css = (":root{--bg:#F5F7FA;--ink:#18385E;--sub:#5B6B7F;--line:#C9D3E0;--sig:#008E94;--band:#8FA6C4;--okbg:#C58B2B}"
-           "@media(prefers-color-scheme:dark){:root{--bg:#10151C;--ink:#E6ECF4;--sub:#9AA9BC;--line:#2B3644;--sig:#38B6BC;--band:#5C7596;--okbg:#D9A24A}}"
+    css = (":root{--bg:#F5F7FA;--ink:#18385E;--sub:#5B6B7F;--line:#C9D3E0;--sig:#008E94;--band:#8FA6C4;--okbg:#C58B2B;--hi:#D6336C}"
+           "@media(prefers-color-scheme:dark){:root{--bg:#10151C;--ink:#E6ECF4;--sub:#9AA9BC;--line:#2B3644;--sig:#38B6BC;--band:#5C7596;--okbg:#D9A24A;--hi:#FF7AA2}}"
            "body{margin:0;padding:16px;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,sans-serif;max-width:860px}")
     return (f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>{t}</title><style>{css}{SCENE_CSS}</style></head><body><h1 style="font-size:18px">{t}</h1>'
-            f'{scene4d(spec, view, start_t=start_t)}<script>{SCENE_JS}</script></body></html>')
+            f'{scene4d(spec, view, start_t=start_t, selection=selection)}<script>{SCENE_JS}</script></body></html>')

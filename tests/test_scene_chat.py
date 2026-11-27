@@ -341,3 +341,25 @@ s.turn("돌리고 이미지")
     assert re.view.azimuth == 10.0 and re.pending()["stale"] == "" and re.pending()["tools"] == ["set_camera", "make_image"]
     t = re.resume_pending()
     assert t.kind == "done" and re.view.azimuth == 77.0 and len(re.new_images) == 1 and re.pending() is None
+
+
+def test_screen_selection_is_taken_refused_when_stale_or_unknown_and_cleared_by_empty(tmp_path):
+    from cont.objspec import SelectionError
+    ss = session(tmp_path)
+    assert ss.select_from_screen(["die.si", "die.si"], S.version) == ("die.si",)
+    with pytest.raises(SelectionError, match="오래된 화면"):
+        ss.select_from_screen(["wafer.si"], "다른버전")
+    with pytest.raises(SelectionError, match="명세에 없는 부품"):
+        ss.select_from_screen(["wafer.si", "없는부품"], S.version)
+    assert ss.selection == ("die.si",)                                     # 거부된 선택은 이전 상태를 바꾸지 않는다
+    assert ss.select_from_screen([], S.version) == ()
+
+
+def test_next_turn_edits_the_part_chosen_on_screen_and_prompt_shows_it(tmp_path):
+    p = plan({"id": "a", "tool": "edit_part", "args": {"changes": {"z1": 2.4}}})
+    ss = session(tmp_path, p)
+    ss.select_from_screen(["die.si"], S.version)
+    t = ss.turn("그 부품 두께를 키워줘")
+    assert t.kind == "done" and ss.spec.part("die.si").part.z1 == 2.4 and ss.spec.part("wafer.si") == S.part("wafer.si")
+    text = "\n".join(m.content for m in ss.provider.seen[0])
+    assert '"selection": ["die.si"]' in text
