@@ -19,7 +19,7 @@ from cont.generation import Generator
 from cont.objspec import (ObjectSpec, ObjectSpecError, Selection, SpecImage, ViewState, edit_selection, generate_image, select,
                           select_region)
 from cont.objspec.scene import Timeline
-from cont.service.project import open_project, save_project
+from cont.service.project import open_project, save_conversation, save_project
 
 SYSTEM_PROMPT = (
     "너는 장면 편집 계획기다. 사용자 요청을 등록된 도구 호출 계획으로만 답한다. 출력은 JSON 한 개 {\"steps\":[{\"id\":\"s1\",\"tool\":..,\"args\":{..},\"depends_on\":[..]}]}이고 다른 글은 쓰지 않는다. "
@@ -52,6 +52,14 @@ class Turn:
     changes: list[str] = field(default_factory=list)
     request_id: str = ""
 
+    def to_dict(self) -> dict[str, Any]:
+        return {"text": self.text, "kind": self.kind, "reply": self.reply, "steps": [dict(s) for s in self.steps],
+                "changes": list(self.changes), "request_id": self.request_id}
+
+    @classmethod
+    def from_dict(cls, d: Mapping[str, Any]) -> "Turn":
+        return cls(d["text"], d["kind"], d["reply"], [dict(s) for s in d.get("steps", [])], list(d.get("changes", [])), d.get("request_id", ""))
+
 
 class SceneSession:
     def __init__(self, spec: ObjectSpec, generator: Generator, provider: Any | None = None, *, root: str | Path | None = None,
@@ -66,14 +74,18 @@ class SceneSession:
         self.new_images: list[SpecImage] = []                             # 아직 저장하지 않은 이미지
         self.baseline = (spec, self.view)                                 # 비교 기준: 열었을 때 또는 마지막 저장 때 상태
         self.turns: list[Turn] = []
+        self.open_problems: list[str] = []                                # 열 때 알려야 할 문제(이미지 없음, 대화 기록 읽기 실패 등)
         self.context_limits = context_limits or configured_limits()
 
     @classmethod
     def open(cls, root: str | Path, generator: Generator, provider: Any | None = None) -> "SceneSession":
         o = open_project(root)                                            # 모델을 부르지 않는다
         st = o.state
-        return cls(st.spec, generator, provider, root=root, project_id=o.project_id, name=o.name, view=st.view,
-                   selection=st.selection, playback_t=st.playback_t, saved_images=st.images)
+        s = cls(st.spec, generator, provider, root=root, project_id=o.project_id, name=o.name, view=st.view,
+                selection=st.selection, playback_t=st.playback_t, saved_images=st.images)
+        s.turns = [Turn.from_dict(d) for d in st.conversation]            # 저장된 대화 기록(다음 요청의 문맥으로 쓰인다)
+        s.open_problems = list(o.problems)
+        return s
 
     # ---- 상태 -------------------------------------------------------------------------------------------------
     def _snapshot(self) -> tuple[Any, ...]:
@@ -168,7 +180,8 @@ class SceneSession:
         def save() -> Mapping[str, Any]:
             if S.root is None or not S.project_id:
                 raise RuntimeError("저장할 프로젝트 폴더가 정해지지 않았습니다")
-            r = save_project(S.root, S.project_id, S.name or S.spec.name, S.spec, S.view, S.selection, S.playback_t, S.new_images)
+            r = save_project(S.root, S.project_id, S.name or S.spec.name, S.spec, S.view, S.selection, S.playback_t, S.new_images,
+                             conversation=[t.to_dict() for t in S.turns])
             S.saved_images = open_project(S.root).state.images
             S.new_images = []
             S.baseline = (S.spec, S.view)
@@ -231,6 +244,11 @@ class SceneSession:
 
     def _end(self, t: Turn) -> Turn:
         self.turns.append(t)
+        if t.kind == "done" and self.root is not None and any(s["tool"] == "save_project" for s in t.steps):
+            try:                                                         # 저장한 요청 자신까지 대화 기록에 넣는다(상태 저장은 이미 끝났다)
+                save_conversation(self.root, self.project_id, [x.to_dict() for x in self.turns])
+            except Exception as e:
+                t.reply += f"\n(대화 기록을 저장하지 못했습니다: {type(e).__name__})"
         return t
 
 

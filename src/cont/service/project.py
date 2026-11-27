@@ -5,6 +5,8 @@
   이미지는 만든 때의 명세를 부모로 둔 파생물이다. ID·지문·프로젝트 경계는 장부 규칙을 그대로 따른다.
 - manifest.json은 임시 파일에 쓴 뒤 바꿔 넣는다(원자적). 바꾸기 전 manifest는 manifest.prev.json에 남는다. 본문 해시가 맞지 않으면
   (손상·손으로 고침) 직전 정상 manifest로 열고 `recovered_from_previous`로 알린다. 파일이 없거나 바뀌었으면 숨기지 않고 `problems`에 적는다.
+- 대화 기록(사용자 발화, 계획 단계의 도구·상태, 코드가 만든 답)은 manifest 본문에 함께 저장해 같은 해시로 보호한다. 모델의 원문 응답과
+  공급자 설정·키는 저장하지 않는다. 대화 기록이 없는 이전 저장도 그대로 열린다(`conversation`은 선택 항목).
 - 저장 폴더는 저장소 밖에 둔다. 원본을 덮어쓰지 않고, 이전 명세 version은 `restore_version`으로 다시 꺼낼 수 있다.
 """
 from __future__ import annotations
@@ -33,6 +35,9 @@ class ProjectError(ValueError):
     pass
 
 
+_TURN_KINDS = ("done", "failed", "refused")
+
+
 @dataclass
 class SavedImage:
     rep_id: str
@@ -51,6 +56,7 @@ class ProjectState:
     selection: tuple[str, ...] = ()              # 선택한 부품 ID
     playback_t: float = 0.0                      # 설명용 재생 위치(초)
     images: list[SavedImage] = field(default_factory=list)
+    conversation: list[dict[str, Any]] = field(default_factory=list)      # 저장된 대화 턴(오래된 것부터)
 
 
 @dataclass
@@ -74,6 +80,42 @@ def _lock_stale(config_dir: Path | None = None) -> float:
     if isinstance(v, bool) or not isinstance(v, (int, float)) or v <= 0:
         raise ProjectError(f"lock_stale_seconds={v!r}: 0보다 큰 수여야 합니다")
     return float(v)
+
+
+def _conv_limits(config_dir: Path | None = None) -> tuple[int, int]:
+    with open((config_dir or CONFIG_DIR) / "objspec" / "project.yaml", encoding="utf-8") as fh:
+        cfg = yaml.safe_load(fh) or {}
+    out = []
+    for k, d in (("conversation_max_turns", 200), ("conversation_text_max_chars", 2000)):
+        v = cfg.get(k, d)
+        if isinstance(v, bool) or not isinstance(v, int) or v <= 0:
+            raise ProjectError(f"{k}={v!r}: 0보다 큰 정수여야 합니다")
+        out.append(v)
+    return out[0], out[1]
+
+
+def _clean_conversation(conv: list[dict[str, Any]] | tuple[dict[str, Any], ...], config_dir: Path | None = None) -> list[dict[str, Any]]:
+    """대화 턴을 저장 형식으로 검사·정리한다. 모르는 항목은 저장하지 않고, 너무 긴 글은 잘라 표시한다."""
+    max_turns, max_chars = _conv_limits(config_dir)
+
+    def cut(v: Any, what: str) -> str:
+        if not isinstance(v, str):
+            raise ProjectError(f"대화 기록의 {what}이(가) 글이 아닙니다")
+        return v if len(v) <= max_chars else v[:max_chars] + "…(잘림)"
+
+    out: list[dict[str, Any]] = []
+    for t in conv:
+        if not isinstance(t, dict) or t.get("kind") not in _TURN_KINDS:
+            raise ProjectError("대화 기록의 턴 형식이 맞지 않습니다")
+        steps = []
+        for st in t.get("steps", []):
+            if not isinstance(st, dict) or not isinstance(st.get("tool"), str) or not isinstance(st.get("state"), str):
+                raise ProjectError("대화 기록의 단계 형식이 맞지 않습니다")
+            steps.append({"id": cut(st.get("id", ""), "단계 id"), "tool": st["tool"], "state": st["state"], "error": cut(st.get("error") or "", "오류")})
+        changes = [cut(c, "변경 내용") for c in t.get("changes", [])]
+        out.append({"text": cut(t.get("text", ""), "발화"), "kind": t["kind"], "reply": cut(t.get("reply", ""), "답"), "steps": steps,
+                    "changes": changes, "request_id": cut(t.get("request_id", ""), "요청 id")})
+    return out[-max_turns:]
 
 
 def _atomic_write(path: Path, data: bytes) -> None:
@@ -155,8 +197,9 @@ def _verified_spec(root: Path, ledger: Ledger, project_id: str, art: str, versio
 
 def save_project(root: str | Path, project_id: str, name: str, spec: ObjectSpec, view: ViewState | None = None,
                  selection: tuple[str, ...] = (), playback_t: float = 0.0, images: list[SpecImage] | tuple[SpecImage, ...] = (),
-                 config_dir: Path | None = None) -> dict[str, Any]:
-    """현재 상태를 저장한다. 같은 명세 version이면 다시 쓰지 않고, 다르면 이전 명세를 부모로 새 version을 더한다."""
+                 config_dir: Path | None = None, conversation: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    """현재 상태를 저장한다. 같은 명세 version이면 다시 쓰지 않고, 다르면 이전 명세를 부모로 새 version을 더한다.
+    conversation을 주면 그것으로 대화 기록을 바꾸고, 주지 않으면(None) 이전에 저장한 대화 기록을 그대로 둔다."""
     if not isinstance(project_id, str) or not project_id.strip():
         raise ProjectError("프로젝트 ID가 필요합니다")
     view = view or ViewState()
@@ -166,6 +209,7 @@ def save_project(root: str | Path, project_id: str, name: str, spec: ObjectSpec,
     dur = Timeline(spec, view, config_dir=config_dir).duration if spec.stages else 0.0
     if isinstance(playback_t, bool) or not isinstance(playback_t, (int, float)) or not 0 <= playback_t <= dur + 1e-9:
         raise ProjectError(f"재생 위치 {playback_t!r}: 0~{dur}초 사이여야 합니다")
+    conv = _clean_conversation(conversation, config_dir) if conversation is not None else None
     root = Path(root)
     (root / "files").mkdir(parents=True, exist_ok=True)
     with _Lock(root, _lock_stale(config_dir)):
@@ -213,7 +257,8 @@ def save_project(root: str | Path, project_id: str, name: str, spec: ObjectSpec,
                 have.add(rec["id"])
         body = {"schema_version": SCHEMA, "project_id": project_id, "name": name, "revision": (old["revision"] + 1) if old else 1,
                 "current": {"art": cur["art"], "version": spec.version}, "history": history, "view": view.to_dict(),
-                "selection": list(selection), "playback_t": float(playback_t), "images": imgs}
+                "selection": list(selection), "playback_t": float(playback_t), "images": imgs,
+                "conversation": conv if conv is not None else (list(old.get("conversation", [])) if old else [])}
         out = {"body": body, "body_sha256": sha256_bytes(_canon(body))}
         mp = root / MANIFEST
         if mp.exists():
@@ -273,8 +318,37 @@ def open_project(root: str | Path) -> Opened:
             png, status = None, "changed" if "다릅니다" in str(e) else "missing"
             problems.append(f"이미지를 쓸 수 없습니다 ({im['rep_id']}): {e}")
         images.append(SavedImage(im["rep_id"], im["art"], im["spec_version"], im.get("stage"), im["record"], png, status))
-    return Opened(pid, body["name"], body["revision"], ProjectState(spec, view, sel, float(body["playback_t"]), images),
+    try:
+        conv = _clean_conversation(body.get("conversation", []), None)
+    except ProjectError as e:
+        conv = []
+        problems.append(f"대화 기록을 읽을 수 없어 비워서 열었습니다 ({e})")
+    return Opened(pid, body["name"], body["revision"], ProjectState(spec, view, sel, float(body["playback_t"]), images, conv),
                   list(body["history"]), recovered, problems)
+
+
+def save_conversation(root: str | Path, project_id: str, conversation: list[dict[str, Any]], config_dir: Path | None = None) -> dict[str, Any]:
+    """대화 기록만 갱신한다. 명세·이미지·개정 번호는 그대로이고(개정은 상태를 저장할 때만 오른다), 직전 manifest는 prev로 남는다."""
+    conv = _clean_conversation(conversation, config_dir)
+    root = Path(root)
+    with _Lock(root, _lock_stale(config_dir)):
+        mp = root / MANIFEST
+        current_ok = True
+        try:
+            body = _read_manifest(mp)
+        except ProjectError:
+            current_ok = False
+            body = _read_manifest(root / PREV)              # 현재 것이 깨졌으면 직전 정상 manifest 위에 이어 쓴다
+        if body["project_id"] != project_id:
+            raise ProjectError(f"이 폴더는 다른 프로젝트({body['project_id']})의 것입니다")
+        body = {**body, "conversation": conv}
+        out = {"body": body, "body_sha256": sha256_bytes(_canon(body))}
+        if mp.exists() and current_ok:                      # 깨진 manifest로 정상 prev를 덮지 않는다
+            tmp = root / (PREV + ".tmp")
+            shutil.copyfile(mp, tmp)
+            os.replace(tmp, root / PREV)
+        _atomic_write(mp, json.dumps(out, ensure_ascii=False, sort_keys=True, indent=1).encode("utf-8"))
+        return {"revision": body["revision"], "turns": len(conv)}
 
 
 def restore_version(root: str | Path, spec_version: str) -> ObjectSpec:
