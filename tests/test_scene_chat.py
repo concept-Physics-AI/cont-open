@@ -312,3 +312,32 @@ def test_request_that_cannot_be_recorded_is_not_executed(tmp_path, monkeypatch):
     monkeypatch.setattr(sc, "save_request", lambda *a, **k: (_ for _ in ()).throw(OSError("디스크")))
     t = ss.turn("돌려줘")
     assert t.kind == "refused" and "요청 기록을 남기지 못해" in t.reply and ss.view.azimuth == 10.0
+
+
+def test_real_process_kill_during_a_turn_leaves_a_resumable_request(tmp_path):
+    """같은 시험을 BaseException 흉내가 아니라 실제 프로세스 강제 종료(os._exit)로 확인한다."""
+    import subprocess
+    import sys
+    root = tmp_path / "proj"
+    code = f'''
+import json, os, sys
+import cont.generation.providers as gp
+from cont.dialogue.scene_chat import SceneSession
+from cont.generation import get_generator
+from cont.llm import LLMResponse
+from cont.objspec import hybrid_bonding_stack
+class P:
+    name = model = "canned"
+    def __init__(self): self.r = [{json.dumps(plan(step("a", "set_camera", azimuth=10), step("b", "save_project")))!r}, {json.dumps(plan(step("a", "set_camera", azimuth=77), step("b", "make_image", stage="contact")))!r}]
+    def complete(self, m, **o): return LLMResponse(self.r.pop(0), "c", "c")
+s = SceneSession(hybrid_bonding_stack(), get_generator("fake"), P(), root={str(root)!r}, project_id="p1", name="n")
+assert s.turn("돌리고 저장").kind == "done"
+gp.Fake.generate = lambda *a, **k: os._exit(9)
+s.turn("돌리고 이미지")
+'''
+    r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=120)
+    assert r.returncode == 9, r.stderr[-500:]
+    re = SceneSession.open(root, get_generator("fake"), None)
+    assert re.view.azimuth == 10.0 and re.pending()["stale"] == "" and re.pending()["tools"] == ["set_camera", "make_image"]
+    t = re.resume_pending()
+    assert t.kind == "done" and re.view.azimuth == 77.0 and len(re.new_images) == 1 and re.pending() is None
