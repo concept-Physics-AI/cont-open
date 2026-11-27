@@ -5,16 +5,22 @@
   LLM은 답문을 쓰지 않는다. 물리 값을 계산하지 않는다.
 - 상태: 명세·보기(카메라·단계 속도)·선택·재생 위치·이미지. 저장·재열기는 `service.project`를 쓴다(모델 재호출 없음).
 - 요청마다 새 실행기를 쓴다(같은 계획을 나중에 다시 내도 이전 결과를 재사용하지 않는다).
+- 이미 저장한 프로젝트에서는 계획을 실행하기 **전에** 요청 기록(`plan_store.save_request`)을 남기고, 요청이 끝나면(완료·되돌림) 지운다.
+  실행 중 프로세스가 죽으면 기록이 남아, 다시 열 때 알리고(`pending()`) 사용자가 `resume_pending()`으로 같은 계획을 다시 실행하거나
+  `discard_pending()`으로 버린다. 조용히 이어 가지 않는다. 장면의 변경은 저장 전까지 메모리에만 있으므로 이어 실행은 **모든 단계를** 다시 실행하며
+  (끝난 단계를 건너뛰지 않는다), 열었을 때의 상태가 요청을 받던 때와 다르면(저장하지 않은 변경이 사라졌음) 거절한다.
 """
 from __future__ import annotations
 
 import json
+import hashlib
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping
 
 from cont.dialogue.context import ContextLimits, build_messages, configured_limits
-from cont.dialogue.plan import Executor, PlanError, Tool, parse, validate
+from cont.dialogue.plan import Executor, Plan, PlanError, Tool, parse, validate
+from cont.dialogue.plan_store import StaleCheckpoint, clear_request, has_request, load_request, save_request
 from cont.generation import Generator
 from cont.objspec import (ObjectSpec, ObjectSpecError, Selection, SpecImage, ViewState, edit_selection, generate_image, select,
                           select_region)
@@ -75,6 +81,7 @@ class SceneSession:
         self.baseline = (spec, self.view)                                 # 비교 기준: 열었을 때 또는 마지막 저장 때 상태
         self.turns: list[Turn] = []
         self.open_problems: list[str] = []                                # 열 때 알려야 할 문제(이미지 없음, 대화 기록 읽기 실패 등)
+        self.saved_revision = 0                                           # 마지막으로 저장·연 프로젝트 개정(저장 전이면 0)
         self.context_limits = context_limits or configured_limits()
 
     @classmethod
@@ -85,6 +92,10 @@ class SceneSession:
                 selection=st.selection, playback_t=st.playback_t, saved_images=st.images)
         s.turns = [Turn.from_dict(d) for d in st.conversation]            # 저장된 대화 기록(다음 요청의 문맥으로 쓰인다)
         s.open_problems = list(o.problems)
+        s.saved_revision = o.revision
+        p = s.pending()
+        if p:
+            s.open_problems.append(f"중단된 요청이 있습니다: '{p['text'][:60]}'" + (f" (이어 갈 수 없음: {p['stale']})" if p["stale"] else " (이어 하려면 resume_pending, 버리려면 discard_pending)"))
         return s
 
     # ---- 상태 -------------------------------------------------------------------------------------------------
@@ -182,6 +193,7 @@ class SceneSession:
                 raise RuntimeError("저장할 프로젝트 폴더가 정해지지 않았습니다")
             r = save_project(S.root, S.project_id, S.name or S.spec.name, S.spec, S.view, S.selection, S.playback_t, S.new_images,
                              conversation=[t.to_dict() for t in S.turns])
+            S.saved_revision = r["revision"]
             S.saved_images = open_project(S.root).state.images
             S.new_images = []
             S.baseline = (S.spec, S.view)
@@ -219,6 +231,8 @@ class SceneSession:
     def turn(self, text: str) -> Turn:
         if self.provider is None:
             return self._end(Turn(text, "refused", "계획을 만들 LLM 공급자가 연결되어 있지 않습니다. 아무것도 실행하지 않았습니다."))
+        if self._pending_dir() is not None and has_request(self._pending_dir()):
+            return self._end(Turn(text, "refused", "중단된 요청이 남아 있어 새 요청을 받지 않았습니다. 이어 하려면 resume_pending, 버리려면 discard_pending을 쓰세요. 아무것도 실행하지 않았습니다."))
         try:
             raw = self.provider.complete(self._messages(text), **self.llm_opts).text
         except Exception as e:                                           # 공급자 오류는 요청 실패로 남기고 상태를 건드리지 않는다
@@ -231,15 +245,76 @@ class SceneSession:
             validate(plan, tools)
         except (ValueError, PlanError) as e:
             return self._end(Turn(text, "refused", f"계획이 맞지 않아 실행하지 않았습니다: {str(e)[:150]}"))
+        return self._run_plan(text, plan, tools)
+
+    # ---- 중단된 요청 -----------------------------------------------------------------------------------------
+    def _pending_dir(self) -> Path | None:
+        """요청 기록을 둘 곳. 아직 저장한 적 없는 프로젝트는 다시 열 수 없으므로 기록하지 않는다."""
+        return self.root / "pending" if self.root is not None and self.saved_revision > 0 else None
+
+    def _fingerprint(self) -> dict[str, Any]:
+        """요청을 받던 때의 장면 상태. 열었을 때 이것과 같아야 같은 계획을 이어 실행한다."""
+        imgs = [i.rep_id for i in self.saved_images] + [f"new:{i.representation.id}" for i in self.new_images]
+        state = {"spec_version": self.spec.version, "view": self.view.to_dict(), "selection": list(self.selection),
+                 "playback_t": self.playback_t, "images": imgs}
+        return {"project_id": self.project_id, "revision": self.saved_revision,
+                "state_sha256": hashlib.sha256(json.dumps(state, sort_keys=True, ensure_ascii=False, default=str).encode("utf-8")).hexdigest()}
+
+    def pending(self) -> dict[str, Any] | None:
+        """남아 있는 중단된 요청. 없으면 None. stale이 문자열이면 지금 상태로는 이어 갈 수 없는 이유다."""
+        d = self._pending_dir()
+        if d is None or not has_request(d):
+            return None
+        try:
+            text, plan, ctx = load_request(d)
+        except StaleCheckpoint as e:
+            return {"text": "(읽을 수 없는 요청)", "request_id": "", "tools": [], "stale": str(e)}
+        want, stale = self._fingerprint(), ""
+        if ctx != want:
+            diff = sorted(k for k in set(ctx) | set(want) if ctx.get(k) != want.get(k))
+            stale = ("열었을 때 상태가 요청을 받던 때와 다릅니다(" + ", ".join(diff) + "). 저장하지 않은 변경이 사라졌을 수 있어 이어 가지 않습니다")
+        else:
+            try:
+                validate(plan, self.tools())
+            except PlanError as e:
+                stale = f"지금의 도구로는 계획이 맞지 않습니다: {str(e)[:100]}"
+        return {"text": text, "request_id": plan.request_id(), "tools": [s.tool for s in plan.steps], "stale": stale}
+
+    def resume_pending(self) -> Turn:
+        """중단된 요청의 계획을 같은 상태에서 처음부터 다시 실행한다(LLM을 다시 부르지 않는다). 이어 갈 수 없으면 아무것도 하지 않고 이유를 알린다."""
+        p = self.pending()
+        if p is None:
+            return self._end(Turn("(이어 하기)", "refused", "이어 할 중단된 요청이 없습니다."))
+        if p["stale"]:
+            return self._end(Turn(p["text"], "refused", f"중단된 요청을 이어 가지 않았습니다: {p['stale']}. 버리려면 discard_pending을 쓰세요. 아무것도 실행하지 않았습니다."))
+        text, plan, _ = load_request(self._pending_dir())
+        t = self._run_plan(text, plan, self.tools(), resumed=True)
+        return t
+
+    def discard_pending(self) -> bool:
+        d = self._pending_dir()
+        return clear_request(d) if d is not None else False
+
+    def _run_plan(self, text: str, plan: Plan, tools: dict[str, Tool], resumed: bool = False) -> Turn:
+        d = self._pending_dir()
+        if d is not None:
+            try:
+                save_request(d, text, plan, self._fingerprint())       # 실행 전에 남긴다. 못 남기면 실행하지 않는다
+            except OSError as e:
+                return self._end(Turn(text, "refused", f"중단에 대비한 요청 기록을 남기지 못해 실행하지 않았습니다({type(e).__name__}). 아무것도 실행하지 않았습니다."))
         snap = self._snapshot()
         run = Executor(tools).execute(plan)
         steps = [{"id": s.id, "tool": s.tool, "state": run.states[s.id].state, "error": run.states[s.id].error} for s in plan.steps]
         rid = plan.request_id()
         if run.done:
             lines = [str(run.states[s.id].result.get("summary", s.tool)) for s in plan.steps]       # type: ignore[union-attr]
-            return self._end(Turn(text, "done", "\n".join(lines), steps, lines, rid))
+            if d is not None:
+                clear_request(d)
+            return self._end(Turn(text, "done", ("중단된 요청을 이어 실행했습니다.\n" if resumed else "") + "\n".join(lines), steps, lines, rid))
         bad = next(s for s in plan.steps if run.states[s.id].state == "failed")
         self._restore(snap)
+        if d is not None:
+            clear_request(d)                                           # 실패해 전부 되돌렸으므로 이어 할 것이 없다
         return self._end(Turn(text, "failed", f"'{bad.tool}' 단계가 실패해 이번 요청의 변경을 모두 되돌렸습니다: {run.states[bad.id].error}", steps, [], rid))
 
     def _end(self, t: Turn) -> Turn:

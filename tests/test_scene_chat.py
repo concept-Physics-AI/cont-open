@@ -212,3 +212,132 @@ def test_conversation_save_failure_is_reported_in_the_reply_not_hidden(tmp_path,
     monkeypatch.setattr(sc, "save_conversation", lambda *a, **k: (_ for _ in ()).throw(OSError("디스크")))
     t = ss.turn("돌리고 저장")
     assert t.kind == "done" and "대화 기록을 저장하지 못했습니다: OSError" in t.reply
+
+
+# ---- 중단된 요청 재개 -----------------------------------------------------------------------------------------------
+class Died(BaseException):
+    """프로세스가 죽는 것을 흉내낸다(Executor는 Exception만 잡으므로 그대로 빠져나간다)."""
+
+
+def _saved_session(tmp_path, *replies):
+    """한 번 저장한 프로젝트에서 시작하는 세션."""
+    ss = session(tmp_path, plan(step("a", "set_camera", azimuth=10), step("b", "save_project")), *replies)
+    assert ss.turn("돌리고 저장").kind == "done"
+    return ss
+
+
+def _crash_during_image(ss, monkeypatch, text="카메라를 돌리고 접촉 이미지를 만들어줘"):
+    ss.provider.replies.append(plan(step("a", "set_camera", azimuth=77), step("b", "make_image", stage="contact")))
+    with monkeypatch.context() as m:
+        m.setattr(gen_providers.Fake, "generate", lambda *a, **k: (_ for _ in ()).throw(Died()))
+        with pytest.raises(Died):
+            ss.turn(text)
+
+
+def test_no_request_record_is_left_after_normal_or_failed_turns_and_none_before_first_save(tmp_path):
+    ss = session(tmp_path, plan(step("a", "set_camera", azimuth=5)), plan(step("a", "seek", t=1)),
+                 plan(step("a", "set_camera", azimuth=20), step("b", "edit_part", changes={"z1": 3})))
+    ss.turn("돌려줘")
+    assert not (tmp_path / "proj" / "pending").exists()                      # 저장한 적 없으면 기록하지 않는다(다시 열 수 없다)
+    ss2 = _saved_session(tmp_path / "x", plan(step("a", "seek", t=1)), plan(step("a", "set_camera", azimuth=20), step("b", "edit_part", changes={"z1": 3})))
+    ss2.turn("1초로")
+    assert ss2.turn("돌리고 선택 없이 수정").kind == "failed"
+    assert ss2.pending() is None and not (tmp_path / "x" / "proj" / "pending" / "request.json").exists()
+
+
+def test_interrupted_request_is_reported_on_open_and_resume_reruns_the_whole_plan_without_the_llm(tmp_path, monkeypatch):
+    ss = _saved_session(tmp_path)
+    _crash_during_image(ss, monkeypatch)
+    re = SceneSession.open(tmp_path / "proj", get_generator("fake"), None)           # 공급자 없음: LLM을 다시 부르지 않는다
+    assert any("중단된 요청이 있습니다" in p and "카메라를 돌리고 접촉 이미지" in p for p in re.open_problems)
+    info = re.pending()
+    assert info["tools"] == ["set_camera", "make_image"] and info["stale"] == ""
+    assert re.view.azimuth == 10.0                                                    # 메모리에만 있던 변경은 사라졌다
+    t = re.resume_pending()
+    assert t.kind == "done" and t.reply.startswith("중단된 요청을 이어 실행했습니다")
+    assert re.view.azimuth == 77.0 and len(re.new_images) == 1                        # 앞 단계(카메라)도 다시 적용된다
+    assert re.pending() is None and not (tmp_path / "proj" / "pending" / "request.json").exists()
+    assert re.resume_pending().kind == "refused"                                       # 이어 할 것이 없다
+
+
+def test_new_requests_are_refused_while_an_interrupted_one_is_unresolved_and_discard_clears_it(tmp_path, monkeypatch):
+    ss = _saved_session(tmp_path)
+    _crash_during_image(ss, monkeypatch)
+    re = SceneSession.open(tmp_path / "proj", get_generator("fake"), Canned(plan(step("a", "seek", t=1))))
+    t = re.turn("1초로")
+    assert t.kind == "refused" and "중단된 요청이 남아" in t.reply and re.playback_t == 0.0 and not re.provider.seen    # 공급자도 부르지 않았다
+    assert re.discard_pending() is True and re.discard_pending() is False and re.pending() is None
+    assert re.turn("1초로").kind == "done" and re.playback_t == 1.0
+
+
+def test_resume_is_refused_when_unsaved_changes_were_lost(tmp_path, monkeypatch):
+    ss = _saved_session(tmp_path, plan(step("a", "set_stage_speed", stage="align", factor=0.5)))
+    assert ss.turn("정렬 느리게").kind == "done"                                       # 저장하지 않은 변경
+    _crash_during_image(ss, monkeypatch)
+    re = SceneSession.open(tmp_path / "proj", get_generator("fake"), None)
+    info = re.pending()
+    assert "state_sha256" in info["stale"] and "저장하지 않은 변경" in info["stale"]
+    t = re.resume_pending()
+    assert t.kind == "refused" and "이어 가지 않았습니다" in t.reply and re.view.azimuth == 10.0 and re.view.speed_of("align") == 1.0
+    assert re.pending() is not None                                                    # 조용히 지우지 않는다
+
+
+def test_resume_is_refused_when_the_plan_already_saved_before_dying(tmp_path, monkeypatch):
+    ss = _saved_session(tmp_path)
+    ss.provider.replies.append(plan(step("a", "set_camera", azimuth=33), step("b", "save_project"), step("c", "make_image", stage="contact")))
+    with monkeypatch.context() as m:
+        m.setattr(gen_providers.Fake, "generate", lambda *a, **k: (_ for _ in ()).throw(Died()))
+        with pytest.raises(Died):
+            ss.turn("돌리고 저장하고 이미지")
+    re = SceneSession.open(tmp_path / "proj", get_generator("fake"), None)
+    assert re.view.azimuth == 33.0                                                     # 저장 단계는 디스크에 반영됐다
+    assert "revision" in re.pending()["stale"] and re.resume_pending().kind == "refused"   # 다시 하면 겹치므로 거절
+
+
+def test_tampered_request_record_is_not_resumed(tmp_path, monkeypatch):
+    ss = _saved_session(tmp_path)
+    _crash_during_image(ss, monkeypatch)
+    f = tmp_path / "proj" / "pending" / "request.json"
+    raw = json.loads(f.read_text(encoding="utf-8"))
+    raw["plan"]["steps"][0]["args"]["azimuth"] = 999
+    f.write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
+    re = SceneSession.open(tmp_path / "proj", get_generator("fake"), None)
+    assert "해시" in re.pending()["stale"] and re.resume_pending().kind == "refused" and re.view.azimuth == 10.0
+    assert re.discard_pending() is True
+
+
+def test_request_that_cannot_be_recorded_is_not_executed(tmp_path, monkeypatch):
+    import cont.dialogue.scene_chat as sc
+    ss = _saved_session(tmp_path, plan(step("a", "set_camera", azimuth=50)))
+    monkeypatch.setattr(sc, "save_request", lambda *a, **k: (_ for _ in ()).throw(OSError("디스크")))
+    t = ss.turn("돌려줘")
+    assert t.kind == "refused" and "요청 기록을 남기지 못해" in t.reply and ss.view.azimuth == 10.0
+
+
+def test_real_process_kill_during_a_turn_leaves_a_resumable_request(tmp_path):
+    """같은 시험을 BaseException 흉내가 아니라 실제 프로세스 강제 종료(os._exit)로 확인한다."""
+    import subprocess
+    import sys
+    root = tmp_path / "proj"
+    code = f'''
+import json, os, sys
+import cont.generation.providers as gp
+from cont.dialogue.scene_chat import SceneSession
+from cont.generation import get_generator
+from cont.llm import LLMResponse
+from cont.objspec import hybrid_bonding_stack
+class P:
+    name = model = "canned"
+    def __init__(self): self.r = [{json.dumps(plan(step("a", "set_camera", azimuth=10), step("b", "save_project")))!r}, {json.dumps(plan(step("a", "set_camera", azimuth=77), step("b", "make_image", stage="contact")))!r}]
+    def complete(self, m, **o): return LLMResponse(self.r.pop(0), "c", "c")
+s = SceneSession(hybrid_bonding_stack(), get_generator("fake"), P(), root={str(root)!r}, project_id="p1", name="n")
+assert s.turn("돌리고 저장").kind == "done"
+gp.Fake.generate = lambda *a, **k: os._exit(9)
+s.turn("돌리고 이미지")
+'''
+    r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=120)
+    assert r.returncode == 9, r.stderr[-500:]
+    re = SceneSession.open(root, get_generator("fake"), None)
+    assert re.view.azimuth == 10.0 and re.pending()["stale"] == "" and re.pending()["tools"] == ["set_camera", "make_image"]
+    t = re.resume_pending()
+    assert t.kind == "done" and re.view.azimuth == 77.0 and len(re.new_images) == 1 and re.pending() is None

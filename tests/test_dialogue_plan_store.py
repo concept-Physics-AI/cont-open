@@ -58,3 +58,30 @@ def test_step_that_was_running_at_save_time_is_not_treated_as_done(tmp_path):
     restored = load(tmp_path, p, CTX)
     assert restored.states["b"].state == "failed" and "결과를 알 수 없음" in restored.states["b"].error
     assert restored.states["a"].state == "done"
+
+
+# ---- 실행 전 요청 기록 ---------------------------------------------------------------------------------------------
+def test_request_record_round_trips_and_is_cleared(tmp_path):
+    from cont.dialogue.plan_store import clear_request, has_request, load_request, save_request
+    p = plan()
+    assert not has_request(tmp_path)
+    save_request(tmp_path, "일을 해줘", p, {"rev": 1})
+    assert has_request(tmp_path)
+    text, got, ctx = load_request(tmp_path)
+    assert text == "일을 해줘" and got == p and got.request_id() == p.request_id() and ctx == {"rev": 1}
+    assert clear_request(tmp_path) is True and clear_request(tmp_path) is False and not has_request(tmp_path)
+
+
+def test_request_record_refuses_missing_corrupt_and_tampered(tmp_path):
+    from cont.dialogue.plan_store import load_request, save_request
+    with pytest.raises(StaleCheckpoint, match="없습니다"):
+        load_request(tmp_path)
+    path = save_request(tmp_path, "x", plan(), {})
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["plan"]["steps"][0]["args"]["x"] = 99                       # 손으로 고침
+    path.write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
+    with pytest.raises(StaleCheckpoint, match="해시"):
+        load_request(tmp_path)
+    path.write_text("{깨짐", encoding="utf-8")
+    with pytest.raises(StaleCheckpoint, match="깨졌"):
+        load_request(tmp_path)
