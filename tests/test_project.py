@@ -201,3 +201,69 @@ def test_concurrent_save_is_refused_and_stale_lock_is_cleared(tmp_path):
     os.utime(tmp_path / P.LOCK, (old, old))
     _save(tmp_path)
     assert open_project(tmp_path).revision == 1 and not (tmp_path / P.LOCK).exists()
+
+
+# ---- 대화 기록 -----------------------------------------------------------------------------------------------------
+def _turn(i, kind="done", text=None):
+    return {"text": text or f"요청 {i}", "kind": kind, "reply": f"답 {i}",
+            "steps": [{"id": "s1", "tool": "set_camera", "state": "done", "error": ""}], "changes": [f"변경 {i}"], "request_id": f"r{i}"}
+
+
+def test_conversation_round_trips_and_is_kept_when_not_passed_again(tmp_path):
+    conv = [_turn(1), _turn(2, "refused")]
+    _save(tmp_path, conversation=conv)
+    o = open_project(tmp_path)
+    assert o.state.conversation == conv and not o.problems
+    _save(tmp_path, spec=S, playback_t=1.0)                   # conversation을 주지 않으면 이전 기록을 그대로 둔다
+    assert open_project(tmp_path).state.conversation == conv
+    _save(tmp_path, playback_t=1.0, conversation=[])          # 빈 목록은 비우는 것이다
+    assert open_project(tmp_path).state.conversation == []
+
+
+def test_save_conversation_only_updates_conversation_not_revision_or_state(tmp_path):
+    r = _save(tmp_path)
+    before = open_project(tmp_path)
+    out = P.save_conversation(tmp_path, "p1", [_turn(1)])
+    after = open_project(tmp_path)
+    assert out["revision"] == r["revision"] == after.revision == before.revision
+    assert after.state.spec == before.state.spec and after.state.view == before.state.view and after.state.selection == before.state.selection
+    assert after.state.conversation == [_turn(1)]
+    with pytest.raises(ProjectError, match="다른 프로젝트"):
+        P.save_conversation(tmp_path, "other", [])
+
+
+def test_old_manifest_without_conversation_opens_with_empty_history(tmp_path):
+    _save(tmp_path)
+    mp = tmp_path / "manifest.json"
+    raw = json.loads(mp.read_text(encoding="utf-8"))
+    del raw["body"]["conversation"]
+    raw["body_sha256"] = P.sha256_bytes(P._canon(raw["body"]))
+    mp.write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
+    o = open_project(tmp_path)
+    assert o.state.conversation == [] and not o.problems
+
+
+def test_conversation_is_trimmed_and_long_text_is_cut_with_a_mark(tmp_path, monkeypatch):
+    cfg = tmp_path / "cfg"
+    (cfg / "objspec").mkdir(parents=True)
+    (cfg / "objspec" / "project.yaml").write_text("lock_stale_seconds: 60\nconversation_max_turns: 3\nconversation_text_max_chars: 10\n", encoding="utf-8")
+    out = P._clean_conversation([_turn(i, text="가" * 30) for i in range(5)], cfg)
+    assert [t["request_id"] for t in out] == ["r2", "r3", "r4"]                  # 최근 3턴만
+    assert out[0]["text"] == "가" * 10 + "…(잘림)"
+
+
+@pytest.mark.parametrize("bad", [[{"kind": "weird"}], ["문자열"], [{**_turn(1), "steps": [{"tool": 3, "state": "done"}]}], [{**_turn(1), "text": 5}]])
+def test_bad_conversation_is_refused_at_save(tmp_path, bad):
+    with pytest.raises(ProjectError):
+        _save(tmp_path, conversation=bad)
+
+
+def test_tampered_conversation_is_caught_by_the_hash_and_previous_save_is_used(tmp_path):
+    _save(tmp_path, conversation=[_turn(1)])
+    _save(tmp_path, playback_t=1.0, conversation=[_turn(1), _turn(2)])
+    mp = tmp_path / "manifest.json"
+    raw = json.loads(mp.read_text(encoding="utf-8"))
+    raw["body"]["conversation"][0]["reply"] = "손으로 고침"
+    mp.write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
+    o = open_project(tmp_path)
+    assert o.recovered_from_previous and o.state.conversation == [_turn(1)]

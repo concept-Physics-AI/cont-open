@@ -1,2 +1,4 @@
 # 프로젝트 저장 설정
 lock_stale_seconds: 60      # 저장 중 잠금 파일이 이보다 오래되면 죽은 저장으로 보고 지운다
+conversation_max_turns: 200      # 저장하는 대화 기록의 최대 턴 수(넘으면 오래된 것부터 버린다)
+conversation_text_max_chars: 2000   # 사용자 발화·답 한 줄의 최대 글자 수(넘으면 잘라 저장하고 표시한다)

@@ -179,3 +179,36 @@ def test_first_json_object_is_used_when_text_follows_it(tmp_path):
     t = s.turn("카메라를 방위각 90도로")
     assert t.kind == "done" and s.view.azimuth == 90
     assert session(tmp_path, "JSON 없음").turn("x").kind == "refused"
+
+
+def test_saved_conversation_includes_the_saving_turn_and_continues_after_reopen(tmp_path):
+    ss = session(tmp_path, plan(step("a", "select_part", ref="die.si")), plan(step("a", "set_camera", azimuth=77), step("b", "save_project")))
+    ss.turn("위 다이(실리콘)를 선택해줘")
+    t = ss.turn("카메라를 돌리고 저장해줘")
+    assert t.kind == "done"
+    o = open_project(tmp_path / "proj")
+    assert [c["text"] for c in o.state.conversation] == ["위 다이(실리콘)를 선택해줘", "카메라를 돌리고 저장해줘"]      # 저장한 요청 자신까지
+    assert o.state.conversation[1]["steps"][1]["tool"] == "save_project" and o.revision == 1                        # 기록 갱신은 개정을 올리지 않는다
+    # 다시 열면 같은 대화가 이어지고, 다음 요청의 문맥에 이전 왕복과 저장된 선택이 들어간다
+    re = SceneSession.open(tmp_path / "proj", get_generator("fake"), Canned(plan(step("a", "edit_part", changes={"z1": 2.5}))))
+    assert [x.text for x in re.turns] == ["위 다이(실리콘)를 선택해줘", "카메라를 돌리고 저장해줘"] and re.selection == ("die.si",)
+    t2 = re.turn("그 부품의 윗면 z1을 2.5로 올려줘")
+    assert t2.kind == "done" and re.spec.part("die.si").part.z1 == 2.5
+    text = "\n".join(m.content for m in re.provider.seen[0])
+    assert "위 다이(실리콘)를 선택해줘" in text and '"selection": ["die.si"]' in text
+
+
+def test_turns_without_a_save_are_not_written_and_reopen_gives_the_last_saved_conversation(tmp_path):
+    ss = session(tmp_path, plan(step("a", "set_camera", azimuth=10), step("b", "save_project")), plan(step("a", "seek", t=1)))
+    ss.turn("돌리고 저장")
+    ss.turn("1초로")                                           # 저장하지 않은 요청
+    re = SceneSession.open(tmp_path / "proj", get_generator("fake"), None)
+    assert [x.text for x in re.turns] == ["돌리고 저장"] and re.playback_t == 0.0
+
+
+def test_conversation_save_failure_is_reported_in_the_reply_not_hidden(tmp_path, monkeypatch):
+    import cont.dialogue.scene_chat as sc
+    ss = session(tmp_path, plan(step("a", "set_camera", azimuth=10), step("b", "save_project")))
+    monkeypatch.setattr(sc, "save_conversation", lambda *a, **k: (_ for _ in ()).throw(OSError("디스크")))
+    t = ss.turn("돌리고 저장")
+    assert t.kind == "done" and "대화 기록을 저장하지 못했습니다: OSError" in t.reply
