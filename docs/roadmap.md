@@ -25,7 +25,7 @@ P1~P6은 사용자 흐름의 순서다. 저장 ID·버전·의존성 계약과 �
 
 ### 작업 단위 실행과 인수 계획
 
-P1~P6과 PINN 병행 범위를 실행하는 상세 명세는 [integration_control_plan.md](integration_control_plan.md), 작업별 의존·역할·재사용·산출물·인수·실패 시험·복귀는 [integration_jobs.yaml](integration_jobs.yaml)에 있다. CT 6개·GF 14개·PF 8개·QA 4개, 총 32개이며 제품 방향이나 현재 기능 상태를 대체하지 않는다. 모든 작업은 계획으로 등록했고 담당 배정과 실제 인수는 아직이다. CT01 → GF01/GF02 및 PF01/PF02를 첫 착수 묶음으로 삼고 컨트롤타워 전체 완성을 기다리지 않는다.
+P1~P6과 PINN 병행 범위를 실행하는 상세 명세는 [integration_control_plan.md](integration_control_plan.md), 작업별 의존·역할·재사용·산출물·인수·실패 시험·복귀는 [integration_jobs.yaml](integration_jobs.yaml)에 있다. CT 6개·GF 14개·PF 8개·QA 4개, 총 32개이며 제품 방향이나 현재 기능 상태를 대체하지 않는다. 모든 작업은 계획으로 등록했고 담당 배정과 실제 인수는 아직이다. 지금까지의 구현이 어느 인수 항목까지 증거가 있는지는 [integration_evidence_20261127.md](integration_evidence_20261127.md)(기록)에 정리했다. CT01 → GF01/GF02 및 PF01/PF02를 첫 착수 묶음으로 삼고 컨트롤타워 전체 완성을 기다리지 않는다.
 
 ### PINN 무학습 소프트웨어 병행 과제
 

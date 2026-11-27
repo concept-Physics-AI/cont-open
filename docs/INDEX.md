@@ -29,6 +29,7 @@
 | [docs/adoption_tasks.md](adoption_tasks.md) | 참고 |
 | [docs/llm_check_20261123.md](llm_check_20261123.md) | 기록 |
 | [docs/progress_20261125.md](progress_20261125.md) | 기록 |
+| [docs/integration_evidence_20261127.md](integration_evidence_20261127.md) | 기록 |
 | [docs/machining_slice1.md](machining_slice1.md) | 보조 |
 | [docs/physics_product.md](physics_product.md) | 보조 |
 | [docs/physics_models.md](physics_models.md) | 보조 |
