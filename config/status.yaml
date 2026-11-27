@@ -136,8 +136,8 @@ items:
 - key: generative_resume
   name: 핵심 6 작업 저장과 이어 하기
   status: 뼈대
-  scope: 명세·카메라·단계 속도·선택·재생 위치·이미지 기록을 저장·재열기하는 service.project와 실행/계획 체크포인트/Fab 저장이 있다. 장면 대화 기록은 프로젝트에 저장·복원되나(가짜 공급자와 파일로 시험) 중단된 계획의 재개
-    및 화면 재개 인수는 미완료
+  scope: 명세·카메라·단계 속도·선택·재생 위치·이미지 기록을 저장·재열기하는 service.project와 실행/계획 체크포인트/Fab 저장이 있다. 장면 대화 기록은 프로젝트에 저장·복원되고 중단된 요청은 알림 후 사용자가 재실행/버림을 정한다(가짜 공급자와 파일로 시험, 실제 프로세스 강제 종료는 미확인).
+    화면 재개 인수는 미완료
   evidence:
   - src/cont/service/runs.py
   - src/cont/dialogue/plan_store.py
