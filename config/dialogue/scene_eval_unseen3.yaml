@@ -1,0 +1,87 @@
+# 세 번째 보지 않은 사례 모음. 앞의 세 파일(scene_eval, unseen, unseen2)과 문장이 겹치지 않게 새로 썼다.
+# 앞선 측정에서 남은 실패 유형(카메라 용어, '쪽 부품' 같은 묶음 이름의 모호함)을 고친 뒤 보지 않은 문장으로 확인하는 용도다.
+# 사용: python -m cont.dialogue.scene_eval --cases config/dialogue/scene_eval_unseen3.yaml
+repeat: 3
+timeout_s: 300
+llm_opts: {temperature: 0}
+
+cases:
+  # --- 카메라 용어 (고친 유형) ---
+  - id: w_cam_elev_only
+    turns: ["고도를 10도로 낮춰줘"]
+    expect: {camera: {elevation: 10}}
+  - id: w_cam_azi_elev
+    turns: ["방위각 80도, 고도 35도로 설정해줘"]
+    expect: {camera: {azimuth: 80, elevation: 35}}
+  - id: w_cam_dist_elev
+    turns: ["고도 15도에 거리 1.2로 맞춰줘"]
+    expect: {camera: {elevation: 15, distance: 1.2}}
+  - id: w_cam_all_reordered
+    turns: ["거리는 0.6, 고도는 45도, 방위각은 -30도로 해줘"]
+    expect: {camera: {azimuth: -30, elevation: 45, distance: 0.6}}
+  - id: w_cam_view_from_above
+    turns: ["위에서 내려다보는 각도로 고도 80도로 해줘"]
+    expect: {camera: {elevation: 80}}
+  - id: w_cam_side_azimuth
+    turns: ["옆에서 보도록 방위각을 90도로 돌려줘"]
+    expect: {camera: {azimuth: 90}}
+  # --- 묶음 이름 모호함 (고친 유형) ---
+  - id: w_amb_lower_side
+    turns: ["아래쪽 부품들 중 하나의 윗면 높이를 1.1로 해줘"]
+    expect: {unchanged: true}
+  - id: w_amb_upper_group_z0
+    turns: ["위쪽 부분의 아랫면 높이를 1.3으로 바꿔줘"]
+    expect: {unchanged: true}
+  - id: w_amb_wafer_outer
+    turns: ["웨이퍼 부분의 바깥 반지름을 19로 줄여줘"]
+    expect: {unchanged: true}
+  - id: w_amb_die_name
+    turns: ["다이 쪽 부품 이름을 '상부'로 바꿔줘"]
+    expect: {unchanged: true}
+  - id: w_amb_substrate_group
+    turns: ["기판 부분의 z1을 2로 해줘"]
+    expect: {unchanged: true}
+  - id: w_group_resolved_by_name
+    turns: ["위 유전층 윗면 높이를 1.6으로 해줘"]
+    expect: {parts: {die.dielectric: {z1: 1.6}}, selection: [die.dielectric]}
+  - id: w_group_resolved_by_context
+    turns: ["위 다이(실리콘)를 선택해줘", "이 부품의 안쪽 반지름을 1로 해줘"]
+    expect: {parts: {die.si: {inner: 1}}, selection: [die.si]}
+  # --- 정상 요청, 새 표현 ---
+  - id: w_speed_third_ordinal
+    turns: ["세 번째 단계를 0.4배로 해줘"]
+    expect: {speed: {contact: 0.4}}
+  - id: w_speed_all_slow
+    turns: ["접근, 정렬, 접촉 단계를 모두 0.5배로 해줘"]
+    expect: {speed: {approach: 0.5, align: 0.5, contact: 0.5}}
+  - id: w_speed_then_seek
+    turns: ["정렬 단계를 2배로 하고 재생 위치를 1초로 옮겨줘"]
+    expect: {speed: {align: 2.0}, playback_t: 1.0}
+  - id: w_select_by_name_part
+    turns: ["위 유전층만 선택해줘"]
+    expect: {selection: [die.dielectric]}
+  - id: w_image_approach
+    turns: ["접근 단계 설명 이미지를 만들어줘"]
+    expect: {images: 1}
+  - id: w_save_only
+    turns: ["프로젝트를 저장해줘"]
+    expect: {}
+  - id: w_two_edits_one_turn
+    turns: ["위 다이(실리콘)를 선택해서 바깥 반지름을 13으로, 윗면 높이를 2.2로 바꿔줘"]
+    expect: {parts: {die.si: {outer: 13, z1: 2.2}}, selection: [die.si]}
+  - id: w_correct_value
+    turns: ["카메라를 방위각 60도로 돌려줘", "아니, 70도로 해줘"]
+    expect: {camera: {azimuth: 70}}
+  # --- 지원 안 함·값 없음 ---
+  - id: w_missing_camera_value
+    turns: ["고도를 조금 올려줘"]
+    expect: {unchanged: true}
+  - id: w_unsupported_color
+    turns: ["위 다이(실리콘)를 빨간색으로 바꿔줘"]
+    expect: {unchanged: true}
+  - id: w_unsupported_delete
+    turns: ["아래 유전층을 삭제해줘"]
+    expect: {unchanged: true}
+  - id: w_question_stage_count
+    turns: ["부품이 모두 몇 개야?"]
+    expect: {unchanged: true}
