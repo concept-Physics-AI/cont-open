@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from cont.dialogue.context import ContextLimits, build_messages, configured_limits
-from cont.dialogue.plan import Executor, Plan, PlanError, Tool, parse, validate
+from cont.dialogue.plan import Executor, Plan, PlanError, Step, Tool, parse, validate
 from cont.dialogue.plan_store import StaleCheckpoint, clear_request, has_request, load_request, save_request
 from cont.generation import Generator
 from cont.objspec import (ObjectSpec, ObjectSpecError, Selection, SelectionError, SpecImage, ViewState, edit_selection, generate_image, select,
@@ -258,6 +258,10 @@ class SceneSession:
             raise SelectionError(f"명세에 없는 부품입니다: {unknown}. 선택하지 않았습니다")
         self.selection = ids
         return self.selection
+
+    def save_now(self) -> Turn:
+        """저장 단추: LLM 없이 저장 도구 한 단계만 실행한다(계획·검증·실패 시 되돌리기·기록은 말로 한 요청과 같다)."""
+        return self._run_plan("(저장 단추)", Plan((Step("a", "save_project", {}),)), self.tools())
 
     # ---- 중단된 요청 -----------------------------------------------------------------------------------------
     def _pending_dir(self) -> Path | None:
