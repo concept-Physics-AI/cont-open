@@ -22,7 +22,7 @@ from cont.dialogue.context import ContextLimits, build_messages, configured_limi
 from cont.dialogue.plan import Executor, Plan, PlanError, Tool, parse, validate
 from cont.dialogue.plan_store import StaleCheckpoint, clear_request, has_request, load_request, save_request
 from cont.generation import Generator
-from cont.objspec import (ObjectSpec, ObjectSpecError, Selection, SpecImage, ViewState, edit_selection, generate_image, select,
+from cont.objspec import (ObjectSpec, ObjectSpecError, Selection, SelectionError, SpecImage, ViewState, edit_selection, generate_image, select,
                           select_region)
 from cont.objspec.scene import Timeline
 from cont.service.project import open_project, save_conversation, save_project
@@ -246,6 +246,18 @@ class SceneSession:
         except (ValueError, PlanError) as e:
             return self._end(Turn(text, "refused", f"계획이 맞지 않아 실행하지 않았습니다: {str(e)[:150]}"))
         return self._run_plan(text, plan, tools)
+
+    def select_from_screen(self, ids: list[str] | tuple[str, ...], spec_version: str) -> tuple[str, ...]:
+        """3D 장면에서 사용자가 고른 부품(`s4d:select` 이벤트의 ids·spec_version)을 선택 상태로 받는다. 다음 대화의 "그 부품"이 이것을 가리킨다.
+        화면이 보여 준 명세 version이 지금과 다르면(오래된 화면) 받지 않는다. 명세에 없는 부품이 섞여 있어도 받지 않는다. 빈 목록은 선택을 비운다."""
+        if spec_version != self.spec.version:
+            raise SelectionError("화면의 장면이 지금 명세와 다릅니다(오래된 화면). 선택하지 않았습니다. 화면을 다시 불러오세요")
+        ids = tuple(dict.fromkeys(ids))
+        unknown = [i for i in ids if i not in self.spec.part_ids]
+        if unknown:
+            raise SelectionError(f"명세에 없는 부품입니다: {unknown}. 선택하지 않았습니다")
+        self.selection = ids
+        return self.selection
 
     # ---- 중단된 요청 -----------------------------------------------------------------------------------------
     def _pending_dir(self) -> Path | None:
